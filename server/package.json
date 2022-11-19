@@ -1,7 +1,20 @@
 {
   "name": "kensa-minecraft-launcher-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/server.js",
   "author": "Kensa",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "start": "tsc && node ."
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.14",
+    "@types/node": "^18.11.9",
+    "typescript": "^4.9.3"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
 }
