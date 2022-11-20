@@ -7,18 +7,27 @@ import * as msmc from 'msmc'
 let win: BrowserWindow | null = null
 
 const platorm = os.platform()
-let configPath = ''
+let configFolder = ''
+let rootDir;
 
 if(platorm === 'win32'){
-    configPath = path.join(os.homedir(), 'AppData', 'Roaming', 'kensa-minecraft-launcher')
+    configFolder = path.join(os.homedir(), 'AppData', 'Roaming', 'kensa-minecraft-launcher')
+    rootDir = path.join(os.homedir(), 'AppData', 'Roaming', '.kensa-launcher')
 }else if(platorm === 'linux'){
-    configPath = path.join(os.homedir(), '.config', 'kensa-minecraft-launcher')
+    configFolder = path.join(os.homedir(), '.config', 'kensa-minecraft-launcher')
+    rootDir = path.join(os.homedir(), '.kensa-launcher')
 }else {
     console.error('Unsupported platform')
     process.exit(1)
 }
 
+const defaultConfig = {
+    rootDir,
+    ram: '6G',
+}
+
 let loginInfo: msmc.result | null;
+let config: Record<string, any> | null;
 
 async function createWindow() {
     win = new BrowserWindow({
@@ -38,8 +47,8 @@ async function createWindow() {
         win.loadURL("http://localhost:5173/")
     ]}
 
-    if(fs.existsSync(path.join(configPath, 'loginInfo.json'))) {
-        loginInfo = JSON.parse(fs.readFileSync(path.join(configPath, 'loginInfo.json'), 'utf-8'))
+    if(fs.existsSync(path.join(configFolder, 'loginInfo.json'))) {
+        loginInfo = JSON.parse(fs.readFileSync(path.join(configFolder, 'loginInfo.json'), 'utf-8'))
         if(!loginInfo)return
         if(!loginInfo.profile)return
         if(!msmc.validate(loginInfo.profile)){
@@ -47,6 +56,13 @@ async function createWindow() {
                 loginInfo = res
             })
         }
+    }
+
+    if(!fs.existsSync(path.join(configFolder, 'config.json'))) {
+        config = defaultConfig
+        fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
+    } else {
+        config = JSON.parse(fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8'))
     }
 }
 
@@ -67,7 +83,7 @@ ipcMain.handle('msmc-connect', (event, arg) => {
                 resolve(false)
             }else{
                 loginInfo = res
-                fs.writeFileSync(path.join(configPath, 'loginInfo.json'), JSON.stringify(loginInfo,null,4))
+                fs.writeFileSync(path.join(configFolder, 'loginInfo.json'), JSON.stringify(loginInfo,null,4))
                 resolve(true)
             }
         }).catch(res => {
@@ -79,5 +95,15 @@ ipcMain.handle('msmc-connect', (event, arg) => {
 
 ipcMain.on('msmc-logout', (event, arg) => {
     loginInfo = null
-    fs.rmSync(path.join(configPath, 'loginInfo.json'))
+    fs.rmSync(path.join(configFolder, 'loginInfo.json'))
+})
+
+ipcMain.on('get-config', (event, arg) => {
+    event.returnValue = JSON.stringify(config)
+})
+
+ipcMain.on('set-config', (event, arg) => {
+    const newConfig = JSON.parse(arg)
+    config = {...config, ...newConfig}
+    fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
 })
