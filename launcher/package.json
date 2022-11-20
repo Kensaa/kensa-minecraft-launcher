@@ -1,7 +1,54 @@
 {
   "name": "kensa-minecraft-launcher",
-  "version": "1.0.0",
-  "main": "index.js",
+  "description": "A Minecraft launcher which will be pretty cringe but hopefully usable",
   "author": "Kensa",
-  "license": "MIT"
+  "private": true,
+  "version": "0.0.1",
+  "main": "dist-electron/electron.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bootstrap": "^5.2.2",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.6.0",
+    "react-dom": "^18.2.0",
+    "sass": "^1.56.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
+    "@vitejs/plugin-react": "^2.2.0",
+    "electron": "^21.3.0",
+    "electron-builder": "^23.6.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.3",
+    "vite-electron-plugin": "^0.5.2",
+    "vite-plugin-electron-renderer": "^0.11.3"
+  },
+  "build": {
+    "appId": "fr.kensa.minecraftLauncher",
+    "productName": "Kensa's Minecraft Launcher",
+    "directories": {
+      "output": "release",
+      "buildResources": "buildAssets"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*"
+    ],
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "zip",
+      "category": "Game"
+    },
+    "win": {
+      "target": "msi",
+      "publisherName": "Kensa"
+    }
+  }
 }
