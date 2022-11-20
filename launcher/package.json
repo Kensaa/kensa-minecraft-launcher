@@ -12,12 +12,16 @@
   },
   "dependencies": {
     "bootstrap": "^5.2.2",
+    "minecraft-launcher-core": "^3.16.16",
+    "msmc": "^3.1.3",
     "react": "^18.2.0",
     "react-bootstrap": "^2.6.0",
     "react-dom": "^18.2.0",
-    "sass": "^1.56.1"
+    "sass": "^1.56.1",
+    "zustand": "^4.1.4"
   },
   "devDependencies": {
+    "@types/node": "^18.11.9",
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@vitejs/plugin-react": "^2.2.0",
