@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Dialog, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
@@ -32,6 +32,7 @@ let loginInfo: msmc.result | null;
 let config: Record<string, any> | null;
 
 async function createWindow() {
+    console.log('createWindow')
     win = new BrowserWindow({
         title: 'Main window',
         width:1000,
@@ -43,12 +44,6 @@ async function createWindow() {
         }
     })
     
-    if(app.isPackaged){
-        await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
-    }else{[
-        win.loadURL("http://localhost:5173/")
-    ]}
-
     if(fs.existsSync(path.join(configFolder, 'loginInfo.json'))) {
         loginInfo = JSON.parse(fs.readFileSync(path.join(configFolder, 'loginInfo.json'), 'utf-8'))
         if(!loginInfo)return
@@ -59,13 +54,23 @@ async function createWindow() {
             })
         }
     }
-
+    
     if(!fs.existsSync(path.join(configFolder, 'config.json'))) {
         config = defaultConfig
         fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
+        console.log('created config file using default config : ')
+        console.log(config)
     } else {
         config = JSON.parse(fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8'))
+        console.log('parsed existing config:')
+        console.log(config)
     }
+
+    if(app.isPackaged){
+        await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    }else{[
+        win.loadURL("http://localhost:5173/")
+    ]}
 }
 
 app.whenReady().then(createWindow)
@@ -96,18 +101,22 @@ ipcMain.handle('msmc-connect', (event, arg) => {
 })
 
 ipcMain.on('msmc-logout', (event, arg) => {
+    console.log('msmc-logout')
     loginInfo = null
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
 })
 
 ipcMain.on('get-config', (event, arg) => {
+    console.log('get-config')
     event.returnValue = JSON.stringify(config)
 })
 
 ipcMain.on('set-config', (event, arg) => {
+    console.log('set-config')
     const newConfig = JSON.parse(arg)
     config = {...config, ...newConfig}
     fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
+    console.log('config saved')
 })
 
 ipcMain.on('prompt-folder',(event, args) => {
