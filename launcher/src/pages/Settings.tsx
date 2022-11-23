@@ -14,7 +14,8 @@ export default function Settings() {
     const [validated, setValidated] = useState(false)
     console.log(config)
 
-    const handleSubmit = () => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
         config.setRootDir(rootDir)
         config.setRam(ram)
         config.setPrimaryServer(primaryServer)
@@ -22,8 +23,8 @@ export default function Settings() {
 
         setValidated(true)
         setTimeout(() => setValidated(false), 1500);
-        console.log('config set');
     }
+
     
     return (
             <Form onSubmit={handleSubmit} validated={validated} className="w-100 h-100 d-flex flex-column p-2">
