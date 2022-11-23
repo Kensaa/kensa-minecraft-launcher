@@ -1,11 +1,10 @@
-import { app, BrowserWindow, ipcMain, ipcRenderer } from 'electron'
+import { app, BrowserWindow, ipcMain, Dialog, dialog } from 'electron'
 import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
 
 let win: BrowserWindow | null = null
-
 const platorm = os.platform()
 let configFolder = ''
 let rootDir;
@@ -23,7 +22,10 @@ if(platorm === 'win32'){
 
 const defaultConfig = {
     rootDir,
-    ram: '6G',
+    ram: 6,
+    primaryServer: 'localhost',
+    fallbackServer: 'localhost',
+
 }
 
 let loginInfo: msmc.result | null;
@@ -106,4 +108,12 @@ ipcMain.on('set-config', (event, arg) => {
     const newConfig = JSON.parse(arg)
     config = {...config, ...newConfig}
     fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
+})
+
+ipcMain.on('prompt-folder',(event, args) => {
+    if(!win)return event.returnValue="error"
+    const dir = dialog.showOpenDialogSync(win, {
+        properties: ['openDirectory']
+    })
+    event.returnValue = dir
 })
