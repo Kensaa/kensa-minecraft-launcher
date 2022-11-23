@@ -9,7 +9,6 @@ import UserElement from './components/UserElement'
 export default function App() {
     const [overlay, setOverlay] = useState<JSX.Element | undefined>(undefined)
     const [currentTab, setCurrentTab] = useState(0)
-    console.log('render')
     const tabs: Record<string,JSX.Element> = 
     {
         Home : <Home/>,
