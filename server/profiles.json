@@ -1,0 +1,16 @@
+[
+    {
+        "name":"Modpack Feur",
+        "version":{
+            "mc": "1.16.5",
+            "forge": "forge-1.16.5-36.2.39-installer.jar"
+        },
+        "gameFolder":"modpackFeur"
+    },
+    {
+        "name":"vanilla 1.16.5",
+        "version":{
+            "mc":"1.16.5"
+        }
+    }
+]

@@ -11,7 +11,7 @@ export default function App() {
     const [currentTab, setCurrentTab] = useState(0)
     const tabs: Record<string,JSX.Element> = 
     {
-        Home : <Home/>,
+        Home : <Home setOverlay={setOverlay}/>,
         Settings: <Settings/>
     }
 

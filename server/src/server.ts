@@ -7,10 +7,16 @@ import { Request, Response, NextFunction } from 'express'
 
 const PORT = 40069
 const staticFolder = path.join(__dirname,'..', 'static')
+const profiles = JSON.parse(fs.readFileSync('profiles.json','utf-8'))
+if(!profiles){
+    console.log('not profiles file found');
+    process.exit(1)
+}
 
 ;(async () => {
     const app = express()
     const hashTree = await hashFolder(staticFolder)
+    const simpleTree = await folderTree(staticFolder)
 
     app.use(cors())
     app.use(express.json())
@@ -23,6 +29,11 @@ const staticFolder = path.join(__dirname,'..', 'static')
     app.get('/hashes', (req, res) => {
         res.status(200).json(hashTree)
     })
+
+    app.get('/profiles',(req, res) => {
+        res.status(200).json(profiles)
+    })
+
 
 
     app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
@@ -43,7 +54,22 @@ async function hashFolder(src: string): Promise<Record<string, any> | string> {
     return res
 }
 
-function getHash(src:string):Promise<string>{
+export async function folderTree(src: string): Promise<Record<string, unknown> | string> {
+    if (fs.statSync(src).isFile()) {
+        return ''
+    } else {
+        const res: {[k: string]: Record<string, unknown> | string} = {}
+        const files = fs.readdirSync(src)
+        for (const file of files) {
+            const filePath = path.join(src, file)
+            const fileInfo = await folderTree(filePath)
+            res[file] = fileInfo
+        }
+        return res
+    }
+}
+
+function getHash(src: string):Promise<string> {
     return new Promise<string>((resolve,reject) => {
         const stream = fs.createReadStream(src)
         const hash = crypto.createHash('md5')
