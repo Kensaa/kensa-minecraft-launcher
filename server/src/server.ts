@@ -3,20 +3,21 @@ import * as cors from 'cors'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
-import { Request, Response, NextFunction } from 'express'
 
-const PORT = 40069
-const staticFolder = path.join(__dirname,'..', 'static')
-const profiles = JSON.parse(fs.readFileSync('profiles.json','utf-8'))
+const PORT = process.env.PORT || 40069
+const staticFolder = process.env.STATIC_FOLDER || 'static/'
+const profilesFile = process.env.PROFILES_FILE || 'profiles.json'
+
+let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
 if(!profiles){
     console.log('not profiles file found');
+    fs.writeFileSync(profilesFile, JSON.stringify({}))
     process.exit(1)
 }
 
 ;(async () => {
     const app = express()
-    const hashTree = await hashFolder(staticFolder)
-    const simpleTree = await folderTree(staticFolder)
+    let hashTree = await hashFolder(staticFolder)
 
     app.use(cors())
     app.use(express.json())
@@ -34,10 +35,12 @@ if(!profiles){
         res.status(200).json(profiles)
     })
 
-
+    app.post('/reload', async (req, res) => {
+        hashTree = await hashFolder(staticFolder)
+        profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
+    })
 
     app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
-
 })()
 
 async function hashFolder(src: string): Promise<Record<string, any> | string> {
@@ -52,21 +55,6 @@ async function hashFolder(src: string): Promise<Record<string, any> | string> {
         res[filename] = hash
     }
     return res
-}
-
-export async function folderTree(src: string): Promise<Record<string, unknown> | string> {
-    if (fs.statSync(src).isFile()) {
-        return ''
-    } else {
-        const res: {[k: string]: Record<string, unknown> | string} = {}
-        const files = fs.readdirSync(src)
-        for (const file of files) {
-            const filePath = path.join(src, file)
-            const fileInfo = await folderTree(filePath)
-            res[file] = fileInfo
-        }
-        return res
-    }
 }
 
 function getHash(src: string):Promise<string> {
