@@ -32,6 +32,7 @@ export default create<configStore>(set => {
             ipcRenderer.send('set-config', JSON.stringify({ram}))
         },
         setPrimaryServer: (primaryServer: string) => {
+            if(primaryServer.endsWith('/')) primaryServer = primaryServer.slice(0, -1)
             set({primaryServer})
             ipcRenderer.send('set-config', JSON.stringify({primaryServer}))
         },
