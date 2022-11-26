@@ -6,13 +6,11 @@ interface configStore {
     rootDir: string
     ram: number
     primaryServer: string
-    fallbackServer: string
     jrePath: string
     closeLauncher: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
     setPrimaryServer: (primaryServer: string) => void
-    setFallbackServer: (fallbackServer: string) => void
     setJrePath: (jrePath: string) => void
     setCloseLauncher: (closeLauncher: boolean) => void
 }
@@ -25,7 +23,6 @@ export default create<configStore>(set => {
         rootDir: config.rootDir,
         ram: config.ram,
         primaryServer: config.primaryServer,
-        fallbackServer: config.fallbackServer,
         jrePath: config.jrePath,
         closeLauncher: config.closeLauncher,
         setRootDir: (rootDir: string) => {
@@ -40,10 +37,7 @@ export default create<configStore>(set => {
             set({primaryServer})
             ipcRenderer.send('set-config', JSON.stringify({primaryServer}))
         },
-        setFallbackServer: (fallbackServer: string) => {
-            set({fallbackServer})
-            ipcRenderer.send('set-config', JSON.stringify({fallbackServer}))
-        },
+        
         setJrePath: (jrePath: string) => {
             set({jrePath})
             ipcRenderer.send('set-config', JSON.stringify({jrePath}))

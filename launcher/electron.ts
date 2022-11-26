@@ -14,6 +14,7 @@ let win: BrowserWindow | null = null
 const platorm = os.platform()
 let configFolder = ''
 let rootDir;
+let startProgress = 0;
 
 if(platorm === 'win32'){
     configFolder = path.join(os.homedir(), 'AppData', 'Roaming', 'kensa-minecraft-launcher')
@@ -30,7 +31,6 @@ const defaultConfig = {
     rootDir,
     ram: 6,
     primaryServer: 'http://localhost:40069',
-    fallbackServer: 'http://localhost:40069',
     jrePath: '',
     closeLauncher:true
 }
@@ -123,7 +123,6 @@ ipcMain.on('set-config', (event, arg) => {
     const newConfig = JSON.parse(arg)
     config = {...config, ...newConfig}
     fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
-    console.log('config saved')
 })
 
 ipcMain.on('prompt-folder',(event, args) => {
@@ -181,7 +180,9 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             localTree = await folderTree(localPath)
     
             for(const folder of remoteFolders){
-                for(const file of Object.keys(remoteTree[folder])){
+                const remoteFiles = Object.keys(remoteTree[folder])
+                let i = 0
+                for(const file of remoteFiles){
                     if(!Object.keys(localTree[folder]).includes(file)){
                         console.log('downloading file: ' + path.join(folder, file))
                         await download(urlJoin(config.primaryServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
@@ -191,6 +192,8 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                             await download(urlJoin(config.primaryServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
                         }
                     }
+                    startProgress = i / remoteFiles.length * 100
+                    i++
                 }
                 const onlyLocalFiles = Object.keys(localTree[folder]).filter(file => !Object.keys(remoteTree[folder]).includes(file))
                 for(const file of onlyLocalFiles){
@@ -225,14 +228,24 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
     
         //console.log(opts)
         launcher.launch(opts as any)
-        launcher.on('debug', e => console.log(e))
-        launcher.on('data', e => console.log(e))
+        //launcher.on('debug', e => console.log(e))
+        //launcher.on('data', e => console.log(e))
         launcher.on('start', e => {
-            resolve()
             if(!config) return
             if(config.closeLauncher) app.quit()
+            resolve()
+        })
+        launcher.on('progress', progress => {
+            if(typeof progress !== 'number') return
+            console.log("progress: "+progress+"%")
+            startProgress = progress
         })
     })
+})
+
+ipcMain.on('get-start-progress', (event, arg) => {
+    //console.log('get-start-progress')
+    event.returnValue = startProgress
 })
 
 function checkExist(path: string){

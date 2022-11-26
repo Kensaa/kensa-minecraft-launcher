@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@kensaa/minecraft-launcher-core": "^3.16.19",
+    "@kensaa/minecraft-launcher-core": "^3.16.20",
     "bootstrap": "^5.2.2",
     "msmc": "^3.1.3",
     "react": "^18.2.0",

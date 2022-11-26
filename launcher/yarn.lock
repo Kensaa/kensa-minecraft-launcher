@@ -339,10 +339,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@kensaa/minecraft-launcher-core@^3.16.19":
-  version "3.16.19"
-  resolved "https://registry.yarnpkg.com/@kensaa/minecraft-launcher-core/-/minecraft-launcher-core-3.16.19.tgz#25d02df0c14d0daf775b727206198d7e67f26b99"
-  integrity sha512-a8uDG3Gqg6VKknjVoWX7k3zap93ovYo8uo//wyyGAR3xqcbVQYGkPtQ5b+NcM4xSmcQojmxP0O3J/GcuMqtgbQ==
+"@kensaa/minecraft-launcher-core@^3.16.20":
+  version "3.16.20"
+  resolved "https://registry.yarnpkg.com/@kensaa/minecraft-launcher-core/-/minecraft-launcher-core-3.16.20.tgz#2cb077b8efb9304f710f43fca4d63f8ba04495f3"
+  integrity sha512-nyJa6IdAvcihWa6pgwAhCdvmk/4t0a6w1JG7O4817TvZioggdsTqBl4qA/JOeyy7MhXhlQQMH4htmzeBMuFvYw==
   dependencies:
     adm-zip "^0.4.13"
     checksum "^0.1.1"
