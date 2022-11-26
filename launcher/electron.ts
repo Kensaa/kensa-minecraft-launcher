@@ -27,10 +27,15 @@ if(platorm === 'win32'){
     process.exit(1)
 }
 
+let primaryServer = 'http://redover.fr:40069'
+if(app.isPackaged){
+    primaryServer = 'http://localhost:40069'
+}
+
 const defaultConfig = {
     rootDir,
     ram: 6,
-    primaryServer: 'http://localhost:40069',
+    primaryServer,
     jrePath: '',
     closeLauncher:true
 }
