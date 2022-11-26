@@ -18,6 +18,12 @@ if(!profilesFile){
 if(!fs.existsSync(staticFolder)){
     console.log(`static folder ${staticFolder} does not exist`)
     process.exit(1)
+}else {
+    const files = fs.readFileSync(staticFolder)
+    if(files.length === 0){
+        fs.mkdirSync(path.join(staticFolder, 'forges'))
+        fs.mkdirSync(path.join(staticFolder, 'gameFolders'))
+    }
 }
 if(!fs.existsSync(profilesFile)){
     console.log(`profiles file ${profilesFile} does not exist`)
