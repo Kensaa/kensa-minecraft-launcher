@@ -7,8 +7,10 @@ RUN npm install
 
 COPY . .
 
-ENV PROFILES_FILES="/data/profiles.json"
+ENV PROFILES_FILE="/data/profiles.json"
 ENV STATIC_FOLDER="/data/static/"
 ENV PORT="40069"
+
+EXPOSE 40069
 
 CMD ["npm", "start"]
