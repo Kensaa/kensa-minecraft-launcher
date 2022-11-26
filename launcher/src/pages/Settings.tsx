@@ -26,19 +26,17 @@ export default function Settings() {
         setTimeout(() => setValidated(false), 1500);
     }
 
-    
     return (
-            <Form onSubmit={handleSubmit} validated={validated} className="w-100 h-100 d-flex flex-column p-2">
-                <div style={{"flexGrow":1}} className="w-100">
-                    <DirInput label="Game Directory" value={rootDir} setter={(s: string | number | boolean) => setRootDir(s as string)} />
-                    <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={6} max={14} />
-                    <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
-                    <FileInput label="JRE executable" placeholder="leave empty if you don't know what you're doing" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
-                    <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
-                </div>
-
-                <Button type="submit">Save</Button>
-            </Form>
+        <Form onSubmit={handleSubmit} validated={validated} className="w-100 h-100 d-flex flex-column p-2">
+            <div style={{"flexGrow":1}} className="w-100">
+                <DirInput label="Game Directory" value={rootDir} setter={(s: string | number | boolean) => setRootDir(s as string)} />
+                <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={6} max={14} />
+                <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
+                <FileInput label="JRE executable" placeholder="leave empty if you don't know what you're doing" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
+                <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
+            </div>
+            <Button type="submit">Save</Button>
+        </Form>
     )
 }
 
@@ -59,7 +57,6 @@ function DirInput({label, value, setter}: InputProps){
             <Form.Control value={value as string} onChange={e => setter(e.target.value)} type="text"/>
             <Button className="mx-2" variant="outline-primary" onClick={openPrompt}>Open Folder</Button>
         </Form.Group>
-        
     )
 }
 
@@ -74,7 +71,6 @@ function FileInput({label, value, setter, placeholder}: InputProps){
             <Form.Control className="mx-2" value={value as string} placeholder={placeholder} onChange={e => setter(e.target.value)} type="text"/>
             <Button className="mx-2" variant="outline-primary" onClick={openPrompt}>Open File</Button>
         </Form.Group>
-        
     )
 }
 

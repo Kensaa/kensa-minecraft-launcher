@@ -27,8 +27,6 @@ export default function App() {
     )
 }
 
-
-
 interface NavigationProps {
     tabs: Record<string,JSX.Element>
     currentTab: number

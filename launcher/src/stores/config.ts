@@ -1,7 +1,6 @@
 import create from 'zustand'
 import { ipcRenderer } from 'electron'
 
-
 interface configStore {
     rootDir: string
     ram: number
@@ -17,7 +16,6 @@ interface configStore {
 
 export default create<configStore>(set => {
     const config = JSON.parse(ipcRenderer.sendSync('get-config'))
-
 
     return {
         rootDir: config.rootDir,

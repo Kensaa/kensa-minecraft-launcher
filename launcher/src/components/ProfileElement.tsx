@@ -3,6 +3,7 @@ import { Profile } from "../types"
 interface ProfileElementProps {
     profile: Profile | undefined
 }
+
 export default function ProfileElement({profile}: ProfileElementProps){
     if(!profile) return <div>Loading...</div>
     let versionString = profile.version.mc

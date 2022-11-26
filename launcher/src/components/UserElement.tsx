@@ -4,11 +4,8 @@ import { Button, Dropdown } from 'react-bootstrap'
 
 import ConnectingOverlay from '../overlays/ConnectingOverlay'
 
-
-
 export default function UserElement({setOverlay}: {setOverlay: (setOverlay: JSX.Element | undefined) => void}) {
     const auth = authStore(state => ({...state}))
-
     const login = () => {
         setOverlay(<ConnectingOverlay/>)
         auth.connect().then(() => setOverlay(undefined)) 

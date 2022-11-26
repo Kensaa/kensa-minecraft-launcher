@@ -7,25 +7,21 @@ import GameStartingOverlay from '../overlays/GameStartingOverlay'
 import authStore from '../stores/auth'
 import configStore from '../stores/config'
 import { Profile } from '../types'
-//import { urlJoin, useFetch } from '../utils'
 
 export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | undefined) => void}) {
     const auth = authStore(state => ({...state}))
     const config = configStore(state => ({...state}))
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [selectedProfile, setSelectedProfile] = useState<number>(0)
-    //const {data: profiles, loading: profilesLoading, error: profilesError} = useFetch(config.primaryServer+'/profiles',{})
     useEffect(() => {
         fetch(config.primaryServer+'/profiles')
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
-                //setSelectedProfile(data[0])
             })
     }, [config])
 
     const startGame = () => {
-        //console.log(profiles[0])
         setOverlay(<GameStartingOverlay/>)
         ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined))
     }
@@ -37,19 +33,19 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
                     <ProfileElement profile={profiles[selectedProfile]} />
                 </div>
             </div> 
-        <div className='w-100 d-flex justify-content-center'>
-            <SplitButton
-                drop="up"
-                variant="outline-primary"
-                title="Launch Game"
-                align="end"
-                onClick={() => startGame()}
-            >
-                {profiles.map((profile, index) => (
-                    <Dropdown.Item onClick={() => setSelectedProfile(index)} key={index}><ProfileElement profile={profile}/></Dropdown.Item>
-                ))}
-            </SplitButton>
-        </div>
+            <div className='w-100 d-flex justify-content-center'>
+                <SplitButton
+                    drop="up"
+                    variant="outline-primary"
+                    title="Launch Game"
+                    align="end"
+                    onClick={() => startGame()}
+                >
+                    {profiles.map((profile, index) => (
+                        <Dropdown.Item onClick={() => setSelectedProfile(index)} key={index}><ProfileElement profile={profile}/></Dropdown.Item>
+                    ))}
+                </SplitButton>
+            </div>
         </div>
     )
 }
