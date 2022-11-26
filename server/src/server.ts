@@ -5,15 +5,26 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
-const staticFolder = process.env.STATIC_FOLDER || 'static/'
-const profilesFile = process.env.PROFILES_FILE || 'profiles.json'
-
-let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
-if(!profiles){
-    console.log('not profiles file found');
-    fs.writeFileSync(profilesFile, JSON.stringify({}))
+const staticFolder = process.env.STATIC_FOLDER
+const profilesFile = process.env.PROFILES_FILE
+if(!staticFolder){
+    console.log(`static folder not defined in environment variables`)
     process.exit(1)
 }
+if(!profilesFile){
+    console.log(`profiles file not defined in environment variables`)
+    process.exit(1)
+}
+if(!fs.existsSync(staticFolder)){
+    console.log(`static folder ${staticFolder} does not exist`)
+    process.exit(1)
+}
+if(!fs.existsSync(profilesFile)){
+    console.log(`profiles file ${profilesFile} does not exist`)
+    process.exit(1)
+}
+
+let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
 
 ;(async () => {
     const app = express()
