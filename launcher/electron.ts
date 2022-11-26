@@ -15,6 +15,7 @@ const platorm = os.platform()
 let configFolder = ''
 let rootDir;
 let startProgress = 0;
+let loginProgress = 0;
 
 if(platorm === 'win32'){
     configFolder = path.join(os.homedir(), 'AppData', 'Roaming', 'kensa-minecraft-launcher')
@@ -96,6 +97,8 @@ ipcMain.handle('msmc-connect', (event, arg) => {
     return new Promise<boolean>(resolve => {
         msmc.fastLaunch('electron',info => {
             console.log(info)
+            if(!info.percent) return
+            loginProgress = info.percent
         }).then(res => {
             console.log('connected')
             if (msmc.errorCheck(res)){
@@ -148,7 +151,7 @@ ipcMain.on('prompt-file',(event, args) => {
 
 ipcMain.handle('start-game', async (event, args: Profile) => {
     return new Promise<void>(async (resolve,reject) => {
-
+        console.log(config)
         if(!config) return
         if(!loginInfo) return
         checkExist(config.rootDir)
@@ -231,10 +234,10 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
     
-        //console.log(opts)
+        console.log(opts)
         launcher.launch(opts as any)
-        //launcher.on('debug', e => console.log(e))
-        //launcher.on('data', e => console.log(e))
+        launcher.on('debug', e => console.log(e))
+        launcher.on('data', e => console.log(e))
         launcher.on('start', e => {
             if(!config) return
             if(config.closeLauncher) app.quit()
@@ -249,8 +252,11 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 })
 
 ipcMain.on('get-start-progress', (event, arg) => {
-    //console.log('get-start-progress')
     event.returnValue = startProgress
+})
+
+ipcMain.on('get-login-progress', (event, arg) => {
+    event.returnValue = loginProgress
 })
 
 function checkExist(path: string){

@@ -39,6 +39,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
                     variant="outline-primary"
                     title="Launch Game"
                     align="end"
+                    disabled={!auth.connected}
                     onClick={() => startGame()}
                 >
                     {profiles.map((profile, index) => (

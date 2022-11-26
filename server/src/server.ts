@@ -5,8 +5,8 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
-const staticFolder = process.env.STATIC_FOLDER
-const profilesFile = process.env.PROFILES_FILE
+const staticFolder = process.env.STATIC_FOLDER || './static'
+const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 if(!staticFolder){
     console.log(`static folder not defined in environment variables`)
     process.exit(1)
