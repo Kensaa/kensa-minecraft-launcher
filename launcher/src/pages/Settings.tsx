@@ -30,7 +30,7 @@ export default function Settings() {
         <Form onSubmit={handleSubmit} validated={validated} className="w-100 h-100 d-flex flex-column p-2">
             <div style={{"flexGrow":1}} className="w-100">
                 <DirInput label="Game Directory" value={rootDir} setter={(s: string | number | boolean) => setRootDir(s as string)} />
-                <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={6} max={14} />
+                <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={1} max={14} />
                 <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
                 <FileInput label="JRE executable" placeholder="leave empty if you don't know what you're doing" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
                 <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
@@ -48,7 +48,10 @@ interface InputProps {
 }
 function DirInput({label, value, setter}: InputProps){
     const openPrompt = () => {
-        setter(ipcRenderer.sendSync('prompt-folder'))
+        const res = ipcRenderer.sendSync('prompt-file') 
+        if(res){
+            setter(res)
+        }
     }
 
     return (
@@ -62,7 +65,10 @@ function DirInput({label, value, setter}: InputProps){
 
 function FileInput({label, value, setter, placeholder}: InputProps){
     const openPrompt = () => {
-        setter(ipcRenderer.sendSync('prompt-file'))
+        const res = ipcRenderer.sendSync('prompt-file') 
+        if(res){
+            setter(res)
+        }
     }
 
     return (

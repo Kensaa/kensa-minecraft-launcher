@@ -140,6 +140,8 @@ ipcMain.on('prompt-folder',(event, args) => {
     })
     if(dir){
         event.returnValue = dir[0]
+    }else{
+        event.returnValue = undefined
     }
 })
 
@@ -150,6 +152,8 @@ ipcMain.on('prompt-file',(event, args) => {
     })
     if(dir){
         event.returnValue = dir[0]
+    }else { 
+        event.returnValue = undefined
     }
 })
 
