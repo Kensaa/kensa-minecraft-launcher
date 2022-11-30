@@ -25,7 +25,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
 
     const startGame = () => {
         setOverlay(<GameStartingOverlay/>)
-        ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined))
+        ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined)).catch(error => console.log(error))
     }
     return (
         <div className='w-100 h-100 d-flex flex-column align-items-center p-2'>

@@ -16,6 +16,7 @@ let configFolder = ''
 let rootDir;
 let startProgress = 0;
 let loginProgress = 0;
+let gameStarting = false;
 
 if(platorm === 'win32'){
     configFolder = path.join(os.homedir(), 'AppData', 'Roaming', 'kensa-minecraft-launcher')
@@ -159,6 +160,11 @@ ipcMain.on('prompt-file',(event, args) => {
 
 ipcMain.handle('start-game', async (event, args: Profile) => {
     return new Promise<void>(async (resolve,reject) => {
+        if(gameStarting) {
+            reject('game already started')
+            return
+        }
+        gameStarting = true
         console.log(config)
         if(!config) return
         if(!loginInfo) return
@@ -236,7 +242,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             forge: forgeArgs,
             memory: {
                 max: config.ram+"G",
-                min: "4G"
+                min: "1G"
             },
             javaPath: (config.jrePath !== ''? config.jrePath : undefined),
             overrides: {
@@ -251,6 +257,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         launcher.on('start', e => {
             if(!config) return
             if(config.closeLauncher) app.quit()
+            gameStarting = false
             resolve()
         })
         launcher.on('progress', progress => {
