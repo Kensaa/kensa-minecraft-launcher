@@ -30,7 +30,7 @@ if(platorm === 'win32'){
 }
 
 let primaryServer = 'http://redover.fr:40069'
-if(app.isPackaged){
+if(!app.isPackaged){
     primaryServer = 'http://localhost:40069'
 }
 
