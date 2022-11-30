@@ -138,7 +138,9 @@ ipcMain.on('prompt-folder',(event, args) => {
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openDirectory']
     })
-    event.returnValue = dir
+    if(dir){
+        event.returnValue = dir[0]
+    }
 })
 
 ipcMain.on('prompt-file',(event, args) => {
@@ -146,7 +148,9 @@ ipcMain.on('prompt-file',(event, args) => {
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openFile']
     })
-    event.returnValue = dir
+    if(dir){
+        event.returnValue = dir[0]
+    }
 })
 
 ipcMain.handle('start-game', async (event, args: Profile) => {
@@ -172,6 +176,8 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             console.log('created folder')
     
             const hashTree = await fetch(urlJoin(config.primaryServer, '/hashes')) as any
+            console.log('hashTree');
+            console.log(hashTree);
             const remoteTree = hashTree['gameFolders'][args.gameFolder]
             console.log('remote tree fetched')
             let localTree = await folderTree(localPath)
@@ -260,6 +266,7 @@ ipcMain.on('get-login-progress', (event, arg) => {
 })
 
 function checkExist(path: string){
+    console.log(path);
     if(!fs.existsSync(path)){
         fs.mkdirSync(path)
     }

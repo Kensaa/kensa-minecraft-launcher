@@ -1,3 +1,4 @@
+import { ChildProcess } from 'child_process'
 import { ipcRenderer } from 'electron'
 import React, { useEffect, useState } from 'react'
 import { Button, ButtonGroup, Dropdown, SplitButton } from 'react-bootstrap'
@@ -18,8 +19,9 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
+                console.log('got profiles ');
             })
-    }, [config])
+    }, [])
 
     const startGame = () => {
         setOverlay(<GameStartingOverlay/>)
