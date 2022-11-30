@@ -48,7 +48,7 @@ let config: Record<string, any> | null;
 async function createWindow() {
     console.log('createWindow')
     win = new BrowserWindow({
-        title: 'Main window',
+        title: 'Kensa Minecraft Launcher',
         width:1000,
         height:700,
         autoHideMenuBar: true,
