@@ -174,9 +174,12 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         let forgeArgs
         if(args.version.forge){
             console.log('forge detected, downloading')
-            await download(urlJoin(config.primaryServer,'/static/forges/',args.version.forge), path.join(config.rootDir, 'forgeInstallers', args.version.forge))
-            console.log('downloaded')
-            forgeArgs = path.join(config.rootDir, 'forgeInstallers', args.version.forge)
+            const forgePath = path.join(config.rootDir, 'forgeInstallers', args.version.forge)
+            if(!fs.existsSync(forgePath)){
+                await download(urlJoin(config.primaryServer,'/static/forges/',args.version.forge), forgePath)
+                console.log('downloaded')
+            }
+            forgeArgs = forgePath
         }
     
         if(args.gameFolder){
