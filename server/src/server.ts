@@ -41,7 +41,7 @@ let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
     app.use('/static/', express.static(staticFolder))
 
     app.get('/', (req, res) => {
-        res.status(200)
+        res.sendStatus(200)
     })
 
     app.get('/hashes', (req, res) => {
