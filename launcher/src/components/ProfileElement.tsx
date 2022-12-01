@@ -1,11 +1,24 @@
+import { Spinner } from "react-bootstrap"
 import { Profile } from "../types"
 
 interface ProfileElementProps {
     profile: Profile | undefined
+    loading: boolean
 }
 
-export default function ProfileElement({profile}: ProfileElementProps){
-    if(!profile) return <div>Loading...</div>
+export default function ProfileElement({ profile, loading }: ProfileElementProps){
+    if(!profile){
+        if(loading){
+            return <div>
+                <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </Spinner>
+            </div>
+        }else {
+            return <div>Error</div>
+        }
+    }
+
     let versionString = profile.version.mc
     if(profile.version.forge){
         let forge = profile.version.forge
