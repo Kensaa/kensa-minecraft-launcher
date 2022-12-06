@@ -77,10 +77,16 @@ let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
                 body: JSON.stringify({
                     server:ADDRESS
                 })        
+            }).then(res => {
+                if(res.ok){
+                    console.log(`cdn "${address}" is now synchronized`);
+                }else {
+                    console.log(`cdn "${address}" sent an error while synchronizing`);
+                }
+            }).catch(err => {
+                console.log(`cdn "${address}" can't be accessed : ${err}`);
             })
-        
         })
-        
     })
 })()
 
