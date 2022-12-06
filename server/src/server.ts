@@ -5,8 +5,16 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
+const ADDRESS = process.env.PORT || 'http://localhost:40069' // REMOVE BEFORE COMMIT
 const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
+const CDNS = process.env.CDNS || 'http://localhost:40070'
+
+
+if(!ADDRESS){
+    console.log('ADDRESS environement variables is not defined, it must be defined to your external ip address');
+}
+
 if(!staticFolder){
     console.log(`static folder not defined in environment variables`)
     process.exit(1)
@@ -15,6 +23,7 @@ if(!profilesFile){
     console.log(`profiles file not defined in environment variables`)
     process.exit(1)
 }
+
 if(!fs.existsSync(staticFolder)){
     console.log(`static folder ${staticFolder} does not exist`)
     process.exit(1)
@@ -29,6 +38,7 @@ if(!fs.existsSync(profilesFile)){
     console.log(`profiles file ${profilesFile} does not exist`)
     process.exit(1)
 }
+
 
 let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
 
@@ -57,7 +67,21 @@ let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
         profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
     })
 
-    app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
+    app.listen(PORT, () => {
+        console.log(`server listening on port ${PORT}`)
+        CDNS.split('|').map(address => {
+            console.log(urlJoin(address, '/sync'));
+            fetch(urlJoin(address, '/sync'), {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    server:ADDRESS
+                })        
+            })
+        
+        })
+        
+    })
 })()
 
 async function hashFolder(src: string): Promise<Record<string, any> | string> {
@@ -82,4 +106,8 @@ function getHash(src: string):Promise<string> {
         stream.on('error', err => reject(err))
         stream.pipe(hash)
     })
+}
+
+function urlJoin(...args: string[]) {
+    return encodeURI(args.map(e=>e.replace(/\\/g,'/')).join('/').replace(/\/+/g,'/'))
 }

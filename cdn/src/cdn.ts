@@ -19,8 +19,10 @@ if(!fs.existsSync(CACHE_FOLDER)){
     app.use('/static/', express.static(CACHE_FOLDER))
 
     app.post('/sync', async (req, res) => {
+        console.log('sync called');
         const { server, } = req.body
         if(!server) return res.status(400).send('missing server field')
+        console.log('primary server address : '+server);
         const fetchRes = await fetch(server)
         if(!fetchRes.ok) return res.status(500).send('server is not responding to ping')
 
