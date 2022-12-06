@@ -17,7 +17,6 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
     const [loading, setLoading] = useState<boolean>(false)
     const [error, setError] = useState('')
 
-
     useEffect(() => {
         setLoading(true)
         fetch(config.primaryServer+'/profiles')

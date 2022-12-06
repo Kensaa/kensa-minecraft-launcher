@@ -12,5 +12,13 @@
         "version":{
             "mc":"1.16.5"
         }
+    },
+    {
+        "name":"devs",
+        "version":{
+            "mc": "1.16.5",
+            "forge": "forge-1.16.5-36.2.39-installer.jar"
+        },
+        "gameFolder":"devs"
     }
 ]
