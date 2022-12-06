@@ -9,6 +9,7 @@ export default function Settings() {
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
     const [primaryServer, setPrimaryServer] = useState(config.primaryServer)
+    const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [jrePath, setJrePath] = useState(config.jrePath)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
     
@@ -19,6 +20,7 @@ export default function Settings() {
         config.setRootDir(rootDir)
         config.setRam(ram)
         config.setPrimaryServer(primaryServer)
+        config.setCdnServer(cdnServer)
         config.setJrePath(jrePath)
         config.setCloseLauncher(closeLauncher)
 
@@ -32,6 +34,7 @@ export default function Settings() {
                 <DirInput label="Game Directory" value={rootDir} setter={(s: string | number | boolean) => setRootDir(s as string)} />
                 <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={1} max={14} />
                 <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
+                <TextInput label="CDN Server" value={cdnServer} setter={(s: string | number | boolean) => setCdnServer(s as string)} />
                 <FileInput label="JRE executable" placeholder="leave empty if you don't know what you're doing" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
                 <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
             </div>

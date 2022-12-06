@@ -38,6 +38,7 @@ const defaultConfig = {
     rootDir,
     ram: 6,
     primaryServer,
+    cdnServer: '',
     jrePath: '',
     closeLauncher:true
 }
@@ -130,6 +131,7 @@ ipcMain.on('get-config', (event, arg) => {
 ipcMain.on('set-config', (event, arg) => {
     console.log('set-config')
     const newConfig = JSON.parse(arg)
+    console.log(newConfig);
     config = {...config, ...newConfig}
     fs.writeFileSync(path.join(configFolder, 'config.json'), JSON.stringify(config, null, 4))
 })
