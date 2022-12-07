@@ -83,9 +83,9 @@ async function createWindow() {
 
     if(app.isPackaged){
         await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
-    }else{[
+    }else{
         win.loadURL("http://localhost:5173/")
-    ]}
+    }
 }
 
 app.whenReady().then(createWindow)
