@@ -23,8 +23,6 @@ if(!fs.existsSync(CACHE_FOLDER)){
         const { server, } = req.body
         if(!server) return res.status(400).send('missing server field')
         console.log('primary server address : '+server);
-        const fetchRes = await fetch(server)
-        if(!fetchRes.ok) return res.status(500).send('server is not responding to ping')
 
         const remoteHashTree = await (fetch(urlJoin(server, '/hashes')).then(res => res.json())) as Tree
         const localHashTree = await hashFolder(CACHE_FOLDER) as Tree
@@ -34,35 +32,39 @@ if(!fs.existsSync(CACHE_FOLDER)){
 
         async function compareTrees(remoteTree: Tree, localTree: Tree, pathA:string[]=[]){
             for(const element of Object.keys(remoteTree)) {
-                console.log('current element : ',element)
+                console.log('element : ',element)
                 // element is a file
                 if(typeof remoteTree[element] === 'string') {
-                    console.log('element is a file')
                     if(localTree[element]) {
-                        console.log('file exist locally ')
+                        console.log('file exists')
                         if(remoteTree[element] !== localTree[element]){
-                            console.log('file is not the same, downloading...')
+                            console.log('file different, downloading...')
                             await download(urlJoin(server, '/static/', ...[...pathA, element]), path.join(...[CACHE_FOLDER, ...pathA, element]))
                         }
                     }else {
-                        console.log('file dont exist locally, downloading...')
+                        console.log("file doesn't exist, downloading...")
                         await download(urlJoin(server, '/static/', ...[...pathA, element]), path.join(...[CACHE_FOLDER, ...pathA, element]))
                     }
                 }else{
-                    console.log('element is a folder')
                     // element is a folder
                     if(localTree[element]) {
-                        console.log('folder exist locally')
+                        console.log('folder exists')
                         //folder exist locally
                         await compareTrees(remoteTree[element], localTree[element], [...pathA,element])
                     }else {
                         // folder doesn't exist
-                        console.log('folder dont exist locally, creating...')
+                        console.log("folder doesn't exist, creating...")
                         fs.mkdirSync(path.join(...[CACHE_FOLDER, ...pathA, element]))
                         await compareTrees(remoteTree[element], {}, [...pathA, element])
                     }
                 }
             }
+            const onlyLocalFiles = Object.keys(localTree).filter(file => !Object.keys(remoteTree).includes(file))
+            for(const localFile of onlyLocalFiles) {
+                console.log(`file ${localFile} is not on server, deleting`);
+                fs.rmSync(path.join(...[CACHE_FOLDER, ...pathA, localFile]))
+            }
+
         }
     })
 
