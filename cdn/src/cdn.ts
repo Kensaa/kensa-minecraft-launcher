@@ -32,28 +32,25 @@ if(!fs.existsSync(CACHE_FOLDER)){
 
         async function compareTrees(remoteTree: Tree, localTree: Tree, pathA:string[]=[]){
             for(const element of Object.keys(remoteTree)) {
-                console.log('element : ',element)
                 // element is a file
                 if(typeof remoteTree[element] === 'string') {
                     if(localTree[element]) {
-                        console.log('file exists')
                         if(remoteTree[element] !== localTree[element]){
-                            console.log('file different, downloading...')
+                            console.log(`updating file ${element}`)
                             await download(urlJoin(server, '/static/', ...[...pathA, element]), path.join(...[CACHE_FOLDER, ...pathA, element]))
                         }
                     }else {
-                        console.log("file doesn't exist, downloading...")
+                        console.log(`downloading file ${element}`)
                         await download(urlJoin(server, '/static/', ...[...pathA, element]), path.join(...[CACHE_FOLDER, ...pathA, element]))
                     }
                 }else{
                     // element is a folder
                     if(localTree[element]) {
-                        console.log('folder exists')
                         //folder exist locally
                         await compareTrees(remoteTree[element], localTree[element], [...pathA,element])
                     }else {
                         // folder doesn't exist
-                        console.log("folder doesn't exist, creating...")
+                        console.log(`creating folder ${element}`)
                         fs.mkdirSync(path.join(...[CACHE_FOLDER, ...pathA, element]))
                         await compareTrees(remoteTree[element], {}, [...pathA, element])
                     }
@@ -61,7 +58,7 @@ if(!fs.existsSync(CACHE_FOLDER)){
             }
             const onlyLocalFiles = Object.keys(localTree).filter(file => !Object.keys(remoteTree).includes(file))
             for(const localFile of onlyLocalFiles) {
-                console.log(`file ${localFile} is not on server, deleting`);
+                console.log(`deleting file ${localFile}`);
                 fs.rmSync(path.join(...[CACHE_FOLDER, ...pathA, localFile]))
             }
 
