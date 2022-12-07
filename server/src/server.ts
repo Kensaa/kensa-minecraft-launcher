@@ -42,6 +42,27 @@ if(!fs.existsSync(profilesFile)){
 
 let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
 
+function syncCDNS(){
+    CDNS.split('|').forEach(address => {
+        console.log(urlJoin(address, '/sync'));
+        fetch(urlJoin(address, '/sync'), {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                server:ADDRESS
+            })        
+        }).then(res => {
+            if(res.ok){
+                console.log(`cdn "${address}" is now synchronized`);
+            }else {
+                console.log(`cdn "${address}" sent an error while synchronizing`);
+            }
+        }).catch(err => {
+            console.log(`cdn "${address}" can't be accessed : ${err}`);
+        })
+    })
+}
+
 ;(async () => {
     const app = express()
     let hashTree = await hashFolder(staticFolder)
@@ -65,28 +86,12 @@ let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
     app.post('/reload', async (req, res) => {
         hashTree = await hashFolder(staticFolder)
         profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
+        syncCDNS()
     })
 
     app.listen(PORT, () => {
         console.log(`server listening on port ${PORT}`)
-        CDNS.split('|').map(address => {
-            console.log(urlJoin(address, '/sync'));
-            fetch(urlJoin(address, '/sync'), {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({
-                    server:ADDRESS
-                })        
-            }).then(res => {
-                if(res.ok){
-                    console.log(`cdn "${address}" is now synchronized`);
-                }else {
-                    console.log(`cdn "${address}" sent an error while synchronizing`);
-                }
-            }).catch(err => {
-                console.log(`cdn "${address}" can't be accessed : ${err}`);
-            })
-        })
+        syncCDNS()
     })
 })()
 
