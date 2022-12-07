@@ -359,6 +359,7 @@ function checkServer(address: string){
     return new Promise<boolean>((resolve, reject)=>{
         http.get(address, res=>{
             res.on('end', () => resolve(true))
+            res.on('data', chunk => {})
         }).on('error', err => resolve(false))
     })
 }
