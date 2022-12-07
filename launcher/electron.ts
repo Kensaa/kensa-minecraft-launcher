@@ -215,8 +215,11 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             console.log('remote tree fetched')
             let localTree = await folderTree(localPath)
             console.log('local tree created')
-            const remoteFolders = Object.keys(remoteTree).filter(key => typeof remoteTree[key] !== 'string')
-            const localFolders = Object.keys(localTree).filter(key => typeof localTree[key] !== 'string')
+            function getFolders(tree: any){
+                return Object.keys(tree).filter(key => typeof tree[key] !== 'string')
+            }
+            const remoteFolders = getFolders(remoteTree)
+            const localFolders = getFolders(localTree)
     
             console.log('starting update procedure')
             for(const folder of remoteFolders){
@@ -225,30 +228,33 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 }
             }
             localTree = await folderTree(localPath)
-    
+
+
             for(const folder of remoteFolders){
-                const remoteFiles = Object.keys(remoteTree[folder])
-                let i = 0
-                for(const file of remoteFiles){
-                    if(!Object.keys(localTree[folder]).includes(file)){
-                        console.log(`downloading file "${path.join(folder, file)}"`);
-                        await download(urlJoin(downloadServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
-                    }else{
-                        if(await getHash(path.join(localPath, folder, file)) !== remoteTree[folder][file]){
-                            console.log(`updating file "${path.join(folder, file)}"`);
-                            await download(urlJoin(downloadServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
+                //start recursive function which will download all files for all the folders
+                await downloadFolder(remoteTree[folder], localTree[folder], path.join(args.gameFolder, folder), path.join(localPath,folder))
+            }
+
+            async function downloadFolder(remoteFolder, localFolder, gameFolder:string, folderPath: string, pathA:string[]=[]){
+                for(const element of Object.keys(remoteFolder)){
+                    if(typeof remoteFolder[element] === 'string'){
+                        if(localFolder[element]){
+                            if(await getHash(path.join(folderPath, ...pathA, element)) !== remoteFolder[element]){
+                                await download(urlJoin(downloadServer, '/static/gameFolders', gameFolder,...pathA, element), path.join(folderPath, ...pathA, element))
+                            }
+                        }else {
+                            await download(urlJoin(downloadServer, '/static/gameFolders', gameFolder, ...pathA, element), path.join(folderPath, ...pathA, element))
+                        }
+                    }else {
+                        if(localFolder[element]){
+                            await downloadFolder(remoteFolder[element], localFolder[element], gameFolder, folderPath, pathA.concat(element))
+                        }else{
+                            fs.mkdirSync(path.join(folderPath, ...pathA, element))
+                            await downloadFolder(remoteFolder[element], {}, gameFolder, folderPath, pathA.concat(element))
                         }
                     }
-                    startProgress = i / remoteFiles.length * 100
-                    i++
-                }
-                const onlyLocalFiles = Object.keys(localTree[folder]).filter(file => !Object.keys(remoteTree[folder]).includes(file))
-                for(const file of onlyLocalFiles){
-                    console.log(`deleting file "${path.join(folder, file)}"`);
-                    fs.rmSync(path.join(localPath, folder, file))
                 }
             }
-    
         }else {
             console.log('no forced game folder detected, creating an empty one...')
             args.gameFolder = args.name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()
@@ -273,7 +279,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
     
-        console.log(opts)
+        //console.log(opts)
         launcher.launch(opts as any)
         launcher.on('debug', e => console.log(e))
         launcher.on('data', e => console.log(e))
