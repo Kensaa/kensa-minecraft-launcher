@@ -16,14 +16,14 @@ export default function UserElement({setOverlay}: {setOverlay: (setOverlay: JSX.
             {auth.connected 
             ?
             <Dropdown className="w-100">
-                <Dropdown.Toggle  style={{borderRadius: "0px"}} className="w-100" variant='secondary'>{auth.profile.name}</Dropdown.Toggle>
+                <Dropdown.Toggle  style={{borderRadius: "0px"}} className="w-100" variant='dark'>{auth.profile.name}</Dropdown.Toggle>
                 <Dropdown.Menu className="w-100">
                     <Dropdown.Item onClick={auth.logout}>Logout</Dropdown.Item>
                 </Dropdown.Menu>
             </Dropdown>
             :
             <>
-                <Button style={{borderRadius:"0px"}} variant='secondary' className='w-100' onClick={login}>Login</Button>
+                <Button style={{borderRadius:"0px"}} variant='dark' className='w-100' onClick={login}>Login</Button>
             </>
             }
         </div>

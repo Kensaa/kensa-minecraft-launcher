@@ -1,12 +1,14 @@
 import { ipcRenderer } from 'electron'
 import React, { useEffect, useState } from 'react'
-import { Alert, Dropdown, SplitButton } from 'react-bootstrap'
+import { Alert, Button, Dropdown, SplitButton } from 'react-bootstrap'
 import ProfileElement from '../components/ProfileElement'
 import GameStartingOverlay from '../overlays/GameStartingOverlay'
 
 import authStore from '../stores/auth'
 import configStore from '../stores/config'
 import { Profile } from '../types'
+
+import minecraft from '../img/minecraft.png'
 
 export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | undefined) => void}) {
     const auth = authStore(state => ({...state}))
@@ -47,27 +49,28 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
         ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined)).catch(error => console.log(error))
     }
     return (
-        <div className='w-100 h-100 d-flex flex-column align-items-center p-2'>
+        <div className='w-100 h-100 d-flex flex-column align-items-center background' style={{ backgroundImage: `url(${minecraft})`}}>
             {error && <Alert style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999 }} dismissible variant="danger" onClose={() => setError('')}>{error}</Alert>}
-            <div className='h-75 w-100 d-flex justify-content-center'>
-                <div>
-                    <h3>Selected Profile : </h3>
-                    <ProfileElement profile={profiles[selectedProfile]} loading={loading}/>
-                </div>
-            </div> 
-            <div className='w-100 d-flex justify-content-center'>
-                <SplitButton
-                    drop="up"
-                    variant="outline-primary"
-                    title="Launch Game"
-                    align="end"
-                    disabled={!auth.connected || loading || !!error}
-                    onClick={() => startGame()}
-                >
-                    {profiles.map((profile, index) => (
-                        <Dropdown.Item onClick={() => selectProfile(index)} key={index}><ProfileElement profile={profile} loading={loading}/></Dropdown.Item>
-                    ))}
-                </SplitButton>
+            <div className="h-100 w-100">
+                <div className='h-25 w-100 d-flex justify-content-center smooth-background-down'>
+                    <div>
+                        <h3>Selected Profile : </h3>
+                        <Dropdown>
+                            <Dropdown.Toggle  style={{borderRadius: "0px"}} className="w-100" variant='dark'>Profile</Dropdown.Toggle>
+                            <Dropdown.Menu className="w-100">
+                                <Dropdown.Item onClick={auth.logout}>Logout</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                    
+                </div> 
+            </div>
+            <div className='h-25 w-100 d-flex justify-content-center align-items-center smooth-background-up'>
+                
+                <Button 
+                    variant="success"
+                    onClick={startGame}
+                >Launch Game</Button>
             </div>
         </div>
     )

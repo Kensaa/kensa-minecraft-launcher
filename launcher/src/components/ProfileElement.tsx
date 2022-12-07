@@ -28,7 +28,7 @@ export default function ProfileElement({ profile, loading }: ProfileElementProps
     return (
         <div style={{backgroundColor:'rgba(0,0,0,0.05)', maxWidth:'400px'}} className='d-flex flex-column align-items-center border p-1'>
             <h6 className='m-0'>{profile.name}</h6>
-            <span className="small">{versionString}</span>
+            <span style={{color:'#ffffff'}} className="small">{versionString}</span>
         </div>
     )
 }

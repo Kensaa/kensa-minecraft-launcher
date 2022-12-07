@@ -26,3 +26,39 @@ html, body, #root {
 .progress{
     width: 100%;
 }
+
+.background {
+    background-size: cover;
+    // background opacity to 0.5
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.btn-dark{
+    --bs-btn-bg: '#1e1e1e';
+    --bs-btn-border-color: '#1e1e1e';
+}
+.list-group-item-dark {
+    --bs-list-group-bg: '#1e1e1e';
+    --bs-list-group-color: '#1e1e1e';
+}
+.list-group-selected {
+    --bs-list-group-bg: '#ffffff';
+    --bs-list-group-color: '#ffffff';
+}
+h1,h2,h3,h4,h5,h6 {
+    color: white;
+}
+
+.smooth-background-down {
+    background: linear-gradient(#1e1e1e, rgba(0, 0, 0, 0.0));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.smooth-background-up {
+    background: linear-gradient(rgba(0, 0, 0, 0.0),#1e1e1e);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}

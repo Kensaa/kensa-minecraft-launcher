@@ -17,7 +17,7 @@ export default function App() {
     return (
         <div className='w-100 h-100 d-flex'>
             {overlay}
-            <div className='h-100 d-flex flex-column align-items-center' style={{width:"150px", background:"rgba(0,0,0,0.02)", borderRight:"1px solid #dee2e6"}}>
+            <div className='h-100 d-flex flex-column align-items-center' style={{width:"150px", background:"#1e1e1e"}}>
                 <UserElement setOverlay={setOverlay}/>
                 <Navigation tabs={tabs} currentTab={currentTab} setCurrentTab={setCurrentTab}/>
             </div>
@@ -40,8 +40,8 @@ function Navigation({tabs, currentTab, setCurrentTab}: NavigationProps) {
                     <ListGroup.Item 
                         className="user-select-none"
                         onClick={() => setCurrentTab(index)}
+                        variant={index === currentTab ? "dark" : "secondary"}
                         action
-                        variant={(index === currentTab ? 'primary' : 'secondary')}
                         key={index}>
                     {tab}
                     </ListGroup.Item>

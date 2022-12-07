@@ -13,8 +13,7 @@ export default function ConnectingOverlay() {
     }, [])
     return (
         <div className="d-flex flex-column justify-content-center align-items-center overlay user-select-none">
-            <h1>Connecting...</h1>
-            <h1>please wait</h1>
+            <h1 style={{color:'#ffffff'}}>Connecting...</h1>
             <div className='w-75 d-flex mt-2'>
             <ProgressBar now={progress} label={`${progress}%`} animated/>
             </div>

@@ -50,8 +50,8 @@ async function createWindow() {
     console.log('createWindow')
     win = new BrowserWindow({
         title: 'Kensa Minecraft Launcher',
-        width:700,
-        height:500,
+        width:1000,
+        height:800,
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true,
