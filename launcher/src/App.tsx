@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { Button, Dropdown, ListGroup } from 'react-bootstrap'
-import authStore from './stores/auth'
+import { ListGroup } from 'react-bootstrap'
 
 import Home from './pages/Home'
 import Settings from './pages/Settings'

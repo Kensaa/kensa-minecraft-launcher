@@ -1,7 +1,6 @@
-import { ChildProcess } from 'child_process'
 import { ipcRenderer } from 'electron'
 import React, { useEffect, useState } from 'react'
-import { Alert, Button, ButtonGroup, Dropdown, SplitButton } from 'react-bootstrap'
+import { Alert, Dropdown, SplitButton } from 'react-bootstrap'
 import ProfileElement from '../components/ProfileElement'
 import GameStartingOverlay from '../overlays/GameStartingOverlay'
 
@@ -19,10 +18,17 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
 
     useEffect(() => {
         setLoading(true)
+        const sProfile = ipcRenderer.sendSync('get-selected-profile')
         fetch(config.primaryServer+'/profiles')
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
+                if(sProfile >= data.length){
+                    ipcRenderer.send('set-selected-profile', 0)
+                    setSelectedProfile(0)
+                }else{
+                    setSelectedProfile(sProfile)
+                }
                 console.log('got profiles ');
                 setLoading(false)
             }).catch(err => {
@@ -31,13 +37,18 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
             })
     }, [])
     
+    const selectProfile = (index: number) => {
+        setSelectedProfile(index)
+        ipcRenderer.send('set-selected-profile', index)
+    }
+
     const startGame = () => {
         setOverlay(<GameStartingOverlay/>)
         ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined)).catch(error => console.log(error))
     }
     return (
         <div className='w-100 h-100 d-flex flex-column align-items-center p-2'>
-            {error && <Alert style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999 }} dismissible variant="danger" onClose={()=>setError('')}>{error}</Alert>}
+            {error && <Alert style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999 }} dismissible variant="danger" onClose={() => setError('')}>{error}</Alert>}
             <div className='h-75 w-100 d-flex justify-content-center'>
                 <div>
                     <h3>Selected Profile : </h3>
@@ -54,7 +65,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
                     onClick={() => startGame()}
                 >
                     {profiles.map((profile, index) => (
-                        <Dropdown.Item onClick={() => setSelectedProfile(index)} key={index}><ProfileElement profile={profile} loading={loading}/></Dropdown.Item>
+                        <Dropdown.Item onClick={() => selectProfile(index)} key={index}><ProfileElement profile={profile} loading={loading}/></Dropdown.Item>
                     ))}
                 </SplitButton>
             </div>

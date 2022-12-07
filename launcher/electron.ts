@@ -160,6 +160,18 @@ ipcMain.on('prompt-file',(event, args) => {
     }
 })
 
+ipcMain.on('get-selected-profile',(event, args) => {
+    if(!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
+        event.returnValue = JSON.stringify(0)
+    }else {
+        event.returnValue = JSON.parse(fs.readFileSync(path.join(configFolder, 'selectedProfile.json'), 'utf-8')).profile
+    }
+})
+
+ipcMain.on('set-selected-profile', (event, args) => {
+    fs.writeFileSync(path.join(configFolder, 'selectedProfile.json'), JSON.stringify({profile: args}, null, 4))
+})
+
 ipcMain.handle('start-game', async (event, args: Profile) => {
     return new Promise<void>(async (resolve,reject) => {
         if(gameStarting) {
