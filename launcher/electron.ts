@@ -173,26 +173,44 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         checkExist(config.rootDir)
         checkExist(path.join(config.rootDir, 'forgeInstallers'))
         checkExist(path.join(config.rootDir, 'profiles'))
+
+        // cdn check
+        const { primaryServer } = config
+        let downloadServer = primaryServer
+
+        if(!await checkServer(primaryServer)){
+            // checking if server is accessible
+            gameStarting = false
+            reject("server is not accessible, either your config is wrong or you don't have an internet connection")
+        }
+
+        if(config.cdnServer && config.cdnServer !== ''){
+            console.log('CDN detected in config, testing if it is working');
+            if(await checkServer(config.cdnServer)){
+                console.log('CDN working, setting it as download server');
+                downloadServer = config.cdnServer
+            } else {
+                console.log('CDN server appear to be inaccessible, using primary server as download server');
+            }
+
+        }
         let forgeArgs
         if(args.version.forge){
             console.log('forge detected, downloading')
             const forgePath = path.join(config.rootDir, 'forgeInstallers', args.version.forge)
             if(!fs.existsSync(forgePath)){
-                await download(urlJoin(config.primaryServer,'/static/forges/',args.version.forge), forgePath)
-                console.log('downloaded')
+                await download(urlJoin(downloadServer,'/static/forges/',args.version.forge), forgePath)
+                console.log(`${args.version.forge} downloaded`)
             }
             forgeArgs = forgePath
         }
     
         if(args.gameFolder){
-            console.log('game folder detected, downloading')
+            console.log('a forced game folder is detected, downloading it...')
             const localPath = path.join(config.rootDir, 'profiles', args.gameFolder)
             checkExist(localPath)
-            console.log('created folder')
     
-            const hashTree = await fetch(urlJoin(config.primaryServer, '/hashes')) as any
-            console.log('hashTree');
-            console.log(hashTree);
+            const hashTree = await fetch(urlJoin(primaryServer, '/hashes')) as any
             const remoteTree = hashTree['gameFolders'][args.gameFolder]
             console.log('remote tree fetched')
             let localTree = await folderTree(localPath)
@@ -213,12 +231,12 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 let i = 0
                 for(const file of remoteFiles){
                     if(!Object.keys(localTree[folder]).includes(file)){
-                        console.log('downloading file: ' + path.join(folder, file))
-                        await download(urlJoin(config.primaryServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
+                        console.log(`downloading file "${path.join(folder, file)}"`);
+                        await download(urlJoin(downloadServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
                     }else{
                         if(await getHash(path.join(localPath, folder, file)) !== remoteTree[folder][file]){
-                            console.log('updating file: ' + path.join(folder, file))
-                            await download(urlJoin(config.primaryServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
+                            console.log(`updating file "${path.join(folder, file)}"`);
+                            await download(urlJoin(downloadServer, '/static/gameFolders', args.gameFolder, folder, file), path.join(localPath, folder, file))
                         }
                     }
                     startProgress = i / remoteFiles.length * 100
@@ -226,13 +244,13 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 }
                 const onlyLocalFiles = Object.keys(localTree[folder]).filter(file => !Object.keys(remoteTree[folder]).includes(file))
                 for(const file of onlyLocalFiles){
-                    console.log('deleting file: ' + path.join(folder, file))
+                    console.log(`deleting file "${path.join(folder, file)}"`);
                     fs.rmSync(path.join(localPath, folder, file))
                 }
             }
     
         }else {
-            console.log('no game folder detected creating an empty one')
+            console.log('no forced game folder detected, creating an empty one...')
             args.gameFolder = args.name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()
         }
         
@@ -267,7 +285,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         })
         launcher.on('progress', progress => {
             if(typeof progress !== 'number') return
-            console.log("progress: "+progress+"%")
+            //console.log("progress: "+progress+"%")
             startProgress = progress
         })
     })
@@ -337,7 +355,14 @@ async function folderTree(src: string): Promise<Record<string, unknown> | string
     }
 }
 
-function fetch(address){
+function checkServer(address: string){
+    return new Promise<boolean>((resolve, reject)=>{
+        http.get(address, res=>{
+            res.on('end', () => resolve(true))
+        }).on('error', err => resolve(false))
+    })
+}
+function fetch(address: string){
     return new Promise((resolve, reject)=>{
         http.get(address, res=>{
             let data = ''
