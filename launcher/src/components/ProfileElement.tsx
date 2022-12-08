@@ -1,5 +1,6 @@
-import { Spinner } from "react-bootstrap"
+import { Dropdown, Spinner } from "react-bootstrap"
 import { Profile } from "../types"
+
 
 interface ProfileElementProps {
     profile: Profile | undefined
@@ -7,6 +8,8 @@ interface ProfileElementProps {
 }
 
 export default function ProfileElement({ profile, loading }: ProfileElementProps){
+
+
     if(!profile){
         if(loading){
             return <div>
@@ -26,9 +29,12 @@ export default function ProfileElement({ profile, loading }: ProfileElementProps
         versionString = forge
     }
     return (
-        <div style={{backgroundColor:'rgba(0,0,0,0.05)', maxWidth:'400px'}} className='d-flex flex-column align-items-center border p-1'>
-            <h6 className='m-0'>{profile.name}</h6>
-            <span style={{color:'#ffffff'}} className="small">{versionString}</span>
+        <div className='d-flex flex-row align-items-center'>
+            {/*<img width={64} height={64} src={forge}/>*/}  
+            <div className="d-flex flex-column justify-content-center align-items-start">
+                <h6 style={{marginBottom:'0px'}}>{profile.name}</h6>
+                <span>{versionString}</span>
+            </div>
         </div>
     )
 }

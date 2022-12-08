@@ -55,12 +55,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
                 <div className='h-25 w-100 d-flex justify-content-center smooth-background-down'>
                     <div>
                         <h3>Selected Profile : </h3>
-                        <Dropdown>
-                            <Dropdown.Toggle  style={{borderRadius: "0px"}} className="w-100" variant='dark'>Profile</Dropdown.Toggle>
-                            <Dropdown.Menu className="w-100">
-                                <Dropdown.Item onClick={auth.logout}>Logout</Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>
+                        <ProfileElement profiles={profiles} loading={loading}/>
                     </div>
                     
                 </div> 
