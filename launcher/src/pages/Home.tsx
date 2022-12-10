@@ -57,7 +57,8 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
             </div>
             <div className='h-25 w-100 d-flex justify-content-center align-items-center smooth-background-up'>
                 
-                <Button 
+                <Button
+                    disabled={loading || !auth.connected || profiles.length === 0}
                     variant="success"
                     onClick={startGame}
                 >Launch Game</Button>
