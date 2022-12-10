@@ -32,12 +32,13 @@ html, body, #root {
     // background opacity to 0.5
     background-color: rgba(0, 0, 0, 0.5);
 }
-
+/*
 .btn-dark{
     --bs-btn-bg: #1e1e1e;
     --bs-btn-border-color: #1e1e1e;
-}
-.btn-primary{
+}*/
+
+.btn-transparent{
     --bs-btn-bg: #ffffff00;
     --bs-btn-border-color: #ffffff00;
 
@@ -72,4 +73,10 @@ h1,h2,h3,h4,h5,h6 {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+.dropdown-menu {
+    backdrop-filter: blur(1px);
+    --bs-dropdown-bg: rgba(255, 255, 255, 0.05);
+    box-shadow: 4px 7px 14px 0.1rem rgb(0 0 0 / 50%);;
 }

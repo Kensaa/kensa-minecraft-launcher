@@ -1,6 +1,8 @@
 import { Dropdown, Spinner } from "react-bootstrap"
 import { Profile } from "../types"
 
+import craftingtable from '../img/craftingtable.png'
+import furnace from '../img/furnace.png'
 
 interface ProfileElementProps {
     profile: Profile | undefined
@@ -30,9 +32,9 @@ export default function ProfileElement({ profile, loading }: ProfileElementProps
     }
     return (
         <div className='d-flex flex-row align-items-center'>
-            {/*<img width={64} height={64} src={forge}/>*/}  
-            <div className="d-flex flex-column justify-content-center align-items-start">
-                <h6 style={{marginBottom:'0px'}}>{profile.name}</h6>
+            <img width={48} height={48} src={profile.version.forge ? furnace : craftingtable}/>
+            <div className="d-flex flex-column justify-content-center align-items-start mx-1">
+                <span style={{marginBottom:'0px'}}>{profile.name}</span>
                 <span>{versionString}</span>
             </div>
         </div>

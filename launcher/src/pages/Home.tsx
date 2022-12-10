@@ -9,6 +9,7 @@ import configStore from '../stores/config'
 import { Profile } from '../types'
 
 import minecraft from '../img/minecraft.png'
+import ProfilePicker from '../components/ProfilePicker'
 
 export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | undefined) => void}) {
     const auth = authStore(state => ({...state}))
@@ -39,10 +40,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
             })
     }, [])
     
-    const selectProfile = (index: number) => {
-        setSelectedProfile(index)
-        ipcRenderer.send('set-selected-profile', index)
-    }
+
 
     const startGame = () => {
         setOverlay(<GameStartingOverlay/>)
@@ -53,10 +51,7 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
             {error && <Alert style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 999 }} dismissible variant="danger" onClose={() => setError('')}>{error}</Alert>}
             <div className="h-100 w-100">
                 <div className='h-25 w-100 d-flex justify-content-center smooth-background-down'>
-                    <div>
-                        <h3>Selected Profile : </h3>
-                        <ProfileElement profiles={profiles} loading={loading}/>
-                    </div>
+                    <ProfilePicker profiles={profiles} loading={loading} selectedProfile={selectedProfile} setSelectedProfile={setSelectedProfile}/>
                     
                 </div> 
             </div>
