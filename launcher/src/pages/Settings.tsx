@@ -30,7 +30,6 @@ export default function Settings({ hide }: SettingsProps) {
 
         setValidated(true)
         hide()
-
     }
 
     return (
@@ -40,7 +39,7 @@ export default function Settings({ hide }: SettingsProps) {
                 <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={1} max={14} />
                 <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
                 <TextInput label="CDN Server" value={cdnServer} setter={(s: string | number | boolean) => setCdnServer(s as string)} />
-                <FileInput label="JRE executable" placeholder="leave empty if you don't know what you're doing" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
+                <FileInput label="JRE executable" placeholder="you shouldn't touch that" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
                 <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
             </div>
             <Button type="submit">Save</Button>
