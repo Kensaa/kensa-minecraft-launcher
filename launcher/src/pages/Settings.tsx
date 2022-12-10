@@ -3,7 +3,11 @@ import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import configStore from '../stores/config'
 
-export default function Settings() {
+interface SettingsProps {
+    hide: () => void
+}
+
+export default function Settings({ hide }: SettingsProps) {
     const config = configStore(store => ({...store}))
 
     const [rootDir, setRootDir] = useState(config.rootDir)
@@ -25,7 +29,8 @@ export default function Settings() {
         config.setCloseLauncher(closeLauncher)
 
         setValidated(true)
-        setTimeout(() => setValidated(false), 1500);
+        hide()
+
     }
 
     return (
@@ -87,7 +92,7 @@ function NumberInput({label, value, setter, min, max}: InputProps & {min:number,
     return (
         <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
             <Form.Label>{label}:</Form.Label>
-            <h4 style={{marginRight:'0.5rem',marginLeft:'0.5rem'}}>{value}G</h4>
+            <h4 style={{marginRight:'0.5rem',marginLeft:'0.5rem', color:'black'}}>{value}G</h4>
 
             <Form.Range value={value as number} onChange={e => setter(e.target.value)} max={max} min={min}/>
         </Form.Group>

@@ -1,52 +1,29 @@
 import React, { useState } from 'react'
-import { ListGroup } from 'react-bootstrap'
+import { ListGroup, Modal } from 'react-bootstrap'
 
 import Home from './pages/Home'
 import Settings from './pages/Settings'
 import UserElement from './components/UserElement'
 
+import settingsImg from './img/settings.png'
+
 export default function App() {
     const [overlay, setOverlay] = useState<JSX.Element | undefined>(undefined)
-    const [currentTab, setCurrentTab] = useState(0)
-    const tabs: Record<string,JSX.Element> = 
-    {
-        Home : <Home setOverlay={setOverlay}/>,
-        Settings: <Settings/>
-    }
+    const [settingsShown, setSettingsShown] = useState<boolean>(false)
 
     return (
         <div className='w-100 h-100 d-flex'>
             {overlay}
-            <div className='h-100 d-flex flex-column align-items-center' style={{width:"150px", background:"#1e1e1e"}}>
-                <UserElement setOverlay={setOverlay}/>
-                <Navigation tabs={tabs} currentTab={currentTab} setCurrentTab={setCurrentTab}/>
-            </div>
-            {tabs[Object.keys(tabs)[currentTab]]}
-        </div>
-    )
-}
+            <UserElement setOverlay={setOverlay}/>
+            <img width={48} height={48} src={settingsImg} style={{position:'absolute',right:0, cursor:'pointer'}} onClick={() => setSettingsShown(true)}/>
+            <Home setOverlay={setOverlay}/>
 
-interface NavigationProps {
-    tabs: Record<string,JSX.Element>
-    currentTab: number
-    setCurrentTab: (tab: number) => void
-}
-
-function Navigation({tabs, currentTab, setCurrentTab}: NavigationProps) {
-    return (
-        <div style={{flexGrow:1}} className="w-100 d-flex flex-column justify-content-center">
-            <ListGroup>
-                {Object.keys(tabs).map((tab, index) => (
-                    <ListGroup.Item 
-                        className="user-select-none"
-                        onClick={() => setCurrentTab(index)}
-                        variant={index === currentTab ? "dark" : "secondary"}
-                        action
-                        key={index}>
-                    {tab}
-                    </ListGroup.Item>
-                ))}
-            </ListGroup>
+            <Modal show={settingsShown} onHide={() => setSettingsShown(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title style={{color:'black'}}>Settings</Modal.Title>
+                </Modal.Header>
+                <Modal.Body><Settings hide={() => setSettingsShown(false)}/></Modal.Body>
+            </Modal>
         </div>
     )
 }

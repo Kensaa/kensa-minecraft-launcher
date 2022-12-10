@@ -12,13 +12,15 @@ export default function UserElement({setOverlay}: {setOverlay: (setOverlay: JSX.
     }
 
     return(
-        <div className='w-100 d-flex justify-content-center'>
+        <div style={{position:'absolute'}} className='d-flex justify-content-center'>
             {auth.connected 
             ?
             <Dropdown className="w-100">
-                <Dropdown.Toggle  style={{borderRadius: "0px"}} className="w-100" variant='dark'>{auth.profile.name}</Dropdown.Toggle>
+                <Dropdown.Toggle style={{borderRadius: "0px",borderBottomRightRadius: "6px"}} className="w-100" variant='dark'>{auth.profile.name}</Dropdown.Toggle>
                 <Dropdown.Menu className="w-100">
-                    <Dropdown.Item onClick={auth.logout}>Logout</Dropdown.Item>
+                    <Dropdown.Item onClick={auth.logout} className="d-flex align-items-center">
+                        <h6 className='m-0'>Logout</h6>
+                    </Dropdown.Item>
                 </Dropdown.Menu>
             </Dropdown>
             :
