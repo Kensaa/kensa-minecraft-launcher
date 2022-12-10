@@ -34,8 +34,8 @@ export default function ProfileElement({ profile, loading }: ProfileElementProps
         <div className='d-flex flex-row align-items-center'>
             <img width={48} height={48} src={profile.version.forge ? furnace : craftingtable}/>
             <div className="d-flex flex-column justify-content-center align-items-start mx-1">
-                <span style={{marginBottom:'0px'}}>{profile.name}</span>
-                <span>{versionString}</span>
+                <h6 style={{marginBottom:'0px', color:'white'}}>{profile.name}</h6>
+                <span style={{color:'white'}}>{versionString}</span>
             </div>
         </div>
     )

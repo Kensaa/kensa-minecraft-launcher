@@ -29,7 +29,6 @@ html, body, #root {
 
 .background {
     background-size: cover;
-    // background opacity to 0.5
     background-color: rgba(0, 0, 0, 0.5);
 }
 
@@ -44,14 +43,6 @@ html, body, #root {
     --bs-btn-active-border-color: #ffffff10;
 }
 
-.list-group-item-dark {
-    --bs-list-group-bg: #1e1e1e;
-    --bs-list-group-color: #1e1e1e;
-}
-.list-group-selected {
-    --bs-list-group-bg: #ffffff;
-    --bs-list-group-color: #ffffff;
-}
 h1,h2,h3,h4,h5,h6 {
     color: white;
 }
@@ -71,7 +62,9 @@ h1,h2,h3,h4,h5,h6 {
 }
 
 .dropdown-menu {
-    backdrop-filter: blur(1px);
-    --bs-dropdown-bg: rgba(255, 255, 255, 0.05);
-    box-shadow: 4px 7px 14px 0.1rem rgb(0 0 0 / 50%);;
+    backdrop-filter: blur(4px);
+    --bs-dropdown-bg: rgba(0, 0, 0, 0.05);
+    box-shadow: 4px 7px 14px 0.1rem rgb(0 0 0 / 50%);
+
+    --bs-dropdown-link-hover-bg: rgba(255, 255, 255, 0.15);
 }

@@ -19,7 +19,7 @@ export default function UserElement({setOverlay}: {setOverlay: (setOverlay: JSX.
                 <Dropdown.Toggle style={{borderRadius: "0px", borderBottomRightRadius: "6px"}} className="w-100" variant='dark'>{auth.profile.name}</Dropdown.Toggle>
                 <Dropdown.Menu className="w-100">
                     <Dropdown.Item onClick={auth.logout} className="d-flex align-items-center">
-                        <h6 className='m-0' style={{color:'black'}}>Logout</h6>
+                        <h6 className='m-0' style={{color:'white'}}>Logout</h6>
                     </Dropdown.Item>
                 </Dropdown.Menu>
             </Dropdown>
