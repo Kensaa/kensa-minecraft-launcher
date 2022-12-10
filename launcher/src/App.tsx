@@ -15,7 +15,7 @@ export default function App() {
         <div className='w-100 h-100 d-flex'>
             {overlay}
             <UserElement setOverlay={setOverlay}/>
-            <img width={48} height={48} src={settingsImg} style={{position:'absolute',right:0, cursor:'pointer'}} onClick={() => setSettingsShown(true)}/>
+            <img width={32} height={32} src={settingsImg} style={{position:'absolute',right:4, top:4, cursor:'pointer'}} onClick={() => setSettingsShown(true)}/>
             <Home setOverlay={setOverlay}/>
 
             <Modal show={settingsShown} onHide={() => setSettingsShown(false)}>
