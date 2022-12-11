@@ -1,15 +1,14 @@
 import { ipcRenderer } from 'electron'
 import React, { useEffect, useState } from 'react'
-import { Alert, Button, Dropdown, SplitButton } from 'react-bootstrap'
-import ProfileElement from '../components/ProfileElement'
+import { Alert, Button } from 'react-bootstrap'
 import GameStartingOverlay from '../overlays/GameStartingOverlay'
+import ProfilePicker from '../components/ProfilePicker'
 
 import authStore from '../stores/auth'
 import configStore from '../stores/config'
 import { Profile } from '../types'
 
 import minecraft from '../img/minecraft.png'
-import ProfilePicker from '../components/ProfilePicker'
 
 export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | undefined) => void}) {
     const auth = authStore(state => ({...state}))
@@ -21,26 +20,27 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
 
     useEffect(() => {
         setLoading(true)
-        const sProfile = ipcRenderer.sendSync('get-selected-profile')
         fetch(config.primaryServer+'/profiles')
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
-                if(sProfile >= data.length){
-                    ipcRenderer.send('set-selected-profile', 0)
-                    setSelectedProfile(0)
-                }else{
-                    setSelectedProfile(sProfile)
-                }
-                console.log('got profiles ');
                 setLoading(false)
             }).catch(err => {
                 setError('unable to fetch profiles, check your internet connection or that the server address is correct')
                 setLoading(false)
             })
-    }, [])
-    
+    }, [ config.primaryServer ])
 
+    useEffect(() => {
+        if(profiles.length === 0) return
+        const sProfile = ipcRenderer.sendSync('get-selected-profile')
+        if(sProfile >= profiles.length){
+            ipcRenderer.send('set-selected-profile', 0)
+            setSelectedProfile(0)
+        }else{
+            setSelectedProfile(sProfile)
+        }
+    }, [ profiles ])
 
     const startGame = () => {
         setOverlay(<GameStartingOverlay/>)
@@ -56,7 +56,6 @@ export default function Home({setOverlay}: {setOverlay: (overlay: JSX.Element | 
                 </div> 
             </div>
             <div className='h-25 w-100 d-flex justify-content-center align-items-center smooth-background-up'>
-                
                 <Button
                     disabled={loading || !auth.connected || profiles.length === 0}
                     variant="success"
