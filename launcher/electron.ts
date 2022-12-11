@@ -250,12 +250,12 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
             localTree = await folderTree(localPath)
 
-
+            
+            let count = 0;
             for (const folder of remoteFolders) {
                 //start recursive function which will download all files for all the folders
                 await downloadFolder(remoteTree[folder], localTree[folder], path.join(args.gameFolder, folder), path.join(localPath, folder))
             }
-            let count = 0;
             async function downloadFolder(remoteFolder, localFolder, gameFolder: string, folderPath: string, pathA: string[] = []) {
                 for (const element of Object.keys(remoteFolder)) {
                     if (typeof remoteFolder[element] === 'string') {
