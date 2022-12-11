@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
-const ADDRESS = process.env.ADDRESS || 'http://localhost:40069' // REMOVE BEFORE COMMIT
+const ADDRESS = process.env.ADDRESS || 'localhost' // REMOVE BEFORE COMMIT
 const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 const CDNS = process.env.CDNS || 'http://localhost:40070'
@@ -87,6 +87,17 @@ function syncCDNS(){
         hashTree = await hashFolder(staticFolder)
         profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
         syncCDNS()
+    })
+
+    app.get('/modsCount/:gameFolder', (req, res) => {
+        const gameFolder = req.params.gameFolder
+        const modsFolder = path.join(staticFolder, 'gameFolders', gameFolder, 'mods')
+        if(!fs.existsSync(modsFolder)){
+            res.status(200).json({count:0})
+        }else {
+            const mods = fs.readdirSync(modsFolder)
+            res.status(200).json({count:mods.length})
+        }
     })
 
     app.listen(PORT, () => {
