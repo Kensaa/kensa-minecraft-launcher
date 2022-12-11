@@ -49,7 +49,7 @@ function syncCDNS(){
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
-                server:ADDRESS
+                server:`http://${ADDRESS}:${PORT}`,
             })        
         }).then(res => {
             if(res.ok){
