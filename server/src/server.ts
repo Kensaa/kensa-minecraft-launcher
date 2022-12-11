@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
-const ADDRESS = process.env.PORT || 'http://localhost:40069' // REMOVE BEFORE COMMIT
+const ADDRESS = process.env.ADDRESS || 'http://localhost:40069' // REMOVE BEFORE COMMIT
 const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 const CDNS = process.env.CDNS || 'http://localhost:40070'
