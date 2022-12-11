@@ -229,8 +229,10 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             const localPath = path.join(config.rootDir, 'profiles', args.gameFolder)
             checkExist(localPath)
 
-            const hashTree = await fetch(urlJoin(primaryServer, '/hashes')) as any
+            const hashTree = await JSONFetch(urlJoin(primaryServer, '/hashes')) as any
             const remoteTree = hashTree['gameFolders'][args.gameFolder]
+
+
             console.log('remote tree fetched')
             let localTree = await folderTree(localPath)
             console.log('local tree created')
@@ -388,7 +390,7 @@ function checkServer(address: string) {
         }).on('error', err => resolve(false))
     })
 }
-function fetch(address: string) {
+function JSONFetch(address: string) {
     return new Promise((resolve, reject) => {
         http.get(address, res => {
             let data = ''
