@@ -231,7 +231,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
             const hashTree = await JSONFetch(urlJoin(primaryServer, '/hashes')) as any
             const remoteTree = hashTree['gameFolders'][args.gameFolder]
-
+            const fileCount = (await JSONFetch(urlJoin(primaryServer, '/fileCount', args.gameFolder)) as { count: number }).count
 
             console.log('remote tree fetched')
             let localTree = await folderTree(localPath)
@@ -255,16 +255,20 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 //start recursive function which will download all files for all the folders
                 await downloadFolder(remoteTree[folder], localTree[folder], path.join(args.gameFolder, folder), path.join(localPath, folder))
             }
-
+            let count = 0;
             async function downloadFolder(remoteFolder, localFolder, gameFolder: string, folderPath: string, pathA: string[] = []) {
                 for (const element of Object.keys(remoteFolder)) {
                     if (typeof remoteFolder[element] === 'string') {
                         if (localFolder[element]) {
                             if (await getHash(path.join(folderPath, ...pathA, element)) !== remoteFolder[element]) {
                                 await download(urlJoin(downloadServer, '/static/gameFolders', gameFolder, ...pathA, element), path.join(folderPath, ...pathA, element))
+                                count++
+                                startProgress = Math.round(count/fileCount*100)
                             }
                         } else {
                             await download(urlJoin(downloadServer, '/static/gameFolders', gameFolder, ...pathA, element), path.join(folderPath, ...pathA, element))
+                            count++
+                            startProgress = Math.round(count/fileCount*100)
                         }
                     } else {
                         if (localFolder[element]) {

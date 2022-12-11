@@ -65,7 +65,7 @@ function syncCDNS(){
 
 ;(async () => {
     const app = express()
-    let hashTree = await hashFolder(staticFolder)
+    let hashTree = await hashFolder(staticFolder) as Record<string, any>
 
     app.use(cors())
     app.use(express.json())
@@ -84,20 +84,34 @@ function syncCDNS(){
     })
 
     app.post('/reload', async (req, res) => {
-        hashTree = await hashFolder(staticFolder)
+        hashTree = await hashFolder(staticFolder) as Record<string, any>
         profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
         syncCDNS()
     })
 
-    app.get('/modsCount/:gameFolder', (req, res) => {
+    app.get('/fileCount/:gameFolder', (req, res) => {
         const gameFolder = req.params.gameFolder
-        const modsFolder = path.join(staticFolder, 'gameFolders', gameFolder, 'mods')
-        if(!fs.existsSync(modsFolder)){
-            res.status(200).json({count:0})
-        }else {
-            const mods = fs.readdirSync(modsFolder)
-            res.status(200).json({count:mods.length})
+        const gameFolderPath = path.join(staticFolder, 'gameFolders', gameFolder)
+        if(!fs.existsSync(gameFolderPath)){
+            res.status(404).json({count:0})
+            return
         }
+        if(!hashTree['gameFolders']) return res.sendStatus(500)
+        const tree = hashTree['gameFolders'][gameFolder]
+        const count = countFile(tree)
+        res.status(200).json({count})
+
+        function countFile(tree: Record<string, any> | string){
+            if(typeof tree === 'string'){
+                return 1
+            }
+            let count = 0
+            for(const key in tree){
+                count += countFile(tree[key])
+            }
+            return count
+        }
+
     })
 
     app.listen(PORT, () => {
