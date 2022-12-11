@@ -38,7 +38,7 @@ const defaultConfig = {
     rootDir,
     ram: 6,
     primaryServer,
-    cdnServer: '',
+    cdnServer: 'http://home.kensa.fr:40070',
     jrePath: '',
     closeLauncher: true
 }
