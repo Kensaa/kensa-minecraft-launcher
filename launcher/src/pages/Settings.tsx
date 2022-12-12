@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron'
+import { FileSearch, FolderSearch } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import configStore from '../stores/config'
@@ -7,8 +8,11 @@ interface SettingsProps {
     hide: () => void
 }
 
+type SettingValue = string | number | boolean
+type Setter = (s: SettingValue) => void
+
 export default function Settings({ hide }: SettingsProps) {
-    const config = configStore(store => ({...store}))
+    const config = configStore(store => ({ ...store }))
 
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
@@ -16,7 +20,7 @@ export default function Settings({ hide }: SettingsProps) {
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [jrePath, setJrePath] = useState(config.jrePath)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
-    
+
     const [validated, setValidated] = useState(false)
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -34,84 +38,150 @@ export default function Settings({ hide }: SettingsProps) {
 
     return (
         <Form onSubmit={handleSubmit} validated={validated} className="w-100 h-100 d-flex flex-column p-2">
-            <div style={{"flexGrow":1}} className="w-100">
-                <DirInput label="Game Directory" value={rootDir} setter={(s: string | number | boolean) => setRootDir(s as string)} />
-                <NumberInput label="Ram" value={ram} setter={(s: string | number | boolean) => setRam(s as number)} min={1} max={14} />
-                <TextInput label="Primary Server" value={primaryServer} setter={(s: string | number | boolean) => setPrimaryServer(s as string)} />
-                <TextInput label="CDN Server" value={cdnServer} setter={(s: string | number | boolean) => setCdnServer(s as string)} />
-                <FileInput label="JRE executable" placeholder="you shouldn't touch that" value={jrePath} setter={(s: string | number | boolean) => setJrePath(s as string)}/>
-                <BooleanInput label="Close launcher when the game launches" value={closeLauncher} setter={(s: string | number | boolean) => setCloseLauncher(s as boolean)}/>
+            <div style={{ "flexGrow": 1 }} className="w-100">
+                <DirInput
+                    label="Game folder"
+                    value={rootDir}
+                    setter={setRootDir as Setter}
+                />
+                <NumberInput
+                    label="RAM"
+                    value={ram}
+                    setter={setRam as Setter}
+                    min={1}
+                    max={14}
+                />
+                <TextInput
+                    label="Main server"
+                    value={primaryServer}
+                    setter={setPrimaryServer as Setter}
+                />
+                <TextInput
+                    label="CDN server"
+                    value={cdnServer}
+                    setter={setCdnServer as Setter}
+                />
+                <FileInput
+                    label="JRE executable"
+                    placeholder="you shouldn't touch that"
+                    value={jrePath}
+                    setter={setJrePath as Setter}
+                />
+                <BooleanInput
+                    label="Close launcher when the game launches"
+                    value={closeLauncher}
+                    setter={setCloseLauncher as Setter}
+                />
             </div>
             <Button type="submit">Save</Button>
         </Form>
     )
 }
 
+
+
 interface InputProps {
     label: string
     value: string | number | boolean
     placeholder?: string
-    setter: (s: string | number | boolean) => void
+    setter: Setter
 }
-function DirInput({label, value, setter}: InputProps){
-    const openPrompt = () => {
-        const res = ipcRenderer.sendSync('prompt-folder') 
-        if(res){
-            setter(res)
-        }
-    }
 
+interface GenericInputProps extends InputProps {
+    children: React.ReactNode
+}
+
+function GenericInput({ children, ...props }: GenericInputProps) {
+    return <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
+        <Form.Label className="text-nowrap me-2">{props.label} :</Form.Label>
+        {children}
+    </Form.Group>
+}
+
+function DirInput(props: InputProps) {
     return (
-        <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
-            <Form.Label>{label}:</Form.Label>
-            <Form.Control value={value as string} onChange={e => setter(e.target.value)} type="text"/>
-            <Button className="mx-2" variant="outline-primary" onClick={openPrompt}>Open Folder</Button>
-        </Form.Group>
+        <GenericInput {...props}>
+            <Form.Control
+                value={props.value as string}
+                onChange={({ target }) => props.setter(target.value)}
+                type="text"
+            />
+            <Button
+                className="mx-2 text-nowrap"
+                variant="outline-primary"
+                onClick={() => {
+                    const res = ipcRenderer.sendSync('prompt-folder')
+                    if (res) props.setter(res)
+                }}
+            >
+                <FolderSearch size={16} className="me-1" />
+                Browse
+            </Button>
+        </GenericInput>
     )
 }
 
-function FileInput({label, value, setter, placeholder}: InputProps){
-    const openPrompt = () => {
-        const res = ipcRenderer.sendSync('prompt-file') 
-        if(res){
-            setter(res)
-        }
-    }
-
+function FileInput(props: InputProps) {
     return (
-        <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
-            <Form.Label>{label}:</Form.Label>
-            <Form.Control className="mx-2" value={value as string} placeholder={placeholder} onChange={e => setter(e.target.value)} type="text"/>
-            <Button className="mx-2" variant="outline-primary" onClick={openPrompt}>Open File</Button>
-        </Form.Group>
+        <GenericInput {...props}>
+            <Form.Control
+                value={props.value as string}
+                placeholder={props.placeholder}
+                onChange={({ target }) => props.setter(target.value)}
+                type="text"
+            />
+            <Button
+                className="mx-2 text-nowrap"
+                variant="outline-primary"
+                onClick={() => {
+                    const res = ipcRenderer.sendSync('prompt-file')
+                    if (res) props.setter(res)
+                }}
+            >
+                <FileSearch size={16} className="me-1" />
+                Browse
+            </Button>
+        </GenericInput>
     )
 }
 
-function NumberInput({label, value, setter, min, max}: InputProps & {min:number, max:number}){
+function NumberInput(props: InputProps & { min: number, max: number }) {
     return (
-        <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
-            <Form.Label>{label}:</Form.Label>
-            <h4 style={{marginRight:'0.5rem',marginLeft:'0.5rem', color:'black'}}>{value}G</h4>
-
-            <Form.Range value={value as number} onChange={e => setter(e.target.value)} max={max} min={min}/>
-        </Form.Group>
+        <GenericInput {...props}>
+            <label className='me-2 mb-2'>{props.value}G</label>
+            <Form.Range
+                className='mb-2'
+                value={props.value as number}
+                onChange={({ target }) => props.setter(target.value)}
+                max={props.max}
+                min={props.min}
+            />
+        </GenericInput>
     )
 }
 
-function TextInput({label, value, setter}: InputProps) {
+function TextInput(props: InputProps) {
     return (
-        <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
-            <Form.Label>{label}:</Form.Label>
-            <Form.Control className="mx-2" value={value as string} onChange={e => setter(e.target.value)} type="text"/>
-        </Form.Group>
+        <GenericInput {...props}>
+            <Form.Control
+                className="mx-2"
+                value={props.value as string}
+                onChange={({ target }) => props.setter(target.value)}
+                type="text"
+            />
+        </GenericInput>
     )
 }
 
-function BooleanInput({label, value, setter}: InputProps){
+function BooleanInput(props: InputProps) {
     return (
-        <Form.Group className="d-flex flex-row my-2 align-items-center justify-content-start">
-            <Form.Label>{label}:</Form.Label>
-            <Form.Check className="mx-2" type="switch" checked={value as boolean} onChange={e => setter(e.target.checked)}/>
-        </Form.Group>
+        <GenericInput {...props}>
+            <Form.Check
+                className="mx-2 mb-2"
+                type="switch"
+                checked={props.value as boolean}
+                onChange={({ target }) => props.setter(target.checked)}
+            />
+        </GenericInput>
     )
 }
