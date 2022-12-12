@@ -55,7 +55,7 @@ interface InputProps {
 }
 function DirInput({label, value, setter}: InputProps){
     const openPrompt = () => {
-        const res = ipcRenderer.sendSync('prompt-file') 
+        const res = ipcRenderer.sendSync('prompt-folder') 
         if(res){
             setter(res)
         }
