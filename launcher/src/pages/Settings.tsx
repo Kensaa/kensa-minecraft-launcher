@@ -86,6 +86,16 @@ interface InputProps {
     placeholder?: string
     setter: Setter
 }
+<<<<<<< HEAD
+=======
+function DirInput({label, value, setter}: InputProps){
+    const openPrompt = () => {
+        const res = ipcRenderer.sendSync('prompt-folder') 
+        if(res){
+            setter(res)
+        }
+    }
+>>>>>>> df8ce3d451c2e89a4980feb1b66b5b33c970b8e5
 
 interface GenericInputProps extends InputProps {
     children: React.ReactNode
