@@ -177,7 +177,7 @@ function BooleanInput(props: InputProps) {
     return (
         <GenericInput {...props}>
             <Form.Check
-                className="mx-2 mb-2"
+                className="mx-2 mb-2 d-flex align-items-center"
                 type="switch"
                 checked={props.value as boolean}
                 onChange={({ target }) => props.setter(target.checked)}
