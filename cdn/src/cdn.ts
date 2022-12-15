@@ -59,7 +59,7 @@ if(!fs.existsSync(CACHE_FOLDER)){
             const onlyLocalFiles = Object.keys(localTree).filter(file => !Object.keys(remoteTree).includes(file))
             for(const localFile of onlyLocalFiles) {
                 console.log(`deleting file ${localFile}`);
-                fs.rmSync(path.join(...[CACHE_FOLDER, ...pathA, localFile]))
+                fs.rmSync(path.join(...[CACHE_FOLDER, ...pathA, localFile]), {recursive: true})
             }
 
         }
