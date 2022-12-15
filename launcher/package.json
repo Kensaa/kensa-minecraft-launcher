@@ -8,7 +8,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
-    "release": "cd release && gh release create ",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -36,7 +35,7 @@
   },
   "build": {
     "appId": "fr.kensa.minecraftLauncher",
-    "productName": "Kensa's Minecraft Launcher",
+    "productName": "Kensa Minecraft Launcher",
     "directories": {
       "output": "release",
       "buildResources": "buildAssets"
