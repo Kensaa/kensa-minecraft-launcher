@@ -101,19 +101,26 @@ function urlJoin(...args: string[]) {
 
 function download(address: string, filepath: string) {
     return new Promise<void>((resolve, reject) => {
-        if(fs.existsSync(path.dirname(filepath))){
-            fs.mkdirSync(path.dirname(filepath), {recursive: true})
+        if (fs.existsSync(path.dirname(filepath))) {
+            fs.mkdirSync(path.dirname(filepath), { recursive: true })
         }
-        if(fs.existsSync(filepath)){
-            fs.writeFileSync(filepath,'')
+        if (fs.existsSync(filepath)) {
+            fs.writeFileSync(filepath, '')
         }
         const file = fs.createWriteStream(filepath)
-        http.get(address,res => {
+        console.log(address)
+        http.get(address, res => {
             res.pipe(file)
-            file.on('finish',() => {
+            file.on('finish', () => {
+                console.log('closed')
                 file.close()
                 resolve()
             })
-        }).on('error', err => reject(err))
+        }).on('error', async (err) => {
+            console.log('error')
+            console.log(err)
+            await download(address, filepath)
+            resolve()
+        })
     })
 }

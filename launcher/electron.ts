@@ -37,7 +37,7 @@ if (!app.isPackaged) {
 
 const defaultConfig = {
     rootDir,
-    ram: 6,
+    ram: 8,
     primaryServer,
     cdnServer: 'http://home.kensa.fr:40070',
     jrePath: '',
