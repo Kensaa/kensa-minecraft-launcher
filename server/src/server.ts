@@ -5,10 +5,10 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 
 const PORT = process.env.PORT || 40069
-const ADDRESS = process.env.ADDRESS || 'localhost' // REMOVE BEFORE COMMIT
+const ADDRESS = process.env.ADDRESS
 const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
-const CDNS = process.env.CDNS || 'http://localhost:40070'
+const CDNS = process.env.CDNS || ''
 
 
 if(!ADDRESS){
@@ -44,7 +44,6 @@ let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
 
 function syncCDNS(){
     CDNS.split('|').forEach(address => {
-        console.log(urlJoin(address, '/sync'));
         fetch(urlJoin(address, '/sync'), {
             method:'POST',
             headers:{'Content-Type':'application/json'},
