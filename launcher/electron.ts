@@ -7,6 +7,7 @@ import { Client } from '@kensaa/minecraft-launcher-core'
 import { Profile } from './src/types'
 import * as http from 'http'
 import * as crypto from 'crypto'
+import { spawn } from 'child_process'
 
 const launcher = new Client()
 
@@ -213,12 +214,15 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
 
         }
+
         let forgeArgs
         if (args.version.forge) {
             console.log('forge detected, downloading')
             const forgePath = path.join(config.rootDir, 'forgeInstallers', args.version.forge)
             if (!fs.existsSync(forgePath)) {
-                await download(urlJoin(downloadServer, '/static/forges/', args.version.forge), forgePath)
+                const forgeURL = urlJoin(downloadServer, '/static/forges/', args.version.forge)
+                console.log(`downloading ${forgeURL} to ${forgePath}`)
+                await download(forgeURL, forgePath)
                 console.log(`${args.version.forge} downloaded`)
             }
             forgeArgs = forgePath
@@ -332,6 +336,21 @@ ipcMain.on('get-start-progress', (event, arg) => {
 
 ipcMain.on('get-login-progress', (event, arg) => {
     event.returnValue = loginProgress
+})
+
+ipcMain.on('check-java-installation', (event, arg) => {
+    //check if java is installed
+    if(!config) return
+    const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
+    const java = spawn(javaPath, ['-version'])
+    java.on('error', e => {
+        event.returnValue = false
+    }
+    )
+    java.on('close', e => {
+        event.returnValue = true
+    }
+    )
 })
 
 function checkExist(path: string) {

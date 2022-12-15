@@ -48,6 +48,13 @@ export default function Home({
         }
     }, [profiles])
 
+    useEffect(() => {
+        const javaIsInstalled = ipcRenderer.sendSync('check-java-installation')
+        if (!javaIsInstalled) {
+            setError('Java is not installed, please install it')
+        }
+    }, [config.jrePath])
+
     const startGame = () => {
         setOverlay(<GameStartingOverlay />)
         ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined)).catch(error => console.log(error))
