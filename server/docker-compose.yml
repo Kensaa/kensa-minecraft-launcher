@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  launcher-server:
+    image: kensa/kensa-minecraft-launcher-server
+    ports: 
+      - "40069:40069/tcp"
+    environment:
+      PORT: 40069
+      ADDRESS: ''
+      staticFolder: '/data/static'
+      profilesFile: '/data/profiles.json'
+      CDNS: ''
+    volumes:
+        - /mnt/kensa-launcher/:/data
