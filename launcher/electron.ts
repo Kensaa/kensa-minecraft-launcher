@@ -281,7 +281,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 }
                 const onlyLocalFile = Object.keys(localFolder).filter(key => typeof localFolder[key] === 'string').filter(key => !Object.keys(remoteFolder).includes(key))
                 for (const file of onlyLocalFile) {
-                    fs.rmSync(path.join(folderPath, ...pathA, file))
+                    fs.rmSync(path.join(folderPath, ...pathA, file), { recursive: true })
                 }   
             }
         } else {
