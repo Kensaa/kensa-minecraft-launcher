@@ -263,7 +263,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             async function downloadFolder(remoteFolder, localFolder, gameFolder: string, folderPath: string, pathA: string[] = []) {
                 for (const element of Object.keys(remoteFolder)) {
                     if (typeof remoteFolder[element] === 'string') {
-                        if (localFolder[element]) {
+                        if (localFolder[element] !== undefined) {
                             if (await getHash(path.join(folderPath, ...pathA, element)) !== remoteFolder[element]) {
                                 await download(urlJoin(downloadServer, '/static/gameFolders', gameFolder, ...pathA, element), path.join(folderPath, ...pathA, element))
                                 count++
@@ -286,7 +286,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 const onlyLocalFile = Object.keys(localFolder).filter(key => typeof localFolder[key] === 'string').filter(key => !Object.keys(remoteFolder).includes(key))
                 for (const file of onlyLocalFile) {
                     fs.rmSync(path.join(folderPath, ...pathA, file), { recursive: true })
-                }   
+                }
             }
         } else {
             console.log('no forced game folder detected, creating an empty one...')
