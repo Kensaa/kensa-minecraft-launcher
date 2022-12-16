@@ -307,8 +307,9 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 min: "1G"
             },
             javaPath: (config.jrePath !== '' ? config.jrePath : undefined),
+            customArgs: ['-Djava.net.preferIPv6Stack=true'],
             overrides: {
-                gameDirectory: path.join(config.rootDir, 'profiles', args.gameFolder)
+                gameDirectory: path.join(config.rootDir, 'profiles', args.gameFolder),
             }
         }
 
