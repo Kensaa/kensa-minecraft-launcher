@@ -18,18 +18,22 @@ export default create<authStore>(set => {
         connect: async () => {
             return new Promise<boolean>(resolve => {
                 ipcRenderer.invoke('msmc-connect').then(res => {
-                    if(res){
-                       const loginInfo = JSON.parse(ipcRenderer.sendSync('msmc-result'))
-                       set({profile: loginInfo.profile, connected: loginInfo.profile ? true : false})
+                    if (res) {
+                        const loginInfo = JSON.parse(
+                            ipcRenderer.sendSync('msmc-result')
+                        )
+                        set({
+                            profile: loginInfo.profile,
+                            connected: loginInfo.profile ? true : false
+                        })
                     }
                     resolve(res)
                 })
             })
         },
         logout: () => {
-            set({profile: undefined, connected: false})
+            set({ profile: undefined, connected: false })
             ipcRenderer.send('msmc-logout')
         }
     }
 })
-

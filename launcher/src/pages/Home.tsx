@@ -14,7 +14,7 @@ export default function Home({
     setOverlay,
     setSettingsShown
 }: {
-    setOverlay: (overlay: JSX.Element | undefined) => void,
+    setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }) {
     const auth = authStore(state => ({ ...state }))
@@ -31,8 +31,11 @@ export default function Home({
             .then(data => {
                 setProfiles(data)
                 setLoading(false)
-            }).catch(err => {
-                setError('Unable to fetch profiles, check your internet connection or the server address')
+            })
+            .catch(err => {
+                setError(
+                    'Unable to fetch profiles, check your internet connection or the server address'
+                )
                 setLoading(false)
             })
     }, [config.primaryServer])
@@ -57,16 +60,22 @@ export default function Home({
 
     const startGame = () => {
         setOverlay(<GameStartingOverlay />)
-        ipcRenderer.invoke('start-game', profiles[selectedProfile]).then(res => setOverlay(undefined)).catch(error => console.log(error))
+        ipcRenderer
+            .invoke('start-game', profiles[selectedProfile])
+            .then(res => setOverlay(undefined))
+            .catch(error => console.log(error))
     }
     return (
-        <div className='w-100 h-100 d-flex flex-column align-items-center background' style={{ backgroundImage: `url(${minecraft})` }}>
+        <div
+            className='w-100 h-100 d-flex flex-column align-items-center background'
+            style={{ backgroundImage: `url(${minecraft})` }}
+        >
             {error && (
                 <Alert
-                    className="m-5 position-absolute"
+                    className='m-5 position-absolute'
                     style={{ zIndex: 9000 }}
                     dismissible
-                    variant="danger"
+                    variant='danger'
                     onClose={() => setError('')}
                 >
                     {error}
@@ -86,12 +95,15 @@ export default function Home({
             />
             <div className='h-25 w-100 d-flex pb-5 justify-content-center align-items-end smooth-background-up position-absolute bottom-0'>
                 <Button
-                    disabled={loading || !auth.connected || profiles.length === 0}
-                    variant="success"
+                    disabled={
+                        loading || !auth.connected || profiles.length === 0
+                    }
+                    variant='success'
                     onClick={startGame}
-                >Launch Game</Button>
+                >
+                    Launch Game
+                </Button>
             </div>
         </div>
     )
 }
-

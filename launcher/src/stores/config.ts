@@ -27,31 +27,31 @@ export default create<configStore>(set => {
         jrePath: config.jrePath,
         closeLauncher: config.closeLauncher,
         setRootDir: (rootDir: string) => {
-            set({rootDir})
-            ipcRenderer.send('set-config', JSON.stringify({rootDir}))
+            set({ rootDir })
+            ipcRenderer.send('set-config', JSON.stringify({ rootDir }))
         },
         setRam: (ram: number) => {
-            set({ram})
-            ipcRenderer.send('set-config', JSON.stringify({ram}))
+            set({ ram })
+            ipcRenderer.send('set-config', JSON.stringify({ ram }))
         },
         setPrimaryServer: (primaryServer: string) => {
-            if(primaryServer.endsWith('/')) primaryServer = primaryServer.slice(0, -1)
-            set({primaryServer})
-            ipcRenderer.send('set-config', JSON.stringify({primaryServer}))
+            if (primaryServer.endsWith('/'))
+                primaryServer = primaryServer.slice(0, -1)
+            set({ primaryServer })
+            ipcRenderer.send('set-config', JSON.stringify({ primaryServer }))
         },
         setCdnServer: (cdnServer: string) => {
-            if(cdnServer.endsWith('/')) cdnServer = cdnServer.slice(0, -1)
-            set({cdnServer})
-            ipcRenderer.send('set-config', JSON.stringify({cdnServer}))
+            if (cdnServer.endsWith('/')) cdnServer = cdnServer.slice(0, -1)
+            set({ cdnServer })
+            ipcRenderer.send('set-config', JSON.stringify({ cdnServer }))
         },
         setJrePath: (jrePath: string) => {
-            set({jrePath})
-            ipcRenderer.send('set-config', JSON.stringify({jrePath}))
+            set({ jrePath })
+            ipcRenderer.send('set-config', JSON.stringify({ jrePath }))
         },
         setCloseLauncher: (closeLauncher: boolean) => {
-            set({closeLauncher})
-            ipcRenderer.send('set-config', JSON.stringify({closeLauncher}))
+            set({ closeLauncher })
+            ipcRenderer.send('set-config', JSON.stringify({ closeLauncher }))
         }
-
     }
 })

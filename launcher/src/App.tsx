@@ -11,16 +11,17 @@ export default function App() {
     return (
         <div className='w-100 h-100 d-flex'>
             {overlay}
-            <Home
-                setOverlay={setOverlay}
-                setSettingsShown={setSettingsShown}
-            />
+            <Home setOverlay={setOverlay} setSettingsShown={setSettingsShown} />
 
             <Modal show={settingsShown} onHide={() => setSettingsShown(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title style={{ color: 'black' }}>Settings</Modal.Title>
+                    <Modal.Title style={{ color: 'black' }}>
+                        Settings
+                    </Modal.Title>
                 </Modal.Header>
-                <Modal.Body><Settings hide={() => setSettingsShown(false)} /></Modal.Body>
+                <Modal.Body>
+                    <Settings hide={() => setSettingsShown(false)} />
+                </Modal.Body>
             </Modal>
         </div>
     )
