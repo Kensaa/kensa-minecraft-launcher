@@ -81,6 +81,21 @@ export default function Home({
                     {error}
                 </Alert>
             )}
+            {config.disableAutoUpdate && (
+                <Alert
+                    className=' position-absolute'
+                    style={{
+                        zIndex: 1,
+                        margin: '100px',
+                        textAlign: 'center'
+                    }}
+                    variant='info'
+                    onClose={() => setError('')}
+                >
+                    you disabled auto-update, the game WILL NOT be updated while
+                    this option is enabled
+                </Alert>
+            )}
             <HomeHeader
                 {...{
                     setOverlay,

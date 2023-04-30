@@ -20,6 +20,9 @@ export default function Settings({ hide }: SettingsProps) {
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [jrePath, setJrePath] = useState(config.jrePath)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
+    const [disableAutoUpdate, setDisableAutoUpdate] = useState(
+        config.disableAutoUpdate
+    )
 
     const [validated, setValidated] = useState(false)
 
@@ -31,6 +34,7 @@ export default function Settings({ hide }: SettingsProps) {
         config.setCdnServer(cdnServer)
         config.setJrePath(jrePath)
         config.setCloseLauncher(closeLauncher)
+        config.setDisableAutoUpdate(disableAutoUpdate)
 
         setValidated(true)
         hide()
@@ -75,6 +79,11 @@ export default function Settings({ hide }: SettingsProps) {
                     label='Close launcher when the game launches'
                     value={closeLauncher}
                     setter={setCloseLauncher as Setter}
+                />
+                <BooleanInput
+                    label='Disable auto-update'
+                    value={disableAutoUpdate}
+                    setter={setDisableAutoUpdate as Setter}
                 />
             </div>
             <Button type='submit'>Save</Button>

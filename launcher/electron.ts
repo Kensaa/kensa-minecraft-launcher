@@ -50,11 +50,12 @@ const defaultConfig = {
     primaryServer,
     cdnServer: '',
     jrePath: '',
-    closeLauncher: true
+    closeLauncher: true,
+    disableAutoUpdate: false
 }
 
 let loginInfo: msmc.result | null
-let config: Record<string, any> | null
+let config: Record<string, any>
 
 async function createWindow() {
     console.log('createWindow')
@@ -94,6 +95,17 @@ async function createWindow() {
         config = JSON.parse(
             fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8')
         )
+        // checking if config is missing field
+        if (Object.keys(config).length !== Object.keys(defaultConfig).length) {
+            console.log(
+                'config seems to be missing some fields, using default config'
+            )
+            config = defaultConfig
+            fs.writeFileSync(
+                path.join(configFolder, 'config.json'),
+                JSON.stringify(config, null, 4)
+            )
+        }
         console.log('parsed existing config:')
         console.log(config)
     }
@@ -268,70 +280,88 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
             forgeArgs = forgePath
         }
-
-        if (args.gameFolder) {
-            console.log('a forced game folder is detected, downloading it...')
-            const localPath = path.join(
-                config.rootDir,
-                'profiles',
-                args.gameFolder
-            )
-            checkExist(localPath)
-
-            const hashTree = (await JSONFetch(
-                urlJoin(primaryServer, '/hashes')
-            )) as any
-            const remoteTree = hashTree['gameFolders'][args.gameFolder]
-            const fileCount = (
-                (await JSONFetch(
-                    urlJoin(primaryServer, '/fileCount', args.gameFolder)
-                )) as { count: number }
-            ).count
-
-            console.log('remote tree fetched')
-            let localTree = await folderTree(localPath)
-            console.log('local tree created')
-            function getFolders(tree: any) {
-                return Object.keys(tree).filter(
-                    key => typeof tree[key] !== 'string'
+        if (!config.disableAutoUpdate) {
+            if (args.gameFolder) {
+                console.log(
+                    'a forced game folder is detected, downloading it...'
                 )
-            }
-            const remoteFolders = getFolders(remoteTree)
-            const localFolders = getFolders(localTree)
+                const localPath = path.join(
+                    config.rootDir,
+                    'profiles',
+                    args.gameFolder
+                )
+                checkExist(localPath)
 
-            console.log('starting update procedure')
-            for (const folder of remoteFolders) {
-                if (!localFolders.includes(folder)) {
-                    fs.mkdirSync(path.join(localPath, folder))
+                const hashTree = (await JSONFetch(
+                    urlJoin(primaryServer, '/hashes')
+                )) as any
+                const remoteTree = hashTree['gameFolders'][args.gameFolder]
+                const fileCount = (
+                    (await JSONFetch(
+                        urlJoin(primaryServer, '/fileCount', args.gameFolder)
+                    )) as { count: number }
+                ).count
+
+                console.log('remote tree fetched')
+                let localTree = await folderTree(localPath)
+                console.log('local tree created')
+                function getFolders(tree: any) {
+                    return Object.keys(tree).filter(
+                        key => typeof tree[key] !== 'string'
+                    )
                 }
-            }
-            localTree = await folderTree(localPath)
+                const remoteFolders = getFolders(remoteTree)
+                const localFolders = getFolders(localTree)
 
-            let count = 0
-            for (const folder of remoteFolders) {
-                //start recursive function which will download all files for all the folders
-                await downloadFolder(
-                    remoteTree[folder],
-                    localTree[folder],
-                    path.join(args.gameFolder, folder),
-                    path.join(localPath, folder)
-                )
-            }
-            async function downloadFolder(
-                remoteFolder,
-                localFolder,
-                gameFolder: string,
-                folderPath: string,
-                pathA: string[] = []
-            ) {
-                for (const element of Object.keys(remoteFolder)) {
-                    if (typeof remoteFolder[element] === 'string') {
-                        if (localFolder[element] !== undefined) {
-                            if (
-                                (await getHash(
-                                    path.join(folderPath, ...pathA, element)
-                                )) !== remoteFolder[element]
-                            ) {
+                console.log('starting update procedure')
+                for (const folder of remoteFolders) {
+                    if (!localFolders.includes(folder)) {
+                        fs.mkdirSync(path.join(localPath, folder))
+                    }
+                }
+                localTree = await folderTree(localPath)
+
+                let count = 0
+                for (const folder of remoteFolders) {
+                    //start recursive function which will download all files for all the folders
+                    await downloadFolder(
+                        remoteTree[folder],
+                        localTree[folder],
+                        path.join(args.gameFolder, folder),
+                        path.join(localPath, folder)
+                    )
+                }
+                async function downloadFolder(
+                    remoteFolder,
+                    localFolder,
+                    gameFolder: string,
+                    folderPath: string,
+                    pathA: string[] = []
+                ) {
+                    for (const element of Object.keys(remoteFolder)) {
+                        if (typeof remoteFolder[element] === 'string') {
+                            if (localFolder[element] !== undefined) {
+                                if (
+                                    (await getHash(
+                                        path.join(folderPath, ...pathA, element)
+                                    )) !== remoteFolder[element]
+                                ) {
+                                    await download(
+                                        urlJoin(
+                                            downloadServer,
+                                            '/static/gameFolders',
+                                            gameFolder,
+                                            ...pathA,
+                                            element
+                                        ),
+                                        path.join(folderPath, ...pathA, element)
+                                    )
+                                    count++
+                                    startProgress = Math.round(
+                                        (count / fileCount) * 100
+                                    )
+                                }
+                            } else {
                                 await download(
                                     urlJoin(
                                         downloadServer,
@@ -348,57 +378,47 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                                 )
                             }
                         } else {
-                            await download(
-                                urlJoin(
-                                    downloadServer,
-                                    '/static/gameFolders',
+                            if (localFolder[element]) {
+                                await downloadFolder(
+                                    remoteFolder[element],
+                                    localFolder[element],
                                     gameFolder,
-                                    ...pathA,
-                                    element
-                                ),
-                                path.join(folderPath, ...pathA, element)
-                            )
-                            count++
-                            startProgress = Math.round(
-                                (count / fileCount) * 100
-                            )
-                        }
-                    } else {
-                        if (localFolder[element]) {
-                            await downloadFolder(
-                                remoteFolder[element],
-                                localFolder[element],
-                                gameFolder,
-                                folderPath,
-                                pathA.concat(element)
-                            )
-                        } else {
-                            fs.mkdirSync(
-                                path.join(folderPath, ...pathA, element)
-                            )
-                            await downloadFolder(
-                                remoteFolder[element],
-                                {},
-                                gameFolder,
-                                folderPath,
-                                pathA.concat(element)
-                            )
+                                    folderPath,
+                                    pathA.concat(element)
+                                )
+                            } else {
+                                fs.mkdirSync(
+                                    path.join(folderPath, ...pathA, element)
+                                )
+                                await downloadFolder(
+                                    remoteFolder[element],
+                                    {},
+                                    gameFolder,
+                                    folderPath,
+                                    pathA.concat(element)
+                                )
+                            }
                         }
                     }
+                    const onlyLocalFile = Object.keys(localFolder)
+                        .filter(key => typeof localFolder[key] === 'string')
+                        .filter(key => !Object.keys(remoteFolder).includes(key))
+                    for (const file of onlyLocalFile) {
+                        console.log('deleting file : ' + file)
+                        fs.rmSync(path.join(folderPath, ...pathA, file), {
+                            recursive: true
+                        })
+                    }
                 }
-                const onlyLocalFile = Object.keys(localFolder)
-                    .filter(key => typeof localFolder[key] === 'string')
-                    .filter(key => !Object.keys(remoteFolder).includes(key))
-                for (const file of onlyLocalFile) {
-                    fs.rmSync(path.join(folderPath, ...pathA, file), {
-                        recursive: true
-                    })
-                }
+            } else {
+                console.log(
+                    'no forced game folder detected, creating an empty one...'
+                )
+                args.gameFolder = args.name
+                    .replace(/[^a-zA-Z0-9]/g, '_')
+                    .toLowerCase()
             }
         } else {
-            console.log(
-                'no forced game folder detected, creating an empty one...'
-            )
             args.gameFolder = args.name
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .toLowerCase()
