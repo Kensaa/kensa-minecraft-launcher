@@ -440,6 +440,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             javaPath: config.jrePath !== '' ? config.jrePath : undefined,
             customArgs: ['-Djava.net.preferIPv6Stack=true'],
             overrides: {
+                detached: false,
                 gameDirectory: path.join(
                     config.rootDir,
                     'profiles',
@@ -454,7 +455,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         launcher.on('data', e => console.log(e))
         launcher.on('start', e => {
             if (!config) return
-            if (config.closeLauncher) app.quit()
+            if (config.closeLauncher) setTimeout(app.quit, 2000)
             gameStarting = false
             resolve()
         })
