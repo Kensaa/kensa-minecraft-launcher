@@ -1,59 +1,59 @@
 {
-  "name": "kensa-minecraft-launcher",
-  "description": "A Minecraft launcher which will be pretty cringe but hopefully usable",
-  "author": "Kensa",
-  "private": true,
-  "version": "0.0.1",
-  "main": "dist-electron/electron.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@kensaa/minecraft-launcher-core": "^3.16.20",
-    "bootstrap": "^5.2.2",
-    "lucide-react": "^0.104.1",
-    "msmc": "^3.1.3",
-    "react": "^18.2.0",
-    "react-bootstrap": "^2.6.0",
-    "react-dom": "^18.2.0",
-    "sass": "^1.56.1",
-    "zustand": "^4.1.4"
-  },
-  "devDependencies": {
-    "@types/node": "^18.11.9",
-    "@types/react": "^18.0.24",
-    "@types/react-dom": "^18.0.8",
-    "@vitejs/plugin-react": "^2.2.0",
-    "electron": "^21.3.0",
-    "electron-builder": "^23.6.0",
-    "typescript": "^4.6.4",
-    "vite": "^3.2.3",
-    "vite-electron-plugin": "^0.5.2",
-    "vite-plugin-electron-renderer": "^0.11.3"
-  },
-  "build": {
-    "appId": "fr.kensa.minecraftLauncher",
-    "productName": "Kensa Minecraft Launcher",
-    "directories": {
-      "output": "release",
-      "buildResources": "buildAssets"
+    "name": "kensa-minecraft-launcher",
+    "description": "A Minecraft launcher which will be pretty cringe but hopefully usable",
+    "author": "Kensa",
+    "private": true,
+    "version": "0.0.4",
+    "main": "dist-electron/electron.js",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
+        "preview": "vite preview"
     },
-    "files": [
-      "dist-electron/**/*",
-      "dist/**/*"
-    ],
-    "mac": {
-      "target": "dmg"
+    "dependencies": {
+        "@kensaa/minecraft-launcher-core": "^3.16.20",
+        "bootstrap": "^5.2.2",
+        "lucide-react": "^0.104.1",
+        "msmc": "^3.1.3",
+        "react": "^18.2.0",
+        "react-bootstrap": "^2.6.0",
+        "react-dom": "^18.2.0",
+        "sass": "^1.56.1",
+        "zustand": "^4.1.4"
     },
-    "linux": {
-      "target": "zip",
-      "category": "Game"
+    "devDependencies": {
+        "@types/node": "^18.11.9",
+        "@types/react": "^18.0.24",
+        "@types/react-dom": "^18.0.8",
+        "@vitejs/plugin-react": "^2.2.0",
+        "electron": "^21.3.0",
+        "electron-builder": "^23.6.0",
+        "typescript": "^4.6.4",
+        "vite": "^3.2.3",
+        "vite-electron-plugin": "^0.5.2",
+        "vite-plugin-electron-renderer": "^0.11.3"
     },
-    "win": {
-      "target": "msi",
-      "publisherName": "Kensa"
+    "build": {
+        "appId": "fr.kensa.minecraftLauncher",
+        "productName": "Kensa Minecraft Launcher",
+        "directories": {
+            "output": "release",
+            "buildResources": "buildAssets"
+        },
+        "files": [
+            "dist-electron/**/*",
+            "dist/**/*"
+        ],
+        "mac": {
+            "target": "dmg"
+        },
+        "linux": {
+            "target": "zip",
+            "category": "Game"
+        },
+        "win": {
+            "target": "msi",
+            "publisherName": "Kensa"
+        }
     }
-  }
 }
