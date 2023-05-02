@@ -52,10 +52,7 @@
             "category": "Game"
         },
         "win": {
-            "target": [
-                "msi",
-                "portable"
-            ],
+            "target": "portable",
             "publisherName": "Kensa"
         }
     }
