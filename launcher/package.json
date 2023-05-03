@@ -48,11 +48,23 @@
             "target": "dmg"
         },
         "linux": {
-            "target": "zip",
+            "target": {
+                "target": "zip",
+                "arch": "x64"
+            },
             "category": "Game"
         },
         "win": {
-            "target": "portable",
+            "target": [
+                {
+                    "target": "msi",
+                    "arch": "x64"
+                },
+                {
+                    "target": "portable",
+                    "arch": "x64"
+                }
+            ],
             "publisherName": "Kensa"
         }
     }
