@@ -1,14 +1,13 @@
 {
     "name": "kensa-minecraft-launcher",
-    "description": "A Minecraft launcher which will be pretty cringe but hopefully usable",
+    "description": "A Minecraft launcher with auto-update feature to facilitate playing modded minecraft",
     "author": "Kensa",
     "private": true,
     "version": "0.0.4",
     "main": "dist-electron/electron.js",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
-        "preview": "vite preview"
+        "build": "tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist"
     },
     "dependencies": {
         "@kensaa/minecraft-launcher-core": "^3.16.20",
