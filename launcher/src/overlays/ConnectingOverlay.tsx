@@ -6,7 +6,6 @@ export default function ConnectingOverlay() {
     const [progress, setProgress] = useState(0)
     useEffect(() => {
         let interval = setInterval(() => {
-            console.log('fetch progress')
             setProgress(ipcRenderer.sendSync('get-login-progress'))
         }, 1000)
         return () => clearInterval(interval)

@@ -52,9 +52,18 @@ export default function Home({
     }, [profiles])
 
     useEffect(() => {
-        const javaIsInstalled = ipcRenderer.sendSync('check-java-installation')
-        if (!javaIsInstalled) {
-            setError('Java is not installed, please install it')
+        const javaVersion = ipcRenderer.sendSync('get-java-version')
+        if (!javaVersion) {
+            setError(
+                'Java is not installed, check the path to Java and try again'
+            )
+        } else {
+            const majorVersion = parseInt(javaVersion.split('.')[0])
+            if (majorVersion < 17) {
+                setError(
+                    "your Java version is too old, please update to Java 17 or newer you also can install Java from the launcher's settings"
+                )
+            }
         }
     }, [config.jrePath])
 
@@ -73,7 +82,7 @@ export default function Home({
             {error && (
                 <Alert
                     className='m-5 position-absolute'
-                    style={{ zIndex: 9000 }}
+                    style={{ zIndex: 9000, textAlign: 'center' }}
                     dismissible
                     variant='danger'
                     onClose={() => setError('')}

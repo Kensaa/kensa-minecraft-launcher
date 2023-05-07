@@ -7,7 +7,11 @@ import { Client } from '@kensaa/minecraft-launcher-core'
 import { Profile } from './src/types'
 import * as http from 'http'
 import * as crypto from 'crypto'
-import { spawn } from 'child_process'
+import { execSync, spawn } from 'child_process'
+import decompress from 'decompress'
+
+const javaBinariesLink =
+    'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
 
 const launcher = new Client()
 
@@ -17,6 +21,7 @@ let configFolder = ''
 let rootDir
 let startProgress = 0
 let loginProgress = 0
+let javaInstallationProgress = 0
 let gameStarting = false
 
 if (platorm === 'win32') {
@@ -446,7 +451,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             javaPath: config.jrePath !== '' ? config.jrePath : undefined,
             customArgs: ['-Djava.net.preferIPv6Stack=true'],
             overrides: {
-                detached: false,
+                detached: config.jrePath !== '',
                 gameDirectory: path.join(
                     config.rootDir,
                     'profiles',
@@ -457,11 +462,11 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
         //console.log(opts)
         launcher.launch(opts as any)
-        launcher.on('debug', e => console.log(e))
+        //launcher.on('debug', e => console.log(e))
         launcher.on('data', e => console.log(e))
         launcher.on('start', e => {
             if (!config) return
-            if (config.closeLauncher) setTimeout(app.quit, 2000)
+            if (config.closeLauncher) setTimeout(app.quit, 5000)
             gameStarting = false
             resolve()
         })
@@ -480,17 +485,51 @@ ipcMain.on('get-start-progress', (event, arg) => {
 ipcMain.on('get-login-progress', (event, arg) => {
     event.returnValue = loginProgress
 })
+ipcMain.on('get-java-installation-progress', (event, arg) => {
+    event.returnValue = javaInstallationProgress
+})
 
-ipcMain.on('check-java-installation', (event, arg) => {
-    //check if java is installed
+ipcMain.on('get-java-version', (event, arg) => {
     if (!config) return
     const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
     const java = spawn(javaPath, ['-version'])
-    java.on('error', e => {
-        event.returnValue = false
+    java.stderr.on('data', data => {
+        data = data.toString().split('\n')[0]
+        let javaVersion = new RegExp('java version').test(data)
+            ? data.split(' ')[2].replace(/"/g, '')
+            : false
+        if (javaVersion != false) {
+            event.returnValue = javaVersion
+        } else {
+            event.returnValue = null
+        }
     })
-    java.on('close', e => {
-        event.returnValue = true
+    java.on('error', e => {
+        event.returnValue = null
+    })
+})
+
+ipcMain.handle('install-java', async (event, arg) => {
+    return new Promise(async (resolve, reject) => {
+        if (!config) reject('no config')
+        const installDirectory = path.join(config.rootDir, 'java')
+        if (fs.existsSync(installDirectory)) {
+            fs.rmSync(installDirectory, { recursive: true, force: true })
+        }
+        fs.mkdirSync(installDirectory)
+        const zipPath = path.join(installDirectory, 'java.zip')
+        console.log('downloading binaries')
+        execSync(`curl -o ${zipPath} ${javaBinariesLink}`)
+        javaInstallationProgress = 50
+        console.log('binaries downloaded')
+
+        console.log('extracting archive')
+        await decompress(zipPath, installDirectory)
+        console.log('achive extracted')
+        fs.rmSync(zipPath)
+
+        javaInstallationProgress = 100
+        resolve(path.join(installDirectory, 'jdk-19.0.2', 'bin', 'java.exe'))
     })
 })
 
