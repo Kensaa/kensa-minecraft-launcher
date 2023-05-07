@@ -3,15 +3,17 @@ import { FileSearch, FolderSearch } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import configStore from '../stores/config'
+import JavaInstallationOverlay from '../overlays/JavaInstallationOverlay'
 
 interface SettingsProps {
     hide: () => void
+    setOverlay: (overlay: JSX.Element | undefined) => void
 }
 
 type SettingValue = string | number | boolean
 type Setter = (s: SettingValue) => void
 
-export default function Settings({ hide }: SettingsProps) {
+export default function Settings({ hide, setOverlay }: SettingsProps) {
     const config = configStore(store => ({ ...store }))
 
     const [rootDir, setRootDir] = useState(config.rootDir)
@@ -38,6 +40,18 @@ export default function Settings({ hide }: SettingsProps) {
 
         setValidated(true)
         hide()
+    }
+
+    const installJava = () => {
+        setOverlay(<JavaInstallationOverlay />)
+        hide()
+        ipcRenderer
+            .invoke('install-java')
+            .then(res => {
+                setOverlay(undefined)
+                config.setJrePath(res)
+            })
+            .catch(error => console.log(error))
     }
 
     return (
@@ -75,6 +89,7 @@ export default function Settings({ hide }: SettingsProps) {
                     value={jrePath}
                     setter={setJrePath as Setter}
                 />
+
                 <BooleanInput
                     label='Close launcher when the game launches'
                     value={closeLauncher}
@@ -85,8 +100,13 @@ export default function Settings({ hide }: SettingsProps) {
                     value={disableAutoUpdate}
                     setter={setDisableAutoUpdate as Setter}
                 />
+                <div className='d-flex justify-content-center'>
+                    <Button onClick={installJava}>Install Java</Button>
+                </div>
             </div>
-            <Button type='submit'>Save</Button>
+            <Button style={{ marginTop: '5px' }} type='submit'>
+                Save
+            </Button>
         </Form>
     )
 }
