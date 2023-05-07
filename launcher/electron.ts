@@ -77,8 +77,14 @@ async function createWindow() {
         if (!loginInfo) return
         if (!loginInfo.profile) return
         if (!msmc.validate(loginInfo.profile)) {
+            console.log('login info not valid')
             msmc.refresh(loginInfo.profile).then(res => {
+                console.log('refreshed login info')
                 loginInfo = res
+                fs.writeFileSync(
+                    path.join(configFolder, 'loginInfo.json'),
+                    JSON.stringify(loginInfo, null, 4)
+                )
             })
         }
     }
