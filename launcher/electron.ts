@@ -69,6 +69,7 @@ async function createWindow() {
         width: 700,
         height: 700,
         autoHideMenuBar: true,
+        resizable:false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -517,6 +518,7 @@ ipcMain.handle('install-java', async (event, arg) => {
             fs.rmSync(installDirectory, { recursive: true, force: true })
         }
         fs.mkdirSync(installDirectory)
+        javaInstallationProgress = 1
         const zipPath = path.join(installDirectory, 'java.zip')
         console.log('downloading binaries')
         execSync(`curl -o ${zipPath} ${javaBinariesLink} --ssl-no-revoke`)
