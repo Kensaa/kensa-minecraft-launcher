@@ -120,6 +120,7 @@ async function createWindow() {
         console.log('parsed existing config:')
         console.log(config)
     }
+    checkExist(config.rootDir)
 
     if (app.isPackaged) {
         await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
@@ -243,7 +244,6 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         console.log(config)
         if (!config) return
         if (!loginInfo) return
-        checkExist(config.rootDir)
         checkExist(path.join(config.rootDir, 'forgeInstallers'))
         checkExist(path.join(config.rootDir, 'profiles'))
 
