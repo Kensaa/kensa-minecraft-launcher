@@ -519,7 +519,7 @@ ipcMain.handle('install-java', async (event, arg) => {
         fs.mkdirSync(installDirectory)
         const zipPath = path.join(installDirectory, 'java.zip')
         console.log('downloading binaries')
-        execSync(`curl -o ${zipPath} ${javaBinariesLink}`)
+        execSync(`curl -o ${zipPath} ${javaBinariesLink} --ssl-no-revoke`)
         javaInstallationProgress = 50
         console.log('binaries downloaded')
 
