@@ -10,61 +10,65 @@ const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 const CDNS = process.env.CDNS || ''
 
-
-if(!ADDRESS){
-    console.log('ADDRESS environement variables is not defined, it must be defined to your external ip address');
+if (!ADDRESS) {
+    console.log(
+        'ADDRESS environement variables is not defined, it must be defined to your external ip address'
+    )
 }
 
-if(!staticFolder){
+if (!staticFolder) {
     console.log(`static folder not defined in environment variables`)
     process.exit(1)
 }
-if(!profilesFile){
+if (!profilesFile) {
     console.log(`profiles file not defined in environment variables`)
     process.exit(1)
 }
 
-if(!fs.existsSync(staticFolder)){
+if (!fs.existsSync(staticFolder)) {
     console.log(`static folder ${staticFolder} does not exist`)
     process.exit(1)
-}else {
+} else {
     const files = fs.readdirSync(staticFolder)
-    if(files.length === 0){
+    if (files.length === 0) {
         fs.mkdirSync(path.join(staticFolder, 'forges'))
         fs.mkdirSync(path.join(staticFolder, 'gameFolders'))
     }
 }
-if(!fs.existsSync(profilesFile)){
+if (!fs.existsSync(profilesFile)) {
     console.log(`profiles file ${profilesFile} does not exist`)
     process.exit(1)
 }
 
+let profiles = JSON.parse(fs.readFileSync(profilesFile, 'utf-8'))
 
-let profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
-
-function syncCDNS(){
+function syncCDNS() {
     CDNS.split('|').forEach(address => {
         fetch(urlJoin(address, '/sync'), {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                server:`http://${ADDRESS}:${PORT}`,
-            })        
-        }).then(res => {
-            if(res.ok){
-                console.log(`cdn "${address}" is now synchronized`);
-            }else {
-                console.log(`cdn "${address}" sent an error while synchronizing`);
-            }
-        }).catch(err => {
-            console.log(`cdn "${address}" can't be accessed : ${err}`);
+                server: `http://${ADDRESS}:${PORT}`
+            })
         })
+            .then(res => {
+                if (res.ok) {
+                    console.log(`cdn "${address}" is now synchronized`)
+                } else {
+                    console.log(
+                        `cdn "${address}" sent an error while synchronizing`
+                    )
+                }
+            })
+            .catch(err => {
+                console.log(`cdn "${address}" can't be accessed : ${err}`)
+            })
     })
 }
 
 ;(async () => {
     const app = express()
-    let hashTree = await hashFolder(staticFolder) as Record<string, any>
+    let hashTree = (await hashFolder(staticFolder)) as Record<string, any>
 
     app.use(cors())
     app.use(express.json())
@@ -78,39 +82,43 @@ function syncCDNS(){
         res.status(200).json(hashTree)
     })
 
-    app.get('/profiles',(req, res) => {
+    app.get('/profiles', (req, res) => {
         res.status(200).json(profiles)
     })
 
     app.post('/reload', async (req, res) => {
-        hashTree = await hashFolder(staticFolder) as Record<string, any>
-        profiles = JSON.parse(fs.readFileSync(profilesFile,'utf-8'))
+        hashTree = (await hashFolder(staticFolder)) as Record<string, any>
+        profiles = JSON.parse(fs.readFileSync(profilesFile, 'utf-8'))
         syncCDNS()
+        res.status(200).send('reloaded')
     })
 
     app.get('/fileCount/:gameFolder', (req, res) => {
         const gameFolder = req.params.gameFolder
-        const gameFolderPath = path.join(staticFolder, 'gameFolders', gameFolder)
-        if(!fs.existsSync(gameFolderPath)){
-            res.status(404).json({count:0})
+        const gameFolderPath = path.join(
+            staticFolder,
+            'gameFolders',
+            gameFolder
+        )
+        if (!fs.existsSync(gameFolderPath)) {
+            res.status(404).json({ count: 0 })
             return
         }
-        if(!hashTree['gameFolders']) return res.sendStatus(500)
+        if (!hashTree['gameFolders']) return res.sendStatus(500)
         const tree = hashTree['gameFolders'][gameFolder]
         const count = countFile(tree)
-        res.status(200).json({count})
+        res.status(200).json({ count })
 
-        function countFile(tree: Record<string, any> | string){
-            if(typeof tree === 'string'){
+        function countFile(tree: Record<string, any> | string) {
+            if (typeof tree === 'string') {
                 return 1
             }
             let count = 0
-            for(const key in tree){
+            for (const key in tree) {
                 count += countFile(tree[key])
             }
             return count
         }
-
     })
 
     app.listen(PORT, () => {
@@ -120,12 +128,12 @@ function syncCDNS(){
 })()
 
 async function hashFolder(src: string): Promise<Record<string, any> | string> {
-    if(fs.statSync(src).isFile()){
+    if (fs.statSync(src).isFile()) {
         return await getHash(src)
     }
-    const res: Record<string, any> = {} 
+    const res: Record<string, any> = {}
     const files = fs.readdirSync(src)
-    for(const filename of files){
+    for (const filename of files) {
         const filePath = path.join(src, filename)
         const hash = await hashFolder(filePath)
         res[filename] = hash
@@ -133,8 +141,8 @@ async function hashFolder(src: string): Promise<Record<string, any> | string> {
     return res
 }
 
-function getHash(src: string):Promise<string> {
-    return new Promise<string>((resolve,reject) => {
+function getHash(src: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         const stream = fs.createReadStream(src)
         const hash = crypto.createHash('md5')
         stream.on('end', () => resolve(hash.digest('hex')))
@@ -144,5 +152,10 @@ function getHash(src: string):Promise<string> {
 }
 
 function urlJoin(...args: string[]) {
-    return encodeURI(args.map(e=>e.replace(/\\/g,'/')).join('/').replace(/\/+/g,'/'))
+    return encodeURI(
+        args
+            .map(e => e.replace(/\\/g, '/'))
+            .join('/')
+            .replace(/\/+/g, '/')
+    )
 }
