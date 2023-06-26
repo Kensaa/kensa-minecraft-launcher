@@ -63,35 +63,39 @@ let loginInfo: msmc.result | null
 let config: Record<string, any>
 
 async function createWindow() {
-    console.log('createWindow')
+    console.log('creating window')
     win = new BrowserWindow({
         title: 'Kensa Minecraft Launcher',
         width: 700,
         height: 700,
         autoHideMenuBar: true,
-        resizable:false,
+        resizable: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
         }
     })
+    console.log('window created')
 
-    if (fs.existsSync(path.join(configFolder, 'loginInfo.json'))) {
-        loginInfo = JSON.parse(
-            fs.readFileSync(path.join(configFolder, 'loginInfo.json'), 'utf-8')
-        )
-        if (!loginInfo) return
-        if (!loginInfo.profile) return
-        if (!msmc.validate(loginInfo.profile)) {
-            console.log('login info not valid')
-            msmc.refresh(loginInfo.profile).then(res => {
-                console.log('refreshed login info')
-                loginInfo = res
-                fs.writeFileSync(
-                    path.join(configFolder, 'loginInfo.json'),
-                    JSON.stringify(loginInfo, null, 4)
-                )
-            })
+    const loginInfoPath = path.join(configFolder, 'loginInfo.json')
+    if (fs.existsSync(loginInfoPath)) {
+        loginInfo = JSON.parse(fs.readFileSync(loginInfoPath, 'utf-8'))
+        console.log('1')
+        if (loginInfo && loginInfo.profile) {
+            if (!msmc.validate(loginInfo.profile)) {
+                console.log('login info expired, refreshing')
+                msmc.refresh(loginInfo.profile).then(res => {
+                    console.log('refreshed login info')
+                    loginInfo = res
+                    fs.writeFileSync(
+                        loginInfoPath,
+                        JSON.stringify(loginInfo, null, 4)
+                    )
+                })
+            }
+        } else {
+            console.log('login info file is corrupted, deleting')
+            fs.rmSync(loginInfoPath)
         }
     }
 
