@@ -23,6 +23,7 @@ export default function Home({
     const [selectedProfile, setSelectedProfile] = useState<number>(0)
     const [loading, setLoading] = useState<boolean>(false)
     const [error, setError] = useState('')
+    const [info, setInfo] = useState('')
 
     useEffect(() => {
         setLoading(true)
@@ -67,6 +68,14 @@ export default function Home({
         }
     }, [config.jrePath])
 
+    useEffect(() => {
+        if (!ipcRenderer.sendSync('is-up-to-date')) {
+            setInfo(
+                'A new update is available, please redownload the launcher at https://github.com/Kensaa/kensa-minecraft-launcher'
+            )
+        }
+    }, [])
+
     const startGame = () => {
         setOverlay(<GameStartingOverlay />)
         ipcRenderer
@@ -81,8 +90,12 @@ export default function Home({
         >
             {error && (
                 <Alert
-                    className='m-5 position-absolute'
-                    style={{ zIndex: 9000, textAlign: 'center' }}
+                    className='position-absolute'
+                    style={{
+                        zIndex: 9000,
+                        textAlign: 'center',
+                        marginTop: '5rem'
+                    }}
                     dismissible
                     variant='danger'
                     onClose={() => setError('')}
@@ -90,12 +103,28 @@ export default function Home({
                     {error}
                 </Alert>
             )}
+            {info && (
+                <Alert
+                    className='position-absolute'
+                    style={{
+                        zIndex: 9000,
+                        textAlign: 'center',
+                        marginTop: '9rem'
+                    }}
+                    dismissible
+                    variant='warning'
+                    onClose={() => setInfo('')}
+                >
+                    {info}
+                </Alert>
+            )}
             {config.disableAutoUpdate && (
                 <Alert
-                    className=' position-absolute'
+                    className='position-absolute'
                     style={{
                         zIndex: 1,
-                        margin: '100px',
+                        marginTop: '5rem',
+
                         textAlign: 'center'
                     }}
                     variant='info'

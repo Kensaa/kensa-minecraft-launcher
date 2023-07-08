@@ -9,6 +9,7 @@ import * as http from 'http'
 import * as crypto from 'crypto'
 import { execSync, spawn } from 'child_process'
 import decompress from 'decompress'
+import fetch from 'electron-fetch'
 
 const javaBinariesLink =
     'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
@@ -177,6 +178,20 @@ ipcMain.on('msmc-logout', (event, arg) => {
     console.log('msmc-logout')
     loginInfo = null
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
+})
+
+ipcMain.on('is-up-to-date', async (event, arg) => {
+    const currentVersion = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
+    ).version.trim()
+
+    const latestVersion = (
+        await JSONFetch(
+            'https://raw.githubusercontent.com/Kensaa/kensa-minecraft-launcher/master/launcher/package.json'
+        )
+    ).version.trim()
+
+    event.returnValue = currentVersion == latestVersion
 })
 
 ipcMain.on('get-config', (event, arg) => {
@@ -613,18 +628,22 @@ async function folderTree(
 
 function checkServer(address: string) {
     return new Promise<boolean>((resolve, reject) => {
-        http.get(address, res => {
+        fetch(address)
+            .then(res => resolve(true))
+            .catch(err => resolve(false))
+        /*http.get(address, res => {
             res.on('end', () => resolve(true))
             res.on('data', chunk => {})
-        }).on('error', err => resolve(false))
+        }).on('error', err => resolve(false))*/
     })
 }
 function JSONFetch(address: string) {
-    return new Promise((resolve, reject) => {
+    return fetch(address).then(res => res.json())
+    /*return new Promise((resolve, reject) => {
         http.get(address, res => {
             let data = ''
             res.on('data', chunk => (data += chunk))
             res.on('end', () => resolve(JSON.parse(data)))
         }).on('error', err => reject(err))
-    })
+    })*/
 }
