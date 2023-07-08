@@ -4,12 +4,13 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client } from '@kensaa/minecraft-launcher-core'
-import { Profile } from './src/types'
+import { Profile } from '../src/types'
 import * as http from 'http'
 import * as crypto from 'crypto'
 import { execSync, spawn } from 'child_process'
 import decompress from 'decompress'
 import fetch from 'electron-fetch'
+import { urlJoin } from './url-join'
 
 const javaBinariesLink =
     'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
@@ -589,7 +590,7 @@ function download(address: string, filepath: string) {
         }).on('error', err => reject(err))
     })
 }
-
+/*
 function urlJoin(...args: string[]) {
     return encodeURI(
         args
@@ -597,7 +598,7 @@ function urlJoin(...args: string[]) {
             .join('/')
             .replace(/\/+/g, '/')
     )
-}
+}*/
 
 function getHash(src: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
