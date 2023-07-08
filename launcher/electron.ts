@@ -100,7 +100,7 @@ async function createWindow() {
     }
 
     if (!fs.existsSync(path.join(configFolder, 'config.json'))) {
-        config = defaultConfig
+        config = { ...defaultConfig }
         fs.writeFileSync(
             path.join(configFolder, 'config.json'),
             JSON.stringify(config, null, 4)
@@ -193,6 +193,16 @@ ipcMain.on('set-config', (event, arg) => {
         path.join(configFolder, 'config.json'),
         JSON.stringify(config, null, 4)
     )
+})
+
+ipcMain.on('reset-config', (event, arg) => {
+    console.log('reset-config')
+    config = { ...defaultConfig }
+    fs.writeFileSync(
+        path.join(configFolder, 'config.json'),
+        JSON.stringify(config, null, 4)
+    )
+    event.returnValue = undefined
 })
 
 ipcMain.on('prompt-folder', (event, args) => {

@@ -16,6 +16,7 @@ interface configStore {
     setJrePath: (jrePath: string) => void
     setCloseLauncher: (closeLauncher: boolean) => void
     setDisableAutoUpdate: (disableAutoUpdate: boolean) => void
+    resetConfig: () => void
 }
 
 export default create<configStore>(set => {
@@ -62,6 +63,11 @@ export default create<configStore>(set => {
                 'set-config',
                 JSON.stringify({ disableAutoUpdate })
             )
+        },
+        resetConfig: () => {
+            ipcRenderer.sendSync('reset-config')
+            const newConfig = JSON.parse(ipcRenderer.sendSync('get-config'))
+            set({ ...newConfig })
         }
     }
 })

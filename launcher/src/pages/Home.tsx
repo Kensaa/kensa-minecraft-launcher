@@ -59,7 +59,7 @@ export default function Home({
             )
         } else {
             const majorVersion = parseInt(javaVersion.split('.')[0])
-            if (majorVersion < 17) {
+            if (majorVersion < 17 && majorVersion > 19) {
                 setError(
                     "your Java version is too old, please update to Java 17 or newer you also can install Java from the launcher's settings"
                 )

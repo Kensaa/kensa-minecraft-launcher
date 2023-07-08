@@ -54,6 +54,11 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
             .catch(error => console.log(error))
     }
 
+    const resetConfig = () => {
+        hide()
+        config.resetConfig()
+    }
+
     return (
         <Form
             onSubmit={handleSubmit}
@@ -103,8 +108,11 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                 <div className='d-flex justify-content-center'>
                     <Button onClick={installJava}>Install Java</Button>
                 </div>
+                <div className='d-flex justify-content-center mt-1'>
+                    <Button onClick={resetConfig}>Reset Config</Button>
+                </div>
             </div>
-            <Button style={{ marginTop: '5px' }} type='submit'>
+            <Button className='mt-1' type='submit'>
                 Save
             </Button>
         </Form>
