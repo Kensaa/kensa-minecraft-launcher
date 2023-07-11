@@ -11,7 +11,8 @@ import { execSync, spawn } from 'child_process'
 import decompress from 'decompress'
 import fetch from 'electron-fetch'
 import { urlJoin } from './url-join'
-import { pino, transport } from 'pino'
+import { pino, multistream } from 'pino'
+import pretty from 'pino-pretty'
 import 'source-map-support/register'
 
 const javaBinariesLink =
@@ -48,22 +49,20 @@ if (platorm === 'win32') {
     process.exit(1)
 }
 const LOG_FILE = path.join(configFolder, 'launcher.log')
+const customLevels = { trace: 10, debug: 20, info: 30, game: 31 }
 const logger = pino(
-    { level: 'trace' },
-    transport({
-        targets: [
-            {
-                level: 'trace',
-                target: 'pino-pretty',
-                options: {}
-            },
-            {
-                level: 'info',
-                target: 'pino/file',
-                options: { destination: LOG_FILE }
-            }
-        ]
-    })
+    { level: 'trace', customLevels },
+    multistream([
+        { level: 'trace', stream: fs.createWriteStream(LOG_FILE) },
+        {
+            level: 'trace',
+            stream: pretty({
+                customLevels,
+                //@ts-ignore
+                customColors: 'trace:gray,debug:blue,info:green,game:yellow'
+            })
+        }
+    ])
 )
 
 let primaryServer = 'http://redover.fr:40069'
@@ -392,12 +391,6 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 let count = 0
                 for (const folder of remoteFolders) {
                     //start recursive function which will download all files for all the folders
-                    /*await downloadFolder(
-                        remoteTree[folder],
-                        localTree[folder],
-                        path.join(args.gameFolder, folder),
-                        path.join(localPath, folder)
-                    )*/
                     await downloadFolder(
                         remoteTree[folder],
                         localTree[folder],
@@ -438,7 +431,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                                     (await getHash(filepath)) !==
                                     remoteFolder[element]
                                 ) {
-                                    logger.info('Updating file "%s"', filepath)
+                                    logger.info('Updating file "%s"', localPath)
                                     await download(fileUrl, filepath)
                                     count++
                                     startProgress = Math.round(
@@ -446,7 +439,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                                     )
                                 }
                             } else {
-                                logger.info('Downloading file "%s"', filepath)
+                                logger.info('Downloading file "%s"', localPath)
                                 await download(fileUrl, filepath)
                                 count++
                                 startProgress = Math.round(
@@ -518,7 +511,10 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
         launcher.launch(opts as any)
 
-        launcher.on('data', e => logger.info(e))
+        launcher.on('data', e => {
+            // sometimes multiple lines arrive at once
+            for (let s of e.trim().split('\n')) logger.game(s.trim())
+        })
         launcher.on('start', e => {
             if (!config) return
             if (config.closeLauncher) setTimeout(app.quit, 5000)
@@ -619,15 +615,6 @@ function download(address: string, filepath: string) {
         }).on('error', err => reject(err))
     })
 }
-/*
-function urlJoin(...args: string[]) {
-    return encodeURI(
-        args
-            .map(e => e.replace(/\\/g, '/'))
-            .join('/')
-            .replace(/\/+/g, '/')
-    )
-}*/
 
 function getHash(src: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
