@@ -516,7 +516,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
 
-        //launcher.launch(opts as any)
+        launcher.launch(opts as any)
 
         launcher.on('data', e => logger.info(e))
         launcher.on('start', e => {
