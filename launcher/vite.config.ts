@@ -9,7 +9,10 @@ export default defineConfig({
     plugins: [
         react(),
         electron({
-            include: ['electron']
+            include: ['electron'],
+            transformOptions: {
+                sourcemap: true
+            }
         }),
         renderer({
             nodeIntegration: true

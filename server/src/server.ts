@@ -3,6 +3,7 @@ import * as cors from 'cors'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
+import 'source-map-support/register'
 
 const PORT = process.env.PORT || 40069
 const ADDRESS = process.env.ADDRESS
@@ -43,6 +44,7 @@ if (!fs.existsSync(profilesFile)) {
 let profiles = JSON.parse(fs.readFileSync(profilesFile, 'utf-8'))
 
 function syncCDNS() {
+    if (CDNS === '') return
     CDNS.split('|').forEach(address => {
         fetch(urlJoin(address, '/sync'), {
             method: 'POST',

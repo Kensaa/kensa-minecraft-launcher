@@ -12,6 +12,7 @@ import decompress from 'decompress'
 import fetch from 'electron-fetch'
 import { urlJoin } from './url-join'
 import { pino, transport } from 'pino'
+import 'source-map-support/register'
 
 const javaBinariesLink =
     'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
@@ -48,24 +49,22 @@ if (platorm === 'win32') {
 }
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 const logger = pino(
+    { level: 'trace' },
     transport({
         targets: [
             {
                 level: 'trace',
                 target: 'pino-pretty',
-                options: {
-                    minimumLevel: 'trace'
-                }
+                options: {}
             },
             {
-                level: 'trace',
+                level: 'info',
                 target: 'pino/file',
                 options: { destination: LOG_FILE }
             }
         ]
     })
 )
-logger.info('test')
 
 let primaryServer = 'http://redover.fr:40069'
 if (!app.isPackaged) {
@@ -127,7 +126,7 @@ async function createWindow() {
             path.join(configFolder, 'config.json'),
             JSON.stringify(config, null, 4)
         )
-        logger.info('created config file using default config: %o', config)
+        logger.child(config).info('created config file using default config:')
     } else {
         config = JSON.parse(
             fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8')
@@ -143,7 +142,7 @@ async function createWindow() {
                 JSON.stringify(config, null, 4)
             )
         }
-        logger.info('Existing config as been loaded: %o', config)
+        logger.child(config).info('Existing config as been loaded: ')
     }
     checkExist(config.rootDir)
 
@@ -162,13 +161,13 @@ if (app.isPackaged) {
 }
 
 ipcMain.on('msmc-result', async (event, arg) => {
-    logger.info('msmc-result')
+    logger.debug('msmc-result')
     const res = loginInfo ? loginInfo : {}
     event.returnValue = JSON.stringify(res)
 })
 
 ipcMain.handle('msmc-connect', (event, arg) => {
-    logger.info('msmc-connect (async)')
+    logger.debug('msmc-connect (async)')
     return new Promise<boolean>(resolve => {
         logger.info('Connecting to Microsoft sevices...')
         msmc.fastLaunch('electron', info => {
@@ -196,13 +195,13 @@ ipcMain.handle('msmc-connect', (event, arg) => {
 })
 
 ipcMain.on('msmc-logout', (event, arg) => {
-    logger.info('msmc-logout')
+    logger.debug('msmc-logout')
     loginInfo = null
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
 })
 
 ipcMain.on('is-up-to-date', async (event, arg) => {
-    logger.info('is-up-to-date')
+    logger.debug('is-up-to-date')
     const currentVersion = JSON.parse(
         fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
     ).version.trim()
@@ -218,12 +217,12 @@ ipcMain.on('is-up-to-date', async (event, arg) => {
 })
 
 ipcMain.on('get-config', (event, arg) => {
-    logger.info('get-config')
+    logger.debug('get-config')
     event.returnValue = JSON.stringify(config)
 })
 
 ipcMain.on('set-config', (event, arg) => {
-    logger.info('set-config')
+    logger.debug('set-config')
     const newConfig = JSON.parse(arg)
     config = { ...config, ...newConfig }
     fs.writeFileSync(
@@ -233,7 +232,7 @@ ipcMain.on('set-config', (event, arg) => {
 })
 
 ipcMain.on('reset-config', (event, arg) => {
-    logger.info('reset-config')
+    logger.debug('reset-config')
     config = { ...defaultConfig }
     fs.writeFileSync(
         path.join(configFolder, 'config.json'),
@@ -243,7 +242,7 @@ ipcMain.on('reset-config', (event, arg) => {
 })
 
 ipcMain.on('prompt-folder', (event, args) => {
-    logger.info('prompt-folder')
+    logger.debug('prompt-folder')
     if (!win) return (event.returnValue = 'error')
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openDirectory']
@@ -256,7 +255,7 @@ ipcMain.on('prompt-folder', (event, args) => {
 })
 
 ipcMain.on('prompt-file', (event, args) => {
-    logger.info('prompt-file')
+    logger.debug('prompt-file')
     if (!win) return (event.returnValue = 'error')
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openFile']
@@ -269,7 +268,7 @@ ipcMain.on('prompt-file', (event, args) => {
 })
 
 ipcMain.on('get-selected-profile', (event, args) => {
-    logger.info('get-selected-profile')
+    logger.debug('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
         event.returnValue = JSON.stringify(0)
     } else {
@@ -283,7 +282,7 @@ ipcMain.on('get-selected-profile', (event, args) => {
 })
 
 ipcMain.on('set-selected-profile', (event, args) => {
-    logger.info('set-selected-profile')
+    logger.debug('set-selected-profile')
     fs.writeFileSync(
         path.join(configFolder, 'selectedProfile.json'),
         JSON.stringify({ profile: args }, null, 4)
@@ -291,7 +290,7 @@ ipcMain.on('set-selected-profile', (event, args) => {
 })
 
 ipcMain.handle('start-game', async (event, args: Profile) => {
-    logger.info('start-game (async)')
+    logger.debug('start-game (async)')
     logger.info('Starting Game ...')
     return new Promise<void>(async (resolve, reject) => {
         if (gameStarting) {
@@ -382,12 +381,13 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 const localFolders = getFolders(localTree)
 
                 logger.info('Starting update procedure')
+                // creates all the folder at the root that does not exists
                 for (const folder of remoteFolders) {
                     if (!localFolders.includes(folder)) {
                         fs.mkdirSync(path.join(localPath, folder))
+                        localTree[folder] = {}
                     }
                 }
-                localTree = await folderTree(localPath)
 
                 let count = 0
                 for (const folder of remoteFolders) {
@@ -516,7 +516,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
 
-        launcher.launch(opts as any)
+        //launcher.launch(opts as any)
 
         launcher.on('data', e => logger.info(e))
         launcher.on('start', e => {
@@ -533,21 +533,21 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 })
 
 ipcMain.on('get-start-progress', (event, arg) => {
-    logger.info('get-start-progress')
+    logger.debug('get-start-progress')
     event.returnValue = startProgress
 })
 
 ipcMain.on('get-login-progress', (event, arg) => {
-    logger.info('get-login-progress')
+    logger.debug('get-login-progress')
     event.returnValue = loginProgress
 })
 ipcMain.on('get-java-installation-progress', (event, arg) => {
-    logger.info('get-java-installation-progress')
+    logger.debug('get-java-installation-progress')
     event.returnValue = javaInstallationProgress
 })
 
 ipcMain.on('get-java-version', (event, arg) => {
-    logger.info('get-java-version')
+    logger.debug('get-java-version')
     if (!config) return
     const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
     const java = spawn(javaPath, ['-version'])
@@ -568,7 +568,7 @@ ipcMain.on('get-java-version', (event, arg) => {
 })
 
 ipcMain.handle('install-java', async (event, arg) => {
-    logger.info('install-java (async)')
+    logger.debug('install-java (async)')
     logger.info('Installing Java ...')
     return new Promise(async (resolve, reject) => {
         if (!config) reject('no config')
@@ -596,7 +596,7 @@ ipcMain.handle('install-java', async (event, arg) => {
 
 function checkExist(path: string) {
     if (!fs.existsSync(path)) {
-        logger.info("%s don't exist, creating")
+        logger.info("%s don't exist, creating", path)
         fs.mkdirSync(path)
     }
 }
