@@ -392,13 +392,28 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 let count = 0
                 for (const folder of remoteFolders) {
                     //start recursive function which will download all files for all the folders
-                    await downloadFolder(
+                    /*await downloadFolder(
                         remoteTree[folder],
                         localTree[folder],
                         path.join(args.gameFolder, folder),
                         path.join(localPath, folder)
+                    )*/
+                    await downloadFolder(
+                        remoteTree[folder],
+                        localTree[folder],
+                        args.gameFolder,
+                        localPath,
+                        [folder]
                     )
                 }
+                /**
+                 *
+                 * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
+                 * @param localFolder object representing the same folder but locally (I.E current state of the folder)
+                 * @param gameFolder name of the remote folder on the server
+                 * @param folderPath path to the local folder
+                 * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
+                 */
                 async function downloadFolder(
                     remoteFolder,
                     localFolder,
@@ -407,65 +422,50 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     pathA: string[] = []
                 ) {
                     for (const element of Object.keys(remoteFolder)) {
+                        const localPath = path.join(...pathA, element)
+                        const filepath = path.join(folderPath, localPath) // = absolute path to file
+                        const fileUrl = urlJoin(
+                            downloadServer,
+                            '/static/gameFolders',
+                            gameFolder,
+                            ...pathA,
+                            element
+                        )
                         if (typeof remoteFolder[element] === 'string') {
+                            // Element is a file
                             if (localFolder[element] !== undefined) {
                                 if (
-                                    (await getHash(
-                                        path.join(folderPath, ...pathA, element)
-                                    )) !== remoteFolder[element]
+                                    (await getHash(filepath)) !==
+                                    remoteFolder[element]
                                 ) {
-                                    await download(
-                                        urlJoin(
-                                            downloadServer,
-                                            '/static/gameFolders',
-                                            gameFolder,
-                                            ...pathA,
-                                            element
-                                        ),
-                                        path.join(folderPath, ...pathA, element)
-                                    )
+                                    logger.info('Updating file "%s"', filepath)
+                                    await download(fileUrl, filepath)
                                     count++
                                     startProgress = Math.round(
                                         (count / fileCount) * 100
                                     )
                                 }
                             } else {
-                                await download(
-                                    urlJoin(
-                                        downloadServer,
-                                        '/static/gameFolders',
-                                        gameFolder,
-                                        ...pathA,
-                                        element
-                                    ),
-                                    path.join(folderPath, ...pathA, element)
-                                )
+                                logger.info('Downloading file "%s"', filepath)
+                                await download(fileUrl, filepath)
                                 count++
                                 startProgress = Math.round(
                                     (count / fileCount) * 100
                                 )
                             }
                         } else {
-                            if (localFolder[element]) {
-                                await downloadFolder(
-                                    remoteFolder[element],
-                                    localFolder[element],
-                                    gameFolder,
-                                    folderPath,
-                                    pathA.concat(element)
-                                )
-                            } else {
-                                fs.mkdirSync(
-                                    path.join(folderPath, ...pathA, element)
-                                )
-                                await downloadFolder(
-                                    remoteFolder[element],
-                                    {},
-                                    gameFolder,
-                                    folderPath,
-                                    pathA.concat(element)
-                                )
+                            // Element is a folder
+                            if (!localFolder[element]) {
+                                fs.mkdirSync(filepath)
+                                localFolder[element] = {}
                             }
+                            await downloadFolder(
+                                remoteFolder[element],
+                                localFolder[element],
+                                gameFolder,
+                                folderPath,
+                                pathA.concat(element)
+                            )
                         }
                     }
                     const onlyLocalFile = Object.keys(localFolder)
