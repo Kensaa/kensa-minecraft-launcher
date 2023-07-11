@@ -11,6 +11,7 @@ import { execSync, spawn } from 'child_process'
 import decompress from 'decompress'
 import fetch from 'electron-fetch'
 import { urlJoin } from './url-join'
+import { pino, transport } from 'pino'
 
 const javaBinariesLink =
     'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
@@ -45,6 +46,26 @@ if (platorm === 'win32') {
     console.error('Unsupported platform')
     process.exit(1)
 }
+const LOG_FILE = path.join(configFolder, 'launcher.log')
+const logger = pino(
+    transport({
+        targets: [
+            {
+                level: 'trace',
+                target: 'pino-pretty',
+                options: {
+                    minimumLevel: 'trace'
+                }
+            },
+            {
+                level: 'trace',
+                target: 'pino/file',
+                options: { destination: LOG_FILE }
+            }
+        ]
+    })
+)
+logger.info('test')
 
 let primaryServer = 'http://redover.fr:40069'
 if (!app.isPackaged) {
@@ -65,7 +86,7 @@ let loginInfo: msmc.result | null
 let config: Record<string, any>
 
 async function createWindow() {
-    console.log('creating window')
+    logger.info('Creating Launcher Window')
     win = new BrowserWindow({
         title: 'Kensa Minecraft Launcher',
         width: 700,
@@ -77,17 +98,16 @@ async function createWindow() {
             contextIsolation: false
         }
     })
-    console.log('window created')
+    logger.info('Window Created')
 
     const loginInfoPath = path.join(configFolder, 'loginInfo.json')
     if (fs.existsSync(loginInfoPath)) {
         loginInfo = JSON.parse(fs.readFileSync(loginInfoPath, 'utf-8'))
-        console.log('1')
         if (loginInfo && loginInfo.profile) {
             if (!msmc.validate(loginInfo.profile)) {
-                console.log('login info expired, refreshing')
+                logger.info('login info expired, refreshing...')
                 msmc.refresh(loginInfo.profile).then(res => {
-                    console.log('refreshed login info')
+                    logger.info('refreshed login info')
                     loginInfo = res
                     fs.writeFileSync(
                         loginInfoPath,
@@ -96,7 +116,7 @@ async function createWindow() {
                 })
             }
         } else {
-            console.log('login info file is corrupted, deleting')
+            logger.warn('login info file is corrupted, deleting')
             fs.rmSync(loginInfoPath)
         }
     }
@@ -107,16 +127,15 @@ async function createWindow() {
             path.join(configFolder, 'config.json'),
             JSON.stringify(config, null, 4)
         )
-        console.log('created config file using default config : ')
-        console.log(config)
+        logger.info('created config file using default config: %o', config)
     } else {
         config = JSON.parse(
             fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8')
         )
         // checking if config is missing field
         if (Object.keys(config).length !== Object.keys(defaultConfig).length) {
-            console.log(
-                'config seems to be missing some fields, using default config'
+            logger.warn(
+                'config seems to be missing some fields, resetting to default config'
             )
             config = defaultConfig
             fs.writeFileSync(
@@ -124,8 +143,7 @@ async function createWindow() {
                 JSON.stringify(config, null, 4)
             )
         }
-        console.log('parsed existing config:')
-        console.log(config)
+        logger.info('Existing config as been loaded: %o', config)
     }
     checkExist(config.rootDir)
 
@@ -144,19 +162,21 @@ if (app.isPackaged) {
 }
 
 ipcMain.on('msmc-result', async (event, arg) => {
+    logger.info('msmc-result')
     const res = loginInfo ? loginInfo : {}
     event.returnValue = JSON.stringify(res)
 })
 
 ipcMain.handle('msmc-connect', (event, arg) => {
+    logger.info('msmc-connect (async)')
     return new Promise<boolean>(resolve => {
+        logger.info('Connecting to Microsoft sevices...')
         msmc.fastLaunch('electron', info => {
-            console.log(info)
             if (!info.percent) return
             loginProgress = info.percent
         })
             .then(res => {
-                console.log('connected')
+                logger.info('Connected')
                 if (msmc.errorCheck(res)) {
                     resolve(false)
                 } else {
@@ -168,20 +188,21 @@ ipcMain.handle('msmc-connect', (event, arg) => {
                     resolve(true)
                 }
             })
-            .catch(res => {
-                console.log('connection failed')
+            .catch(err => {
+                logger.error('Connection failed: %o', err)
                 resolve(false)
             })
     })
 })
 
 ipcMain.on('msmc-logout', (event, arg) => {
-    console.log('msmc-logout')
+    logger.info('msmc-logout')
     loginInfo = null
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
 })
 
 ipcMain.on('is-up-to-date', async (event, arg) => {
+    logger.info('is-up-to-date')
     const currentVersion = JSON.parse(
         fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
     ).version.trim()
@@ -191,19 +212,19 @@ ipcMain.on('is-up-to-date', async (event, arg) => {
             'https://raw.githubusercontent.com/Kensaa/kensa-minecraft-launcher/master/launcher/package.json'
         )
     ).version.trim()
-
+    logger.info('Current version of Launcher: %s', currentVersion)
+    logger.info('Latest available version of Launcher: %s', latestVersion)
     event.returnValue = currentVersion == latestVersion
 })
 
 ipcMain.on('get-config', (event, arg) => {
-    console.log('get-config')
+    logger.info('get-config')
     event.returnValue = JSON.stringify(config)
 })
 
 ipcMain.on('set-config', (event, arg) => {
-    console.log('set-config')
+    logger.info('set-config')
     const newConfig = JSON.parse(arg)
-    console.log(newConfig)
     config = { ...config, ...newConfig }
     fs.writeFileSync(
         path.join(configFolder, 'config.json'),
@@ -212,7 +233,7 @@ ipcMain.on('set-config', (event, arg) => {
 })
 
 ipcMain.on('reset-config', (event, arg) => {
-    console.log('reset-config')
+    logger.info('reset-config')
     config = { ...defaultConfig }
     fs.writeFileSync(
         path.join(configFolder, 'config.json'),
@@ -222,6 +243,7 @@ ipcMain.on('reset-config', (event, arg) => {
 })
 
 ipcMain.on('prompt-folder', (event, args) => {
+    logger.info('prompt-folder')
     if (!win) return (event.returnValue = 'error')
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openDirectory']
@@ -234,6 +256,7 @@ ipcMain.on('prompt-folder', (event, args) => {
 })
 
 ipcMain.on('prompt-file', (event, args) => {
+    logger.info('prompt-file')
     if (!win) return (event.returnValue = 'error')
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openFile']
@@ -246,6 +269,7 @@ ipcMain.on('prompt-file', (event, args) => {
 })
 
 ipcMain.on('get-selected-profile', (event, args) => {
+    logger.info('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
         event.returnValue = JSON.stringify(0)
     } else {
@@ -259,6 +283,7 @@ ipcMain.on('get-selected-profile', (event, args) => {
 })
 
 ipcMain.on('set-selected-profile', (event, args) => {
+    logger.info('set-selected-profile')
     fs.writeFileSync(
         path.join(configFolder, 'selectedProfile.json'),
         JSON.stringify({ profile: args }, null, 4)
@@ -266,13 +291,14 @@ ipcMain.on('set-selected-profile', (event, args) => {
 })
 
 ipcMain.handle('start-game', async (event, args: Profile) => {
+    logger.info('start-game (async)')
+    logger.info('Starting Game ...')
     return new Promise<void>(async (resolve, reject) => {
         if (gameStarting) {
             reject('game already started')
             return
         }
         gameStarting = true
-        console.log(config)
         if (!config) return
         if (!loginInfo) return
         checkExist(path.join(config.rootDir, 'forgeInstallers'))
@@ -291,12 +317,12 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         }
 
         if (config.cdnServer && config.cdnServer !== '') {
-            console.log('CDN detected in config, testing if it is working')
+            logger.info('CDN detected in config, testing if it is working')
             if (await checkServer(config.cdnServer)) {
-                console.log('CDN working, setting it as download server')
+                logger.info('CDN working, setting it as download server')
                 downloadServer = config.cdnServer
             } else {
-                console.log(
+                logger.info(
                     'CDN server appear to be inaccessible, using primary server as download server'
                 )
             }
@@ -304,7 +330,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
         let forgeArgs
         if (args.version.forge) {
-            console.log('forge detected, downloading')
+            logger.info('Forge detected, downloading forge installer')
             const forgePath = path.join(
                 config.rootDir,
                 'forgeInstallers',
@@ -316,16 +342,16 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     '/static/forges/',
                     args.version.forge
                 )
-                console.log(`downloading ${forgeURL} to ${forgePath}`)
+                logger.info(`downloading ${forgeURL} to ${forgePath}`)
                 await download(forgeURL, forgePath)
-                console.log(`${args.version.forge} downloaded`)
+                logger.info(`${args.version.forge} downloaded`)
             }
             forgeArgs = forgePath
         }
         if (!config.disableAutoUpdate) {
             if (args.gameFolder) {
-                console.log(
-                    'a forced game folder is detected, downloading it...'
+                logger.info(
+                    'A forced game folder is detected, downloading it...'
                 )
                 const localPath = path.join(
                     config.rootDir,
@@ -344,9 +370,9 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     )) as { count: number }
                 ).count
 
-                console.log('remote tree fetched')
+                logger.info('Remote tree fetched')
                 let localTree = await folderTree(localPath)
-                console.log('local tree created')
+                logger.info('Local tree created')
                 function getFolders(tree: any) {
                     return Object.keys(tree).filter(
                         key => typeof tree[key] !== 'string'
@@ -355,7 +381,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 const remoteFolders = getFolders(remoteTree)
                 const localFolders = getFolders(localTree)
 
-                console.log('starting update procedure')
+                logger.info('Starting update procedure')
                 for (const folder of remoteFolders) {
                     if (!localFolders.includes(folder)) {
                         fs.mkdirSync(path.join(localPath, folder))
@@ -446,15 +472,14 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                         .filter(key => typeof localFolder[key] === 'string')
                         .filter(key => !Object.keys(remoteFolder).includes(key))
                     for (const file of onlyLocalFile) {
-                        console.log('deleting file : ' + file)
                         fs.rmSync(path.join(folderPath, ...pathA, file), {
                             recursive: true
                         })
                     }
                 }
             } else {
-                console.log(
-                    'no forced game folder detected, creating an empty one...'
+                logger.info(
+                    'No forced game folder detected, creating an empty one...'
                 )
                 args.gameFolder = args.name
                     .replace(/[^a-zA-Z0-9]/g, '_')
@@ -491,10 +516,9 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
 
-        //console.log(opts)
         launcher.launch(opts as any)
-        //launcher.on('debug', e => console.log(e))
-        launcher.on('data', e => console.log(e))
+
+        launcher.on('data', e => logger.info(e))
         launcher.on('start', e => {
             if (!config) return
             if (config.closeLauncher) setTimeout(app.quit, 5000)
@@ -503,24 +527,27 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         })
         launcher.on('progress', progress => {
             if (typeof progress !== 'number') return
-            //console.log("progress: "+progress+"%")
             startProgress = progress
         })
     })
 })
 
 ipcMain.on('get-start-progress', (event, arg) => {
+    logger.info('get-start-progress')
     event.returnValue = startProgress
 })
 
 ipcMain.on('get-login-progress', (event, arg) => {
+    logger.info('get-login-progress')
     event.returnValue = loginProgress
 })
 ipcMain.on('get-java-installation-progress', (event, arg) => {
+    logger.info('get-java-installation-progress')
     event.returnValue = javaInstallationProgress
 })
 
 ipcMain.on('get-java-version', (event, arg) => {
+    logger.info('get-java-version')
     if (!config) return
     const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
     const java = spawn(javaPath, ['-version'])
@@ -541,6 +568,8 @@ ipcMain.on('get-java-version', (event, arg) => {
 })
 
 ipcMain.handle('install-java', async (event, arg) => {
+    logger.info('install-java (async)')
+    logger.info('Installing Java ...')
     return new Promise(async (resolve, reject) => {
         if (!config) reject('no config')
         const installDirectory = path.join(config.rootDir, 'java')
@@ -550,14 +579,14 @@ ipcMain.handle('install-java', async (event, arg) => {
         fs.mkdirSync(installDirectory)
         javaInstallationProgress = 1
         const zipPath = path.join(installDirectory, 'java.zip')
-        console.log('downloading binaries')
+        logger.info('Downloading binaries')
         execSync(`curl -o ${zipPath} ${javaBinariesLink} --ssl-no-revoke`)
         javaInstallationProgress = 50
-        console.log('binaries downloaded')
+        logger.info('Binaries downloaded')
 
-        console.log('extracting archive')
+        logger.info('Extracting archive')
         await decompress(zipPath, installDirectory)
-        console.log('achive extracted')
+        logger.info('Achive extracted')
         fs.rmSync(zipPath)
 
         javaInstallationProgress = 100
@@ -566,8 +595,8 @@ ipcMain.handle('install-java', async (event, arg) => {
 })
 
 function checkExist(path: string) {
-    console.log(path)
     if (!fs.existsSync(path)) {
+        logger.info("%s don't exist, creating")
         fs.mkdirSync(path)
     }
 }
