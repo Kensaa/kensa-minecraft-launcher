@@ -49,6 +49,7 @@ if (platorm === 'win32') {
     process.exit(1)
 }
 const LOG_FILE = path.join(configFolder, 'launcher.log')
+if (fs.existsSync(LOG_FILE)) fs.rmSync(LOG_FILE)
 const customLevels = { trace: 10, debug: 20, info: 30, game: 31 }
 const logger = pino(
     { level: 'trace', customLevels },
