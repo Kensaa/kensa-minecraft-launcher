@@ -632,19 +632,8 @@ function checkServer(address: string) {
         fetch(address)
             .then(res => resolve(true))
             .catch(err => resolve(false))
-        /*http.get(address, res => {
-            res.on('end', () => resolve(true))
-            res.on('data', chunk => {})
-        }).on('error', err => resolve(false))*/
     })
 }
 function JSONFetch(address: string) {
     return fetch(address).then(res => res.json())
-    /*return new Promise((resolve, reject) => {
-        http.get(address, res => {
-            let data = ''
-            res.on('data', chunk => (data += chunk))
-            res.on('end', () => resolve(JSON.parse(data)))
-        }).on('error', err => reject(err))
-    })*/
 }
