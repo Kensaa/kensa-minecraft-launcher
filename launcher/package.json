@@ -3,11 +3,12 @@
     "description": "A Minecraft launcher with auto-update feature to facilitate playing modded minecraft",
     "author": "Kensa",
     "private": true,
-    "version": "1.7.1",
+    "version": "1.8.0",
     "main": "dist-electron/electron.js",
     "scripts": {
         "dev": "vite",
-        "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist"
+        "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
+        "release": "node github-release.js"
     },
     "dependencies": {
         "@kensaa/minecraft-launcher-core": "^3.16.20",
