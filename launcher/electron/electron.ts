@@ -206,12 +206,13 @@ ipcMain.handle('is-up-to-date', (event, arg) => {
         const currentVersion = JSON.parse(
             fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
         ).version.trim()
-
         const latestVersion = (
             await JSONFetch(
-                'https://raw.githubusercontent.com/Kensaa/kensa-minecraft-launcher/master/launcher/package.json'
+                'https://api.github.com/repos/Kensaa/kensa-minecraft-launcher/releases/latest'
             )
-        ).version.trim()
+        ).tag_name
+            .trim()
+            .substring(1)
         logger.info('Current version of Launcher: %s', currentVersion)
         logger.info('Latest available version of Launcher: %s', latestVersion)
         resolve(currentVersion == latestVersion)
