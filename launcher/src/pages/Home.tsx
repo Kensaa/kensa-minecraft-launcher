@@ -69,11 +69,13 @@ export default function Home({
     }, [config.jrePath])
 
     useEffect(() => {
-        if (!ipcRenderer.sendSync('is-up-to-date')) {
-            setInfo(
-                'A new update is available, please redownload the launcher at https://github.com/Kensaa/kensa-minecraft-launcher'
-            )
-        }
+        ipcRenderer.invoke('is-up-to-date').then(res => {
+            if (!res) {
+                setInfo(
+                    'A new update is available, please redownload the launcher at https://github.com/Kensaa/kensa-minecraft-launcher'
+                )
+            }
+        })
     }, [])
 
     const startGame = () => {

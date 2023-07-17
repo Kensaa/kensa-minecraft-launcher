@@ -200,20 +200,22 @@ ipcMain.on('msmc-logout', (event, arg) => {
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
 })
 
-ipcMain.on('is-up-to-date', async (event, arg) => {
-    logger.debug('is-up-to-date')
-    const currentVersion = JSON.parse(
-        fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
-    ).version.trim()
+ipcMain.handle('is-up-to-date', (event, arg) => {
+    logger.debug('is-up-to-date (async)')
+    return new Promise<boolean>(async (resolve, reject) => {
+        const currentVersion = JSON.parse(
+            fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
+        ).version.trim()
 
-    const latestVersion = (
-        await JSONFetch(
-            'https://raw.githubusercontent.com/Kensaa/kensa-minecraft-launcher/master/launcher/package.json'
-        )
-    ).version.trim()
-    logger.info('Current version of Launcher: %s', currentVersion)
-    logger.info('Latest available version of Launcher: %s', latestVersion)
-    event.returnValue = currentVersion == latestVersion
+        const latestVersion = (
+            await JSONFetch(
+                'https://raw.githubusercontent.com/Kensaa/kensa-minecraft-launcher/master/launcher/package.json'
+            )
+        ).version.trim()
+        logger.info('Current version of Launcher: %s', currentVersion)
+        logger.info('Latest available version of Launcher: %s', latestVersion)
+        resolve(currentVersion == latestVersion)
+    })
 })
 
 ipcMain.on('get-config', (event, arg) => {
