@@ -40,7 +40,8 @@ function input() {
     execSync(releaseCommand)
     console.log('release successfully created !')
     fs.rmSync('notes')
-    fs.rmdirSync('release', { recursive: true, force: true })
+    fs.rmSync('release', { recursive: true })
+    process.exit(0)
 })()
 
 async function askNotes() {
