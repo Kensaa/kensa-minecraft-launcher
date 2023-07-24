@@ -105,7 +105,7 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     value={disableAutoUpdate}
                     setter={setDisableAutoUpdate as Setter}
                 />
-                <div className='d-flex justify-content-center'>
+                <div className='d-flex justify-content-center my-1'>
                     <Button className='mx-1' onClick={installJava}>
                         Install Java
                     </Button>
@@ -114,7 +114,7 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     </Button>
                 </div>
             </div>
-            <Button className='mt-1' type='submit'>
+            <Button className='my-1' type='submit'>
                 Save
             </Button>
         </Form>
