@@ -91,7 +91,7 @@ async function createWindow() {
         width: 700,
         height: 700,
         autoHideMenuBar: true,
-        resizable: false,
+        resizable: !app.isPackaged,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

@@ -50,7 +50,7 @@ export default function ProfilePicker({
                         />
                     )}
                 </Dropdown.Toggle>
-                <Dropdown.Menu className='w-100'>
+                <Dropdown.Menu className='w-100' style={{ zIndex: 99999 }}>
                     {profiles &&
                         profiles.map((profile, index) => (
                             <Dropdown.Item

@@ -9,6 +9,7 @@ import configStore from '../stores/config'
 import { Profile } from '../types'
 
 import minecraft from '../img/minecraft.png'
+import AlertStack from '../components/AlertStack'
 
 export default function Home({
     setOverlay,
@@ -90,52 +91,6 @@ export default function Home({
             className='w-100 h-100 d-flex flex-column align-items-center background'
             style={{ backgroundImage: `url(${minecraft})` }}
         >
-            {error && (
-                <Alert
-                    className='position-absolute'
-                    style={{
-                        zIndex: 9000,
-                        textAlign: 'center',
-                        marginTop: '5rem'
-                    }}
-                    dismissible
-                    variant='danger'
-                    onClose={() => setError('')}
-                >
-                    {error}
-                </Alert>
-            )}
-            {info && (
-                <Alert
-                    className='position-absolute'
-                    style={{
-                        zIndex: 9000,
-                        textAlign: 'center',
-                        marginTop: '9rem'
-                    }}
-                    dismissible
-                    variant='warning'
-                    onClose={() => setInfo('')}
-                >
-                    {info}
-                </Alert>
-            )}
-            {config.disableAutoUpdate && (
-                <Alert
-                    className='position-absolute'
-                    style={{
-                        zIndex: 1,
-                        marginTop: '5rem',
-
-                        textAlign: 'center'
-                    }}
-                    variant='info'
-                    onClose={() => setError('')}
-                >
-                    you disabled auto-update, the game WILL NOT be updated while
-                    this option is enabled
-                </Alert>
-            )}
             <HomeHeader
                 {...{
                     setOverlay,
@@ -148,6 +103,45 @@ export default function Home({
                     setSelectedProfile
                 }}
             />
+            <AlertStack>
+                {config.disableAutoUpdate ? (
+                    <Alert
+                        style={{
+                            textAlign: 'center'
+                        }}
+                        variant='info'
+                        onClose={() => setError('')}
+                    >
+                        you disabled auto-update, the game WILL NOT be updated
+                        while this option is enabled
+                    </Alert>
+                ) : undefined}
+                {error ? (
+                    <Alert
+                        style={{
+                            textAlign: 'center'
+                        }}
+                        dismissible
+                        variant='danger'
+                        onClose={() => setError('')}
+                    >
+                        {error}
+                    </Alert>
+                ) : undefined}
+                {info ? (
+                    <Alert
+                        style={{
+                            textAlign: 'center'
+                        }}
+                        dismissible
+                        variant='warning'
+                        onClose={() => setInfo('')}
+                    >
+                        {info}
+                    </Alert>
+                ) : undefined}
+            </AlertStack>
+
             <div className='h-25 w-100 d-flex pb-5 justify-content-center align-items-end smooth-background-up position-absolute bottom-0'>
                 <Button
                     disabled={

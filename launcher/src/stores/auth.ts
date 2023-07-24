@@ -1,4 +1,4 @@
-import create from 'zustand'
+import { create } from 'zustand'
 import { ipcRenderer } from 'electron'
 
 interface authStore {
