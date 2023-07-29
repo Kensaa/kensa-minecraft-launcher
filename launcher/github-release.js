@@ -26,7 +26,7 @@ function input() {
         )
         if (addInscruction) {
             notes +=
-                '\n.msi pour windows\n.exe pour la version (a moitié)portable\n.zip pour les autres'
+                '\n.msi pour windows\n.exe pour la version portable\n.zip pour les autres'
         }
         console.log('----------------------------------')
         console.log(notes)
