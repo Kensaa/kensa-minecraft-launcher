@@ -58,6 +58,6 @@ async function askNotes() {
 async function ask(question) {
     console.log(question)
     console.log('Y/n ')
-    const resp = await input()
-    return resp === ''
+    const resp = (await input()).toLowerCase()
+    return resp === '' || resp === 'y'
 }
