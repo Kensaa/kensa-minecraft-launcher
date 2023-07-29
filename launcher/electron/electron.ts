@@ -136,7 +136,7 @@ async function createWindow() {
             logger.warn(
                 'config seems to be missing some fields, resetting to default config'
             )
-            config = defaultConfig
+            config = { ...defaultConfig }
             fs.writeFileSync(
                 path.join(configFolder, 'config.json'),
                 JSON.stringify(config, null, 4)
