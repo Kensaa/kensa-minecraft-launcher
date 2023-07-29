@@ -2,16 +2,16 @@
 
 A custom made minecraft launcher mainly used for modded minecraft.\
 The key feature is an automatic update of game file from a server to allow seamless update of mods, config, etc...
-You can create multiple profiles from which the user can choose from, each profile is completely isolated from others to allow different config, saves, screenshot at the same time.\
+You can create multiple profiles from which the user can choose from, each profile is completely isolated from others to allow different config, saves, screenshot at the same time.
 
 ## Installation
 
 ### Launcher
 
-You can download the last version from the [release](https://github.com/Kensaa/kensa-minecraft-launcher/releases/latest) page.\
+You can download the last version from the [release](https://github.com/Kensaa/kensa-minecraft-launcher/releases/latest) page.
 
--   The .msi file is an installer for Windows\
--   The .exe file is a portable executable for Windows\
+-   The .msi file is an installer for Windows
+-   The .exe file is a portable executable for Windows
 -   The .zip is a build for linux user
 
 ### Server
