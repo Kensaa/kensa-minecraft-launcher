@@ -18,8 +18,12 @@ export default function Home({
     setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }) {
-    const auth = authStore(state => ({ ...state }))
-    const config = configStore(state => ({ ...state }))
+    const auth = authStore(state => ({ connected: state.connected }))
+    const config = configStore(state => ({
+        primaryServer: state.primaryServer,
+        jrePath: state.jrePath,
+        disableAutoUpdate: state.disableAutoUpdate
+    }))
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [selectedProfile, setSelectedProfile] = useState<number>(0)
     const [loading, setLoading] = useState<boolean>(false)
@@ -70,6 +74,7 @@ export default function Home({
     }, [config.jrePath])
 
     useEffect(() => {
+        if (!(import.meta.env.MODE == 'production')) return
         ipcRenderer.invoke('is-up-to-date').then(res => {
             if (!res) {
                 setInfo(
