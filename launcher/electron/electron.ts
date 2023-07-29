@@ -305,6 +305,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         if (!loginInfo) return
         checkExist(path.join(config.rootDir, 'forgeInstallers'))
         checkExist(path.join(config.rootDir, 'profiles'))
+        checkExist(path.join(config.rootDir, 'addedMods'))
 
         // cdn check
         const { primaryServer } = config
@@ -360,7 +361,9 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     'profiles',
                     args.gameFolder
                 )
+
                 checkExist(localPath)
+                //create folder for added mods
 
                 const hashTree = (await JSONFetch(
                     urlJoin(primaryServer, '/hashes')
@@ -481,6 +484,37 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 args.gameFolder = args.name
                     .replace(/[^a-zA-Z0-9]/g, '_')
                     .toLowerCase()
+            }
+            const addedModsFolder = path.join(
+                config.rootDir,
+                'addedMods',
+                args.gameFolder
+            )
+            checkExist(addedModsFolder)
+            // Copy added mods
+            const addedMods = fs.readdirSync(addedModsFolder)
+            logger.debug(addedMods)
+            if (addedMods.length > 0) {
+                checkExist(
+                    path.join(
+                        config.rootDir,
+                        'profiles',
+                        args.gameFolder,
+                        'mods'
+                    )
+                )
+                for (const mod of addedMods) {
+                    fs.copyFileSync(
+                        path.join(addedModsFolder, mod),
+                        path.join(
+                            config.rootDir,
+                            'profiles',
+                            args.gameFolder,
+                            'mods',
+                            mod
+                        )
+                    )
+                }
             }
         } else {
             args.gameFolder = args.name
