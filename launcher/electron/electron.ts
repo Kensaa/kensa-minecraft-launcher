@@ -491,7 +491,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         let opts = {
             clientPackage: null,
             authorization: msmc.getMCLC().getAuth(loginInfo),
-            root: config.rootDir,
+            root: path.join(config.rootDir, 'profiles', args.gameFolder),
             version: {
                 number: args.version.mc,
                 type: 'release'
@@ -505,14 +505,10 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             customArgs: ['-Djava.net.preferIPv6Stack=true'],
             overrides: {
                 detached: config.jrePath !== '',
-                gameDirectory: path.join(
-                    config.rootDir,
-                    'profiles',
-                    args.gameFolder
-                )
+                assetRoot: path.join(config.rootDir, 'assets'),
+                libraryRoot: path.join(config.rootDir, 'libraries')
             }
         }
-
         launcher.launch(opts as any)
 
         launcher.on('data', e => {
@@ -533,16 +529,13 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 })
 
 ipcMain.on('get-start-progress', (event, arg) => {
-    logger.debug('get-start-progress')
     event.returnValue = startProgress
 })
 
 ipcMain.on('get-login-progress', (event, arg) => {
-    logger.debug('get-login-progress')
     event.returnValue = loginProgress
 })
 ipcMain.on('get-java-installation-progress', (event, arg) => {
-    logger.debug('get-java-installation-progress')
     event.returnValue = javaInstallationProgress
 })
 

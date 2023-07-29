@@ -1,24 +1,32 @@
 [
     {
-        "name":"Modpack Feur",
-        "version":{
+        "name": "Modpack Feur",
+        "version": {
             "mc": "1.16.5",
             "forge": "forge-1.16.5-36.2.39-installer.jar"
         },
-        "gameFolder":"modpackFeur"
+        "gameFolder": "modpackFeur"
     },
     {
-        "name":"vanilla 1.16.5",
-        "version":{
-            "mc":"1.16.5"
+        "name": "vanilla 1.16.5",
+        "version": {
+            "mc": "1.16.5"
         }
     },
     {
-        "name":"devs",
-        "version":{
+        "name": "devs",
+        "version": {
             "mc": "1.16.5",
             "forge": "forge-1.16.5-36.2.39-installer.jar"
         },
-        "gameFolder":"devs"
+        "gameFolder": "devs"
+    },
+    {
+        "name": "All The Mods 8",
+        "version": {
+            "mc": "1.19.2",
+            "forge": "forge-1.19.2-43.2.21-installer.jar"
+        },
+        "gameFolder": "All-The-Mods-8"
     }
 ]
