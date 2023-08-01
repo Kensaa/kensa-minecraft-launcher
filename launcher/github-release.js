@@ -1,5 +1,6 @@
 const { execSync } = require('child_process')
 const fs = require('fs')
+const { platform } = require('os')
 
 const version = require('./package.json').version
 const readline = require('readline').createInterface({
@@ -16,6 +17,10 @@ function input() {
 //delete release folder
 
 ;(async () => {
+    if (platform() !== 'linux') {
+        console.log('please run this script on linux')
+        process.exit(1)
+    }
     console.log('building launcher')
     execSync('yarn build', { stdio: 'inherit' })
     let notes
