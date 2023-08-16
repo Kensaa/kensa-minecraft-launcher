@@ -14,9 +14,10 @@ import { urlJoin } from './url-join'
 import { pino, multistream } from 'pino'
 import pretty from 'pino-pretty'
 import 'source-map-support/register'
-
-const javaBinariesLink =
-    'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip'
+const javaBinaries = {
+    win32: 'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip',
+    linux: 'https://download.oracle.com/java/19/archive/jdk-19.0.2_linux-x64_bin.tar.gz'
+}
 
 const launcher = new Client()
 
@@ -49,7 +50,7 @@ if (platorm === 'win32') {
     process.exit(1)
 }
 const LOG_FILE = path.join(configFolder, 'launcher.log')
-if (fs.existsSync(LOG_FILE)) fs.rmSync(LOG_FILE)
+if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '')
 const customLevels = { trace: 10, debug: 20, info: 30, game: 31 }
 const logger = pino(
     { level: 'trace', customLevels },
@@ -579,13 +580,11 @@ ipcMain.on('get-java-version', (event, arg) => {
     const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
     const java = spawn(javaPath, ['-version'])
     java.stderr.on('data', data => {
-        data = data.toString().split('\n')[0]
-        let javaVersion = new RegExp('java version').test(data)
-            ? data.split(' ')[2].replace(/"/g, '')
-            : false
-        if (javaVersion != false) {
-            event.returnValue = javaVersion
-        } else {
+        const output = data.toString()
+        try {
+            const version = output.split('\n')[0].split('"')[1]
+            event.returnValue = version
+        } catch {
             event.returnValue = null
         }
     })
@@ -607,7 +606,11 @@ ipcMain.handle('install-java', async (event, arg) => {
         javaInstallationProgress = 1
         const zipPath = path.join(installDirectory, 'java.zip')
         logger.info('Downloading binaries')
-        execSync(`curl -o ${zipPath} ${javaBinariesLink} --ssl-no-revoke`)
+        const platform = os.platform()
+        if (!Object.keys(javaBinaries).includes(platform))
+            throw 'platform not supported'
+        const binaries = javaBinaries[platform]
+        execSync(`curl -o ${zipPath} ${binaries} --ssl-no-revoke`)
         javaInstallationProgress = 50
         logger.info('Binaries downloaded')
 
@@ -617,7 +620,14 @@ ipcMain.handle('install-java', async (event, arg) => {
         fs.rmSync(zipPath)
 
         javaInstallationProgress = 100
-        resolve(path.join(installDirectory, 'jdk-19.0.2', 'bin', 'java.exe'))
+        resolve(
+            path.join(
+                installDirectory,
+                'jdk-19.0.2',
+                'bin',
+                platform === 'win32' ? 'java32' : 'java'
+            )
+        )
     })
 })
 

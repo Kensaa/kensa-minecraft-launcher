@@ -59,6 +59,7 @@ export default function Home({
 
     useEffect(() => {
         const javaVersion = ipcRenderer.sendSync('get-java-version')
+        console.log('java version', javaVersion)
         if (!javaVersion) {
             setError(
                 'Java is not installed, check the path to Java and try again'
