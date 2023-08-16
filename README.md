@@ -18,21 +18,21 @@ You can download the last version from the [release](https://github.com/Kensaa/k
 
 ##### Fields
 
--   Game Folder : The directory in which the launcher will download the game, the profiles, and java
--   Ram : The amount in GiB of Ram that the launcher will allocate to the game
--   Main Server : The server used by the launcher to download profiles
--   CDN Server : The server used as CDN (leave empty unless told otherwise)
--   JRE Executable : The Java executable used to launch the game, you shouldn't touch that if you don't know what you're doing
+-   **Game Folder** : The directory in which the launcher will download the game, the profiles, and java
+-   **Ram** : The amount in GiB of Ram that the launcher will allocate to the game
+-   **Main Server** : The server used by the launcher to download profiles
+-   **CDN Server** : The server used as CDN (leave empty unless told otherwise)
+-   **JRE Executable** : The Java executable used to launch the game, you shouldn't touch that if you don't know what you're doing
 
 ##### Radio Buttons
 
--   "Close launcher when the game launches" : Kinda explicit
--   "Disable Auto-Update" : Toggle that if you want to disable the auto update feature of the launcher, I highly recommand not activating it because your profiles will no longer be updated (I will remove that one day)
+-   **Close launcher when the game launches** : Kinda explicit
+-   **Disable Auto-Update** : Toggle that if you want to disable the auto update feature of the launcher, I highly recommand not activating it because your profiles will no longer be updated (I will remove that one day)
 
 ##### Buttons
 
--   Install Java : Install the right version of java in the game directory and sets it as the JRE Executable
--   Reset Config : Kinda explicit too
+-   **Install Java** : Install the right version of java in the game directory and sets it as the JRE Executable
+-   **Reset Config** : Kinda explicit too
 
 > **_NOTE:_**
 > The "Install Java" button now works on Windows and Linux, it downloads the java 19 binaries and places them into the game directory.\
