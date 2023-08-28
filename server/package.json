@@ -5,7 +5,8 @@
     "author": "Kensa",
     "license": "MIT",
     "scripts": {
-        "start": "tsc && node ."
+        "build": "tsc",
+        "start": "yarn build && node ."
     },
     "devDependencies": {
         "@types/cors": "^2.8.12",
