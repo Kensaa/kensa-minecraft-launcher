@@ -21,7 +21,6 @@ export default function Home({
     const auth = authStore(state => ({ connected: state.connected }))
     const config = configStore(state => ({
         primaryServer: state.primaryServer,
-        jrePath: state.jrePath,
         disableAutoUpdate: state.disableAutoUpdate
     }))
     const [profiles, setProfiles] = useState<Profile[]>([])
@@ -56,22 +55,6 @@ export default function Home({
             setSelectedProfile(sProfile)
         }
     }, [profiles])
-
-    useEffect(() => {
-        const javaVersion = ipcRenderer.sendSync('get-java-version')
-        if (!javaVersion) {
-            setError(
-                'Java is not installed, check the path to Java and try again'
-            )
-        } else {
-            const majorVersion = parseInt(javaVersion.split('.')[0])
-            if (majorVersion < 17 && majorVersion > 19) {
-                setError(
-                    "your Java version is too old, please update to Java 17 or newer you also can install Java from the launcher's settings"
-                )
-            }
-        }
-    }, [config.jrePath])
 
     useEffect(() => {
         if (!(import.meta.env.MODE == 'production')) return

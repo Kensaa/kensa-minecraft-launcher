@@ -3,7 +3,6 @@ import { FileSearch, FolderSearch } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import configStore from '../stores/config'
-import JavaInstallationOverlay from '../overlays/JavaInstallationOverlay'
 
 interface SettingsProps {
     hide: () => void
@@ -20,7 +19,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
     const [ram, setRam] = useState(config.ram)
     const [primaryServer, setPrimaryServer] = useState(config.primaryServer)
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
-    const [jrePath, setJrePath] = useState(config.jrePath)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
     const [disableAutoUpdate, setDisableAutoUpdate] = useState(
         config.disableAutoUpdate
@@ -34,24 +32,11 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
         config.setRam(ram)
         config.setPrimaryServer(primaryServer)
         config.setCdnServer(cdnServer)
-        config.setJrePath(jrePath)
         config.setCloseLauncher(closeLauncher)
         config.setDisableAutoUpdate(disableAutoUpdate)
 
         setValidated(true)
         hide()
-    }
-
-    const installJava = () => {
-        setOverlay(<JavaInstallationOverlay />)
-        hide()
-        ipcRenderer
-            .invoke('install-java')
-            .then(res => {
-                setOverlay(undefined)
-                config.setJrePath(res)
-            })
-            .catch(error => console.log(error))
     }
 
     const resetConfig = () => {
@@ -88,12 +73,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     value={cdnServer}
                     setter={setCdnServer as Setter}
                 />
-                <FileInput
-                    label='JRE executable'
-                    placeholder="you shouldn't touch that"
-                    value={jrePath}
-                    setter={setJrePath as Setter}
-                />
 
                 <BooleanInput
                     label='Close launcher when the game launches'
@@ -106,9 +85,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     setter={setDisableAutoUpdate as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
-                    <Button className='mx-1' onClick={installJava}>
-                        Install Java
-                    </Button>
                     <Button className='mx-1' onClick={resetConfig}>
                         Reset Config
                     </Button>

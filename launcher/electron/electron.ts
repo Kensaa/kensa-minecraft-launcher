@@ -14,10 +14,17 @@ import { urlJoin } from './url-join'
 import { pino, multistream } from 'pino'
 import pretty from 'pino-pretty'
 import 'source-map-support/register'
-const javaBinaries = {
-    win32: 'https://download.oracle.com/java/19/archive/jdk-19.0.2_windows-x64_bin.zip',
-    linux: 'https://download.oracle.com/java/19/archive/jdk-19.0.2_linux-x64_bin.tar.gz'
-}
+
+/*const javaBinaries = {
+    8: {
+        win32: '',
+        linux: ''
+    },
+    19: {
+        win32: 'https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_windows-x64_bin.zip',
+        linux: 'https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz'
+    }
+}*/
 
 const launcher = new Client()
 
@@ -27,7 +34,7 @@ let configFolder = ''
 let rootDir
 let startProgress = 0
 let loginProgress = 0
-let javaInstallationProgress = 0
+//let javaInstallationProgress = 0
 let gameStarting = false
 
 if (platorm === 'win32') {
@@ -77,7 +84,6 @@ const defaultConfig = {
     ram: 4,
     primaryServer,
     cdnServer: '',
-    jrePath: '',
     closeLauncher: true,
     disableAutoUpdate: false
 }
@@ -307,6 +313,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         checkExist(path.join(config.rootDir, 'forgeInstallers'))
         checkExist(path.join(config.rootDir, 'profiles'))
         checkExist(path.join(config.rootDir, 'addedMods'))
+        checkExist(path.join(config.rootDir, 'java'))
 
         // cdn check
         const { primaryServer } = config
@@ -330,6 +337,35 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     'CDN server appear to be inaccessible, using primary server as download server'
                 )
             }
+        }
+
+        const platform = os.platform()
+        logger.info('Checking if java is installed')
+        const MCVersionNumber = parseInt(args.version.mc.split('.')[1])
+        const javaVersion = MCVersionNumber >= 17 ? '17' : '8'
+        const javaFolder = path.join(config.rootDir, 'java')
+        const javaExecutable = path.join(
+            javaFolder,
+            javaVersion,
+            'bin',
+            platform === 'win32' ? 'java.exe' : 'java'
+        )
+        if (!fs.existsSync(javaExecutable)) {
+            logger.info('Java not installed, installing it...')
+
+            const zipPath = path.join(javaFolder, 'binaries.tar.gz')
+            execSync(
+                `curl -o ${zipPath} ${urlJoin(
+                    downloadServer,
+                    '/static/java',
+                    `${platform}-${javaVersion}.tar.gz`
+                )} --ssl-no-revoke`
+            )
+            await decompress(zipPath, path.join(javaFolder, javaVersion), {
+                strip: 1
+            })
+            fs.rmSync(zipPath)
+            logger.info('Java installed')
         }
 
         let forgeArgs
@@ -536,7 +572,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 max: config.ram + 'G',
                 min: '1G'
             },
-            javaPath: config.jrePath !== '' ? config.jrePath : undefined,
+            javaPath: javaExecutable,
             customArgs: ['-Djava.net.preferIPv6Stack=true'],
             overrides: {
                 detached: config.jrePath !== '',
@@ -569,66 +605,6 @@ ipcMain.on('get-start-progress', (event, arg) => {
 
 ipcMain.on('get-login-progress', (event, arg) => {
     event.returnValue = loginProgress
-})
-ipcMain.on('get-java-installation-progress', (event, arg) => {
-    event.returnValue = javaInstallationProgress
-})
-
-ipcMain.on('get-java-version', (event, arg) => {
-    logger.debug('get-java-version')
-    if (!config) return
-    const javaPath = config.jrePath !== '' ? config.jrePath : 'java'
-    const java = spawn(javaPath, ['-version'])
-    java.stderr.on('data', data => {
-        const output = data.toString()
-        try {
-            const version = output.split('\n')[0].split('"')[1]
-            event.returnValue = version
-        } catch {
-            event.returnValue = null
-        }
-    })
-    java.on('error', e => {
-        event.returnValue = null
-    })
-})
-
-ipcMain.handle('install-java', async (event, arg) => {
-    logger.debug('install-java (async)')
-    logger.info('Installing Java ...')
-    return new Promise(async (resolve, reject) => {
-        if (!config) reject('no config')
-        const installDirectory = path.join(config.rootDir, 'java')
-        if (fs.existsSync(installDirectory)) {
-            fs.rmSync(installDirectory, { recursive: true, force: true })
-        }
-        fs.mkdirSync(installDirectory)
-        javaInstallationProgress = 1
-        const zipPath = path.join(installDirectory, 'java.zip')
-        logger.info('Downloading binaries')
-        const platform = os.platform()
-        if (!Object.keys(javaBinaries).includes(platform))
-            throw 'platform not supported'
-        const binaries = javaBinaries[platform]
-        execSync(`curl -o ${zipPath} ${binaries} --ssl-no-revoke`)
-        javaInstallationProgress = 50
-        logger.info('Binaries downloaded')
-
-        logger.info('Extracting archive')
-        await decompress(zipPath, installDirectory)
-        logger.info('Achive extracted')
-        fs.rmSync(zipPath)
-
-        javaInstallationProgress = 100
-        resolve(
-            path.join(
-                installDirectory,
-                'jdk-19.0.2',
-                'bin',
-                platform === 'win32' ? 'java32' : 'java'
-            )
-        )
-    })
 })
 
 function checkExist(path: string) {

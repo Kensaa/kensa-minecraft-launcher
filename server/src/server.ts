@@ -11,6 +11,13 @@ const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 const CDNS = process.env.CDNS || ''
 
+const expectedBinaries = [
+    'linux-8.tar.gz',
+    'linux-17.tar.gz',
+    'win32-8.tar.gz',
+    'win32-17.tar.gz'
+]
+
 if (!ADDRESS) {
     console.log(
         'ADDRESS environement variables is not defined, it must be defined to your external ip address'
@@ -34,8 +41,23 @@ if (!fs.existsSync(staticFolder)) {
     if (files.length === 0) {
         fs.mkdirSync(path.join(staticFolder, 'forges'))
         fs.mkdirSync(path.join(staticFolder, 'gameFolders'))
+        fs.mkdirSync(path.join(staticFolder, 'java'))
     }
 }
+
+const binaryFiles = fs.readdirSync(path.join(staticFolder, 'java'))
+let missingBinaries = false
+for (const expectedBinary of expectedBinaries) {
+    if (!binaryFiles.includes(expectedBinary)) {
+        console.log(`missing binary ${expectedBinary}`)
+        missingBinaries = true
+    }
+}
+if (missingBinaries) {
+    console.log('note: naming convention is [platform]-[version].tar.gz')
+    process.exit(1)
+}
+
 if (!fs.existsSync(profilesFile)) {
     console.log(`profiles file ${profilesFile} does not exist`)
     process.exit(1)

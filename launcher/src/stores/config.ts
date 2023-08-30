@@ -6,14 +6,12 @@ interface configStore {
     ram: number
     primaryServer: string
     cdnServer: string
-    jrePath: string
     closeLauncher: boolean
     disableAutoUpdate: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
     setPrimaryServer: (primaryServer: string) => void
     setCdnServer: (cdnServer: string) => void
-    setJrePath: (jrePath: string) => void
     setCloseLauncher: (closeLauncher: boolean) => void
     setDisableAutoUpdate: (disableAutoUpdate: boolean) => void
     resetConfig: () => void
@@ -27,7 +25,6 @@ export default create<configStore>(set => {
         ram: config.ram,
         primaryServer: config.primaryServer,
         cdnServer: config.cdnServer,
-        jrePath: config.jrePath,
         closeLauncher: config.closeLauncher,
         disableAutoUpdate: config.disableAutoUpdate,
         setRootDir: (rootDir: string) => {
@@ -48,10 +45,6 @@ export default create<configStore>(set => {
             if (cdnServer.endsWith('/')) cdnServer = cdnServer.slice(0, -1)
             set({ cdnServer })
             ipcRenderer.send('set-config', JSON.stringify({ cdnServer }))
-        },
-        setJrePath: (jrePath: string) => {
-            set({ jrePath })
-            ipcRenderer.send('set-config', JSON.stringify({ jrePath }))
         },
         setCloseLauncher: (closeLauncher: boolean) => {
             set({ closeLauncher })
