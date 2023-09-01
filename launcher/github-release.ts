@@ -8,13 +8,10 @@ const readline = require('readline').createInterface({
     output: process.stdout
 })
 function input() {
-    return new Promise(resolve => {
+    return new Promise<string>(resolve => {
         readline.question('', resolve)
     })
-} //build
-//get note from args (parse \n)
-//release
-//delete release folder
+}
 
 ;(async () => {
     if (platform() !== 'linux') {
@@ -50,7 +47,7 @@ function input() {
 })()
 
 async function askNotes() {
-    const lines = []
+    const lines: string[] = []
     console.log('enter the note for the release:')
     while (true) {
         const resp = await input()

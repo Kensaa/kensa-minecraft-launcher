@@ -8,7 +8,7 @@
     "scripts": {
         "dev": "vite",
         "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
-        "release": "node github-release.js"
+        "release": "tsx github-release.ts"
     },
     "dependencies": {
         "@kensaa/minecraft-launcher-core": "^3.17.3",
@@ -33,6 +33,7 @@
         "@vitejs/plugin-react": "^2.2.0",
         "electron": "^21.3.0",
         "electron-builder": "^23.6.0",
+        "tsx": "^3.12.8",
         "typescript": "^4.6.4",
         "vite": "^3.2.3",
         "vite-electron-plugin": "^0.5.2",
