@@ -1,6 +1,6 @@
-const { execSync } = require('child_process')
-const fs = require('fs')
-const { platform } = require('os')
+import { execSync } from 'child_process'
+import * as fs from 'fs'
+import { platform } from 'os'
 
 const version = require('./package.json').version
 const readline = require('readline').createInterface({
