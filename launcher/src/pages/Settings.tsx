@@ -17,7 +17,8 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
 
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
-    const [primaryServer, setPrimaryServer] = useState(config.primaryServer)
+    const [servers, setServers] = useState(config.servers)
+    const [selectedServer, setSelectedServer] = useState(config.selectedServer)
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
     const [disableAutoUpdate, setDisableAutoUpdate] = useState(
@@ -30,10 +31,11 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
         e.preventDefault()
         config.setRootDir(rootDir)
         config.setRam(ram)
-        config.setPrimaryServer(primaryServer)
         config.setCdnServer(cdnServer)
         config.setCloseLauncher(closeLauncher)
         config.setDisableAutoUpdate(disableAutoUpdate)
+        config.setServers(servers)
+        config.setSelectedServer(selectedServer)
 
         setValidated(true)
         hide()
@@ -63,10 +65,18 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     min={1}
                     max={14}
                 />
-                <TextInput
-                    label='Main server'
-                    value={primaryServer}
-                    setter={setPrimaryServer as Setter}
+                <NewServerInput
+                    label='Add Server'
+                    value=''
+                    setter={server =>
+                        setServers([...servers, server as string])
+                    }
+                />
+                <ServerSelector
+                    label='Select Server'
+                    value={selectedServer}
+                    setter={setSelectedServer as Setter}
+                    servers={servers}
                 />
                 <TextInput
                     label='CDN server'
@@ -203,6 +213,48 @@ function BooleanInput(props: InputProps) {
                 checked={props.value as boolean}
                 onChange={({ target }) => props.setter(target.checked)}
             />
+        </GenericInput>
+    )
+}
+
+function NewServerInput(props: InputProps) {
+    const [value, setValue] = useState('')
+    return (
+        <GenericInput {...props}>
+            <Form.Control
+                value={value}
+                placeholder={props.placeholder}
+                onChange={({ target }) => setValue(target.value)}
+                type='text'
+            />
+            <Button
+                className='mx-2 text-nowrap'
+                variant='outline-primary'
+                onClick={() => {
+                    props.setter(value)
+                    setValue('')
+                }}
+            >
+                Confirm
+            </Button>
+        </GenericInput>
+    )
+}
+
+function ServerSelector(props: InputProps & { servers: string[] }) {
+    return (
+        <GenericInput {...props}>
+            <Form.Select
+                className='mx-2'
+                value={props.value as number}
+                onChange={({ target }) => props.setter(parseInt(target.value))}
+            >
+                {props.servers.map((server, i) => (
+                    <option key={i} value={i}>
+                        {server}
+                    </option>
+                ))}
+            </Form.Select>
         </GenericInput>
     )
 }

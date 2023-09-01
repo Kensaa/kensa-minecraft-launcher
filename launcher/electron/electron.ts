@@ -28,20 +28,18 @@ const rootDirs = {
 
 let win: BrowserWindow | null = null
 const platform = os.platform()
-let configFolder = ''
-let rootDir
+const supportedPlatforms = ['win32', 'linux']
+
 let startProgress = 0
 let loginProgress = 0
 let gameStarting = false
-
-const supportedPlatforms = ['win32', 'linux']
 
 if (!supportedPlatforms.includes(platform)) {
     console.log('unsupported platform')
     process.exit(1)
 }
-configFolder = path.join(os.homedir(), configFolders[platform])
-rootDir = path.join(os.homedir(), rootDirs[platform])
+const configFolder = path.join(os.homedir(), configFolders[platform])
+const rootDir = path.join(os.homedir(), rootDirs[platform])
 
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '')
@@ -61,15 +59,11 @@ const logger = pino(
     ])
 )
 
-let primaryServer = 'http://redover.fr:40069'
-if (!app.isPackaged) {
-    primaryServer = 'http://localhost:40069'
-}
-
 const defaultConfig = {
     rootDir,
     ram: 4,
-    primaryServer,
+    servers: ['http://redover.fr:40069', 'http://localhost:40069'],
+    selectedServer: 0,
     cdnServer: '',
     closeLauncher: true,
     disableAutoUpdate: false
@@ -303,7 +297,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         checkExist(path.join(config.rootDir, 'java'))
 
         // cdn check
-        const { primaryServer } = config
+        const primaryServer = config.servers[config.selectedServer]
         let downloadServer = primaryServer
 
         if (!(await checkServer(primaryServer))) {

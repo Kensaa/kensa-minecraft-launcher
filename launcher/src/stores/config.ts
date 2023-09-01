@@ -4,26 +4,31 @@ import { ipcRenderer } from 'electron'
 interface configStore {
     rootDir: string
     ram: number
-    primaryServer: string
+    servers: string[]
+    selectedServer: number
+    server: string
     cdnServer: string
     closeLauncher: boolean
     disableAutoUpdate: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
-    setPrimaryServer: (primaryServer: string) => void
+    setServers: (servers: string[]) => void
+    setSelectedServer: (selectedServer: number) => void
     setCdnServer: (cdnServer: string) => void
     setCloseLauncher: (closeLauncher: boolean) => void
     setDisableAutoUpdate: (disableAutoUpdate: boolean) => void
     resetConfig: () => void
 }
 
-export default create<configStore>(set => {
+export default create<configStore>((set, get) => {
     const config = JSON.parse(ipcRenderer.sendSync('get-config'))
 
     return {
         rootDir: config.rootDir,
         ram: config.ram,
-        primaryServer: config.primaryServer,
+        servers: config.servers,
+        selectedServer: config.selectedServer,
+        server: config.servers[config.selectedServer],
         cdnServer: config.cdnServer,
         closeLauncher: config.closeLauncher,
         disableAutoUpdate: config.disableAutoUpdate,
@@ -35,11 +40,13 @@ export default create<configStore>(set => {
             set({ ram })
             ipcRenderer.send('set-config', JSON.stringify({ ram }))
         },
-        setPrimaryServer: (primaryServer: string) => {
-            if (primaryServer.endsWith('/'))
-                primaryServer = primaryServer.slice(0, -1)
-            set({ primaryServer })
-            ipcRenderer.send('set-config', JSON.stringify({ primaryServer }))
+        setServers: (servers: string[]) => {
+            set({ servers, server: servers[get().selectedServer] })
+            ipcRenderer.send('set-config', JSON.stringify({ servers }))
+        },
+        setSelectedServer: (selectedServer: number) => {
+            set({ selectedServer, server: get().servers[selectedServer] })
+            ipcRenderer.send('set-config', JSON.stringify({ selectedServer }))
         },
         setCdnServer: (cdnServer: string) => {
             if (cdnServer.endsWith('/')) cdnServer = cdnServer.slice(0, -1)

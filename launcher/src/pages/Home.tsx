@@ -20,7 +20,7 @@ export default function Home({
 }) {
     const auth = authStore(state => ({ connected: state.connected }))
     const config = configStore(state => ({
-        primaryServer: state.primaryServer,
+        server: state.server,
         disableAutoUpdate: state.disableAutoUpdate
     }))
     const [profiles, setProfiles] = useState<Profile[]>([])
@@ -31,7 +31,7 @@ export default function Home({
 
     useEffect(() => {
         setLoading(true)
-        fetch(config.primaryServer + '/profiles')
+        fetch(config.server + '/profiles')
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
@@ -43,7 +43,7 @@ export default function Home({
                 )
                 setLoading(false)
             })
-    }, [config.primaryServer])
+    }, [config.server])
 
     useEffect(() => {
         if (profiles.length === 0) return
