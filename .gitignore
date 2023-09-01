@@ -3,3 +3,4 @@ dist/
 build/
 server/static/
 cache
+.vscode
