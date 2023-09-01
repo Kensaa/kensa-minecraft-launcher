@@ -65,8 +65,7 @@ const defaultConfig = {
     servers: ['http://redover.fr:40069', 'http://localhost:40069'],
     selectedServer: 0,
     cdnServer: '',
-    closeLauncher: true,
-    disableAutoUpdate: false
+    closeLauncher: true
 }
 
 let loginInfo: msmc.result | null
@@ -368,102 +367,91 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
             forgeArgs = forgePath
         }
-        if (!config.disableAutoUpdate) {
-            if (args.gameFolder) {
-                logger.info(
-                    'A forced game folder is detected, downloading it...'
+        if (args.gameFolder) {
+            logger.info('A forced game folder is detected, downloading it...')
+            const localPath = path.join(
+                config.rootDir,
+                'profiles',
+                args.gameFolder
+            )
+
+            checkExist(localPath)
+            //create folder for added mods
+
+            const hashTree = (await JSONFetch(
+                urlJoin(primaryServer, '/hashes')
+            )) as any
+            const remoteTree = hashTree['gameFolders'][args.gameFolder]
+            const fileCount = (
+                (await JSONFetch(
+                    urlJoin(primaryServer, '/fileCount', args.gameFolder)
+                )) as { count: number }
+            ).count
+
+            logger.info('Remote tree fetched')
+            let localTree = await folderTree(localPath)
+            logger.info('Local tree created')
+            function getFolders(tree: any) {
+                return Object.keys(tree).filter(
+                    key => typeof tree[key] !== 'string'
                 )
-                const localPath = path.join(
-                    config.rootDir,
-                    'profiles',
-                    args.gameFolder
+            }
+            const remoteFolders = getFolders(remoteTree)
+            const localFolders = getFolders(localTree)
+
+            logger.info('Starting update procedure')
+            // creates all the folder at the root that does not exists
+            for (const folder of remoteFolders) {
+                if (!localFolders.includes(folder)) {
+                    fs.mkdirSync(path.join(localPath, folder))
+                    localTree[folder] = {}
+                }
+            }
+
+            let count = 0
+            for (const folder of remoteFolders) {
+                //start recursive function which will download all files for all the folders
+                await downloadFolder(
+                    remoteTree[folder],
+                    localTree[folder],
+                    args.gameFolder,
+                    localPath,
+                    [folder]
                 )
-
-                checkExist(localPath)
-                //create folder for added mods
-
-                const hashTree = (await JSONFetch(
-                    urlJoin(primaryServer, '/hashes')
-                )) as any
-                const remoteTree = hashTree['gameFolders'][args.gameFolder]
-                const fileCount = (
-                    (await JSONFetch(
-                        urlJoin(primaryServer, '/fileCount', args.gameFolder)
-                    )) as { count: number }
-                ).count
-
-                logger.info('Remote tree fetched')
-                let localTree = await folderTree(localPath)
-                logger.info('Local tree created')
-                function getFolders(tree: any) {
-                    return Object.keys(tree).filter(
-                        key => typeof tree[key] !== 'string'
+            }
+            /**
+             *
+             * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
+             * @param localFolder object representing the same folder but locally (I.E current state of the folder)
+             * @param gameFolder name of the remote folder on the server
+             * @param folderPath path to the local folder
+             * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
+             */
+            async function downloadFolder(
+                remoteFolder,
+                localFolder,
+                gameFolder: string,
+                folderPath: string,
+                pathA: string[] = []
+            ) {
+                for (const element of Object.keys(remoteFolder)) {
+                    const localPath = path.join(...pathA, element)
+                    const filepath = path.join(folderPath, localPath) // = absolute path to file
+                    const fileUrl = urlJoin(
+                        downloadServer,
+                        '/static/gameFolders',
+                        gameFolder,
+                        ...pathA,
+                        element
                     )
-                }
-                const remoteFolders = getFolders(remoteTree)
-                const localFolders = getFolders(localTree)
-
-                logger.info('Starting update procedure')
-                // creates all the folder at the root that does not exists
-                for (const folder of remoteFolders) {
-                    if (!localFolders.includes(folder)) {
-                        fs.mkdirSync(path.join(localPath, folder))
-                        localTree[folder] = {}
-                    }
-                }
-
-                let count = 0
-                for (const folder of remoteFolders) {
-                    //start recursive function which will download all files for all the folders
-                    await downloadFolder(
-                        remoteTree[folder],
-                        localTree[folder],
-                        args.gameFolder,
-                        localPath,
-                        [folder]
-                    )
-                }
-                /**
-                 *
-                 * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
-                 * @param localFolder object representing the same folder but locally (I.E current state of the folder)
-                 * @param gameFolder name of the remote folder on the server
-                 * @param folderPath path to the local folder
-                 * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
-                 */
-                async function downloadFolder(
-                    remoteFolder,
-                    localFolder,
-                    gameFolder: string,
-                    folderPath: string,
-                    pathA: string[] = []
-                ) {
-                    for (const element of Object.keys(remoteFolder)) {
-                        const localPath = path.join(...pathA, element)
-                        const filepath = path.join(folderPath, localPath) // = absolute path to file
-                        const fileUrl = urlJoin(
-                            downloadServer,
-                            '/static/gameFolders',
-                            gameFolder,
-                            ...pathA,
-                            element
-                        )
-                        if (typeof remoteFolder[element] === 'string') {
-                            // Element is a file
-                            if (localFolder[element] !== undefined) {
-                                if (
-                                    (await getHash(filepath)) !==
-                                    remoteFolder[element]
-                                ) {
-                                    logger.info('Updating file "%s"', localPath)
-                                    await download(fileUrl, filepath)
-                                    count++
-                                    startProgress = Math.round(
-                                        (count / fileCount) * 100
-                                    )
-                                }
-                            } else {
-                                logger.info('Downloading file "%s"', localPath)
+                    if (typeof remoteFolder[element] === 'string') {
+                        // Element is a file
+                        if (localFolder[element] !== undefined) {
+                            if (
+                                (await getHash(filepath)) !==
+                                remoteFolder[element]
+                            ) {
+                                logger.info('Updating file "%s"', localPath)
                                 await download(fileUrl, filepath)
                                 count++
                                 startProgress = Math.round(
@@ -471,72 +459,70 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                                 )
                             }
                         } else {
-                            // Element is a folder
-                            if (!localFolder[element]) {
-                                fs.mkdirSync(filepath)
-                                localFolder[element] = {}
-                            }
-                            await downloadFolder(
-                                remoteFolder[element],
-                                localFolder[element],
-                                gameFolder,
-                                folderPath,
-                                pathA.concat(element)
+                            logger.info('Downloading file "%s"', localPath)
+                            await download(fileUrl, filepath)
+                            count++
+                            startProgress = Math.round(
+                                (count / fileCount) * 100
                             )
                         }
-                    }
-                    const onlyLocalFile = Object.keys(localFolder)
-                        .filter(key => typeof localFolder[key] === 'string')
-                        .filter(key => !Object.keys(remoteFolder).includes(key))
-                    for (const file of onlyLocalFile) {
-                        fs.rmSync(path.join(folderPath, ...pathA, file), {
-                            recursive: true
-                        })
+                    } else {
+                        // Element is a folder
+                        if (!localFolder[element]) {
+                            fs.mkdirSync(filepath)
+                            localFolder[element] = {}
+                        }
+                        await downloadFolder(
+                            remoteFolder[element],
+                            localFolder[element],
+                            gameFolder,
+                            folderPath,
+                            pathA.concat(element)
+                        )
                     }
                 }
-            } else {
-                logger.info(
-                    'No forced game folder detected, creating an empty one...'
-                )
-                args.gameFolder = args.name
-                    .replace(/[^a-zA-Z0-9]/g, '_')
-                    .toLowerCase()
+                const onlyLocalFile = Object.keys(localFolder)
+                    .filter(key => typeof localFolder[key] === 'string')
+                    .filter(key => !Object.keys(remoteFolder).includes(key))
+                for (const file of onlyLocalFile) {
+                    fs.rmSync(path.join(folderPath, ...pathA, file), {
+                        recursive: true
+                    })
+                }
             }
-            const addedModsFolder = path.join(
-                config.rootDir,
-                'addedMods',
-                args.gameFolder
+        } else {
+            logger.info(
+                'No forced game folder detected, creating an empty one...'
             )
-            checkExist(addedModsFolder)
-            // Copy added mods
-            const addedMods = fs.readdirSync(addedModsFolder)
-            logger.debug(addedMods)
-            if (addedMods.length > 0) {
-                checkExist(
+            args.gameFolder = args.name
+                .replace(/[^a-zA-Z0-9]/g, '_')
+                .toLowerCase()
+        }
+        const addedModsFolder = path.join(
+            config.rootDir,
+            'addedMods',
+            args.gameFolder
+        )
+        checkExist(addedModsFolder)
+        // Copy added mods
+        const addedMods = fs.readdirSync(addedModsFolder)
+        logger.debug(addedMods)
+        if (addedMods.length > 0) {
+            checkExist(
+                path.join(config.rootDir, 'profiles', args.gameFolder, 'mods')
+            )
+            for (const mod of addedMods) {
+                fs.copyFileSync(
+                    path.join(addedModsFolder, mod),
                     path.join(
                         config.rootDir,
                         'profiles',
                         args.gameFolder,
-                        'mods'
+                        'mods',
+                        mod
                     )
                 )
-                for (const mod of addedMods) {
-                    fs.copyFileSync(
-                        path.join(addedModsFolder, mod),
-                        path.join(
-                            config.rootDir,
-                            'profiles',
-                            args.gameFolder,
-                            'mods',
-                            mod
-                        )
-                    )
-                }
             }
-        } else {
-            args.gameFolder = args.name
-                .replace(/[^a-zA-Z0-9]/g, '_')
-                .toLowerCase()
         }
 
         let opts = {

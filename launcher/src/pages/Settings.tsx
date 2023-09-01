@@ -21,9 +21,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
     const [selectedServer, setSelectedServer] = useState(config.selectedServer)
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
-    const [disableAutoUpdate, setDisableAutoUpdate] = useState(
-        config.disableAutoUpdate
-    )
 
     const [validated, setValidated] = useState(false)
 
@@ -33,7 +30,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
         config.setRam(ram)
         config.setCdnServer(cdnServer)
         config.setCloseLauncher(closeLauncher)
-        config.setDisableAutoUpdate(disableAutoUpdate)
         config.setServers(servers)
         config.setSelectedServer(selectedServer)
 
@@ -88,11 +84,6 @@ export default function Settings({ hide, setOverlay }: SettingsProps) {
                     label='Close launcher when the game launches'
                     value={closeLauncher}
                     setter={setCloseLauncher as Setter}
-                />
-                <BooleanInput
-                    label='Disable auto-update'
-                    value={disableAutoUpdate}
-                    setter={setDisableAutoUpdate as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
                     <Button className='mx-1' onClick={resetConfig}>

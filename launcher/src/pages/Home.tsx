@@ -20,8 +20,7 @@ export default function Home({
 }) {
     const auth = authStore(state => ({ connected: state.connected }))
     const config = configStore(state => ({
-        server: state.server,
-        disableAutoUpdate: state.disableAutoUpdate
+        server: state.server
     }))
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [selectedProfile, setSelectedProfile] = useState<number>(0)
@@ -92,18 +91,6 @@ export default function Home({
                 }}
             />
             <AlertStack>
-                {config.disableAutoUpdate ? (
-                    <Alert
-                        style={{
-                            textAlign: 'center'
-                        }}
-                        variant='info'
-                        onClose={() => setError('')}
-                    >
-                        you disabled auto-update, the game WILL NOT be updated
-                        while this option is enabled
-                    </Alert>
-                ) : undefined}
                 {error ? (
                     <Alert
                         style={{
