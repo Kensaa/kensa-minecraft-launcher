@@ -15,47 +15,34 @@ import { pino, multistream } from 'pino'
 import pretty from 'pino-pretty'
 import 'source-map-support/register'
 
-/*const javaBinaries = {
-    8: {
-        win32: '',
-        linux: ''
-    },
-    19: {
-        win32: 'https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_windows-x64_bin.zip',
-        linux: 'https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz'
-    }
-}*/
-
 const launcher = new Client()
 
+const configFolders = {
+    win32: path.join('AppData', 'Roaming', 'kensa-minecraft-launcher'),
+    linux: path.join('.config', 'kensa-minecraft-launcher')
+}
+const rootDirs = {
+    win32: path.join('AppData', 'Roaming', '.kensa-launcher'),
+    linux: path.join('.kensa-launcher')
+}
+
 let win: BrowserWindow | null = null
-const platorm = os.platform()
+const platform = os.platform()
 let configFolder = ''
 let rootDir
 let startProgress = 0
 let loginProgress = 0
-//let javaInstallationProgress = 0
 let gameStarting = false
 
-if (platorm === 'win32') {
-    configFolder = path.join(
-        os.homedir(),
-        'AppData',
-        'Roaming',
-        'kensa-minecraft-launcher'
-    )
-    rootDir = path.join(os.homedir(), 'AppData', 'Roaming', '.kensa-launcher')
-} else if (platorm === 'linux') {
-    configFolder = path.join(
-        os.homedir(),
-        '.config',
-        'kensa-minecraft-launcher'
-    )
-    rootDir = path.join(os.homedir(), '.kensa-launcher')
-} else {
-    console.error('Unsupported platform')
+const supportedPlatforms = ['win32', 'linux']
+
+if (!supportedPlatforms.includes(platform)) {
+    console.log('unsupported platform')
     process.exit(1)
 }
+configFolder = path.join(os.homedir(), configFolders[platform])
+rootDir = path.join(os.homedir(), rootDirs[platform])
+
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '')
 const customLevels = { trace: 10, debug: 20, info: 30, game: 31 }
@@ -339,7 +326,6 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             }
         }
 
-        const platform = os.platform()
         logger.info('Checking if java is installed')
         const MCVersionNumber = parseInt(args.version.mc.split('.')[1])
         const javaVersion = MCVersionNumber >= 17 ? '17' : '8'
@@ -667,6 +653,7 @@ function checkServer(address: string) {
             .catch(err => resolve(false))
     })
 }
+
 function JSONFetch(address: string) {
     return fetch(address).then(res => res.json())
 }
