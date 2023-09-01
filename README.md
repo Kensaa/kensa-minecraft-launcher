@@ -25,7 +25,6 @@ You can download the last version from the [release](https://github.com/Kensaa/k
 #### Radio Buttons
 
 -   **Close launcher when the game launches** : Kinda explicit
--   **Disable Auto-Update** : Toggle that if you want to disable the auto update feature of the launcher, I highly recommand not activating it because your profiles will no longer be updated (I will remove that one day)
 
 #### Buttons
 
