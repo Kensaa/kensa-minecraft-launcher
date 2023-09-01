@@ -28,12 +28,7 @@ You can download the last version from the [release](https://github.com/Kensaa/k
 
 #### Buttons
 
--   **Install Java** : Install the right version of java in the game directory and sets it as the JRE Executable
 -   **Reset Config** : Kinda explicit too
-
-> **_NOTE:_**
-> The "Install Java" button now works on Windows and Linux, it downloads the java 19 binaries and places them into the game directory.\
-> For linux Users, if your game directory is on a ntfs partition, make sure to have the execution rights activated in your `/etc/fstab` with the parameter `exec`
 
 ### Adding mods to existing profile
 
