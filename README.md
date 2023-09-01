@@ -35,6 +35,10 @@ You can download the last version from the [release](https://github.com/Kensaa/k
 > The "Install Java" button now works on Windows and Linux, it downloads the java 19 binaries and places them into the game directory.\
 > For linux Users, if your game directory is on a ntfs partition, make sure to have the execution rights activated in your `/etc/fstab` with the parameter `exec`
 
+### Adding mods to existing profile
+
+If your want to had mods to an existing modded profile, you can add them in [game folder]/addedMods/[profile]. They will be automatically added in the game folder when you start the game. This is made so that people who want to add mods like Optifine, Betterfps, etc... can had them without them being removed at each start by the updater or the creator of the profile adding them to the profile which would install them for all the users
+
 ## Server
 
 You can use the [docker image](https://hub.docker.com/repository/docker/kensa/kensa-minecraft-launcher-server/general) the deploy the server on docker.\
