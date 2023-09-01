@@ -19,9 +19,8 @@ export default function Home({
     setSettingsShown: (show: boolean) => void
 }) {
     const auth = authStore(state => ({ connected: state.connected }))
-    const config = configStore(state => ({
-        server: state.server
-    }))
+    const server = configStore(state => state.server)
+
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [selectedProfile, setSelectedProfile] = useState<number>(0)
     const [loading, setLoading] = useState<boolean>(false)
@@ -30,7 +29,7 @@ export default function Home({
 
     useEffect(() => {
         setLoading(true)
-        fetch(config.server + '/profiles')
+        fetch(server + '/profiles')
             .then(res => res.json())
             .then(data => {
                 setProfiles(data)
@@ -42,7 +41,7 @@ export default function Home({
                 )
                 setLoading(false)
             })
-    }, [config.server])
+    }, [server])
 
     useEffect(() => {
         if (profiles.length === 0) return
