@@ -536,7 +536,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             forge: forgeArgs,
             memory: {
                 max: config.ram + 'G',
-                min: '1G'
+                min: config.ram + 'G'
             },
             javaPath: javaExecutable,
             customArgs: ['-Djava.net.preferIPv6Stack=true'],
