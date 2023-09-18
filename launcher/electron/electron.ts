@@ -5,15 +5,20 @@ import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client } from '@kensaa/minecraft-launcher-core'
 import { Profile } from '../src/types'
-import * as http from 'http'
-import * as crypto from 'crypto'
-import { execSync, spawn } from 'child_process'
+import { execSync } from 'child_process'
 import decompress from 'decompress'
-import fetch from 'electron-fetch'
 import { urlJoin } from './url-join'
 import { pino, multistream } from 'pino'
 import pretty from 'pino-pretty'
 import 'source-map-support/register'
+import {
+    JSONFetch,
+    checkExist,
+    checkServer,
+    download,
+    folderTree,
+    getHash
+} from './utils'
 
 const launcher = new Client()
 
@@ -333,13 +338,12 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             logger.info('Java not installed, installing it...')
 
             const zipPath = path.join(javaFolder, 'binaries.tar.gz')
-            execSync(
-                `curl -o ${zipPath} ${urlJoin(
-                    downloadServer,
-                    '/static/java',
-                    `${platform}-${javaVersion}.tar.gz`
-                )} --ssl-no-revoke`
+            const zipUrl = urlJoin(
+                downloadServer,
+                '/static/java',
+                `${platform}-${javaVersion}.tar.gz`
             )
+            await download(zipUrl, zipPath)
             await decompress(zipPath, path.join(javaFolder, javaVersion), {
                 strip: 1
             })
@@ -376,7 +380,6 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             )
 
             checkExist(localPath)
-            //create folder for added mods
 
             const hashTree = (await JSONFetch(
                 urlJoin(primaryServer, '/hashes')
@@ -572,68 +575,3 @@ ipcMain.on('get-start-progress', (event, arg) => {
 ipcMain.on('get-login-progress', (event, arg) => {
     event.returnValue = loginProgress
 })
-
-function checkExist(path: string) {
-    if (!fs.existsSync(path)) {
-        logger.info("%s don't exist, creating", path)
-        fs.mkdirSync(path)
-    }
-}
-
-function download(address: string, filepath: string) {
-    return new Promise<void>((resolve, reject) => {
-        if (fs.existsSync(path.dirname(filepath))) {
-            fs.mkdirSync(path.dirname(filepath), { recursive: true })
-        }
-        if (fs.existsSync(filepath)) {
-            fs.writeFileSync(filepath, '')
-        }
-        const file = fs.createWriteStream(filepath)
-        http.get(address, res => {
-            res.pipe(file)
-            file.on('finish', () => {
-                file.close()
-                resolve()
-            })
-        }).on('error', err => reject(err))
-    })
-}
-
-function getHash(src: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const stream = fs.createReadStream(src)
-        const hash = crypto.createHash('md5')
-        stream.on('end', () => resolve(hash.digest('hex')))
-        stream.on('error', err => reject(err))
-        stream.pipe(hash)
-    })
-}
-
-async function folderTree(
-    src: string
-): Promise<Record<string, unknown> | string> {
-    if (fs.statSync(src).isFile()) {
-        return ''
-    } else {
-        const res: { [k: string]: Record<string, unknown> | string } = {}
-        const files = fs.readdirSync(src)
-        for (const file of files) {
-            const filePath = path.join(src, file)
-            const fileInfo = await folderTree(filePath)
-            res[file] = fileInfo
-        }
-        return res
-    }
-}
-
-function checkServer(address: string) {
-    return new Promise<boolean>((resolve, reject) => {
-        fetch(address)
-            .then(res => resolve(true))
-            .catch(err => resolve(false))
-    })
-}
-
-function JSONFetch(address: string) {
-    return fetch(address).then(res => res.json())
-}
