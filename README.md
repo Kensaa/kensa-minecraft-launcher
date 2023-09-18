@@ -30,9 +30,11 @@ You can download the last version from the [release](https://github.com/Kensaa/k
 
 -   **Reset Config** : Kinda explicit too
 
-### Adding mods to existing profile
+### Adding files to existing profile
 
-If your want to had mods to an existing modded profile, you can add them in [game folder]/addedMods/[profile]. They will be automatically added in the game folder when you start the game. This is made so that people who want to add mods like Optifine, Betterfps, etc... can had them without them being removed at each start by the updater or the creator of the profile adding them to the profile which would install them for all the users
+If your want to add file (like mods) to an existing profile, you can add them in :\
+`[game folder]/additionalFiles/[profile]`.\
+ They will be automatically added in the game folder when you start the game. This is made so that people who want to add mods like Optifine, Betterfps, etc... can add them without them being removed at each start by the updater or without the creator of the profile having to add them to the profile which would install them for all the users
 
 ## Server
 

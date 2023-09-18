@@ -15,6 +15,7 @@ import {
     JSONFetch,
     checkExist,
     checkServer,
+    copyFolder,
     download,
     folderTree,
     getHash
@@ -501,37 +502,30 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .toLowerCase()
         }
-        const addedModsFolder = path.join(
+
+        const gameFolder = path.join(
             config.rootDir,
-            'addedMods',
+            'profiles',
             args.gameFolder
         )
-        checkExist(addedModsFolder)
+
+        const additionalFileFolder = path.join(
+            config.rootDir,
+            'additionalFiles',
+            args.gameFolder
+        )
+        checkExist(additionalFileFolder)
         // Copy added mods
-        const addedMods = fs.readdirSync(addedModsFolder)
-        logger.debug(addedMods)
-        if (addedMods.length > 0) {
-            checkExist(
-                path.join(config.rootDir, 'profiles', args.gameFolder, 'mods')
-            )
-            for (const mod of addedMods) {
-                fs.copyFileSync(
-                    path.join(addedModsFolder, mod),
-                    path.join(
-                        config.rootDir,
-                        'profiles',
-                        args.gameFolder,
-                        'mods',
-                        mod
-                    )
-                )
-            }
+        const additionalFiles = fs.readdirSync(additionalFileFolder)
+        if (additionalFiles.length > 0) {
+            checkExist(gameFolder)
+            copyFolder(additionalFileFolder, gameFolder)
         }
 
-        let opts = {
+        const opts = {
             clientPackage: null,
             authorization: msmc.getMCLC().getAuth(loginInfo),
-            root: path.join(config.rootDir, 'profiles', args.gameFolder),
+            root: gameFolder,
             version: {
                 number: args.version.mc,
                 type: 'release'

@@ -6,7 +6,7 @@ import fetch from 'electron-fetch'
 
 export function checkExist(path: string) {
     if (!fs.existsSync(path)) {
-        fs.mkdirSync(path)
+        fs.mkdirSync(path, { recursive: true })
     }
 }
 
@@ -66,4 +66,18 @@ export function checkServer(address: string) {
 
 export function JSONFetch(address: string) {
     return fetch(address).then(res => res.json())
+}
+
+export function copyFolder(source: string, destination: string) {
+    const files = fs.readdirSync(source)
+    checkExist(destination)
+    for (const filename of files) {
+        const filepath = path.join(source, filename)
+        const fileDestination = path.join(destination, filename)
+        if (fs.statSync(filepath).isFile()) {
+            fs.copyFileSync(filepath, fileDestination)
+        } else {
+            copyFolder(filepath, fileDestination)
+        }
+    }
 }
