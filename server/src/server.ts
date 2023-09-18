@@ -11,6 +11,10 @@ const staticFolder = process.env.STATIC_FOLDER || './static'
 const profilesFile = process.env.PROFILES_FILE || './profiles.json'
 const CDNS = process.env.CDNS || ''
 
+const version = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
+).version
+
 const expectedBinaries = [
     'linux-8.tar.gz',
     'linux-17.tar.gz',
@@ -100,6 +104,10 @@ function syncCDNS() {
 
     app.get('/', (req, res) => {
         res.sendStatus(200)
+    })
+
+    app.get('/version', (req, res) => {
+        res.status(200).send(version)
     })
 
     app.get('/hashes', (req, res) => {
