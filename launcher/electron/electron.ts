@@ -531,7 +531,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
         launcher.on('data', e => {
             // sometimes multiple lines arrive at once
-            for (let s of e.trim().split('\n')) logger.game(s.trim())
+            for (const s of e.trim().split('\n')) logger.game(s.trim())
         })
         launcher.on('start', e => {
             if (!config) return
