@@ -5,11 +5,10 @@ import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client } from '@kensaa/minecraft-launcher-core'
 import { Profile } from '../src/types'
-import { execSync } from 'child_process'
+import { createLogger } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
-import { pino, multistream } from 'pino'
-import pretty from 'pino-pretty'
+
 import 'source-map-support/register'
 import {
     JSONFetch,
@@ -48,22 +47,7 @@ const configFolder = path.join(os.homedir(), configFolders[platform])
 const rootDir = path.join(os.homedir(), rootDirs[platform])
 
 const LOG_FILE = path.join(configFolder, 'launcher.log')
-if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '')
-const customLevels = { trace: 10, debug: 20, info: 30, game: 31 }
-const logger = pino(
-    { level: 'trace', customLevels },
-    multistream([
-        { level: 'trace', stream: fs.createWriteStream(LOG_FILE) },
-        {
-            level: 'trace',
-            stream: pretty({
-                customLevels,
-                //@ts-ignore
-                customColors: 'trace:gray,debug:blue,info:green,game:yellow'
-            })
-        }
-    ])
-)
+const logger = createLogger(LOG_FILE)
 
 const defaultConfig = {
     rootDir,
