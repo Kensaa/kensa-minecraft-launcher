@@ -407,6 +407,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                     [folder]
                 )
             }
+            logger.info('Update finished')
             /**
              *
              * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
