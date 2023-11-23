@@ -82,14 +82,18 @@ async function createWindow() {
         if (loginInfo && loginInfo.profile) {
             if (!msmc.validate(loginInfo.profile)) {
                 logger.info('login info expired, refreshing...')
-                msmc.refresh(loginInfo.profile).then(res => {
-                    logger.info('refreshed login info')
-                    loginInfo = res
-                    fs.writeFileSync(
-                        loginInfoPath,
-                        JSON.stringify(loginInfo, null, 4)
+                msmc.refresh(loginInfo.profile)
+                    .then(res => {
+                        logger.info('refreshed login info')
+                        loginInfo = res
+                        fs.writeFileSync(
+                            loginInfoPath,
+                            JSON.stringify(loginInfo, null, 4)
+                        )
+                    })
+                    .catch(err =>
+                        logger.warning('failed to refresh login info: %o', err)
                     )
-                })
             }
         } else {
             logger.warn('login info file is corrupted, deleting')
