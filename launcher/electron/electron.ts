@@ -46,6 +46,8 @@ if (!supportedPlatforms.includes(platform)) {
 const configFolder = path.join(os.homedir(), configFolders[platform])
 const rootDir = path.join(os.homedir(), rootDirs[platform])
 
+if (!fs.existsSync(configFolder)) fs.mkdirSync(configFolder)
+
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 const logger = createLogger(LOG_FILE)
 
