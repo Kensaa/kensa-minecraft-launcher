@@ -60,9 +60,6 @@ jobs:
                           console.log('changes:',changes)
                       }
 
-            - name: change directory
-              run: cd launcher
-
             - name: get-pkgversion
               id: get-pkgversion
               uses: actions/github-script@v7
@@ -70,7 +67,7 @@ jobs:
                   script: |
                       const fs = require('fs');
                       const path = require('path');
-                      const pkgJSON = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), "utf8"));
+                      const pkgJSON = JSON.parse(fs.readFileSync(path.join('launcher', 'package.json'), "utf8"));
                       core.setOutput("PACKAGE_VERSION", "v"+pkgJSON.version);
 
             - name: build-test
@@ -98,22 +95,21 @@ jobs:
               with:
                   node-version: 21
 
-            - name: change directory
-              run: cd launcher
-
             - name: install dependencies
+              working-directory: launcher
               run: yarn
 
             - name: build
+              working-directory: launcher
               run: yarn build
 
             - name: release
               uses: softprops/action-gh-release@v1
               with:
                   files: |
-                      release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.msi
-                      release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.exe
-                      release/Kensa Minecraft Launcher-${{needs.version-check.outputs.current-version}}.zip
+                      launcher/release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.msi
+                      launcher/release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.exe
+                      launcher/release/Kensa Minecraft Launcher-${{needs.version-check.outputs.current-version}}.zip
                   draft: false
                   prerelease: false
                   tag_name: ${{ needs.version-check.outputs.current-version }}
