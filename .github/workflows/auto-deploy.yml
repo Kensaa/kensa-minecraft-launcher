@@ -7,7 +7,7 @@ on:
 jobs:
     version-check:
         name: Version Checking
-        runs-on: ubuntu-latest
+        runs-on: [self-hosted]
         outputs:
             status: ${{ steps.build-test.outputs.building }}
             current-version: ${{ steps.get-pkgversion.outputs.PACKAGE_VERSION }}
@@ -82,7 +82,7 @@ jobs:
 
     build:
         name: Build
-        runs-on: ubuntu-latest
+        runs-on: [self-hosted]
         permissions: write-all
         needs: version-check
         if: ${{ needs.version-check.outputs.status == 'true' }}
