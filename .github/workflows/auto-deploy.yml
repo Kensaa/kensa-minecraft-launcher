@@ -69,7 +69,8 @@ jobs:
               with:
                   script: |
                       const fs = require('fs');
-                      const pkgJSON = JSON.parse(fs.readFileSync("package.json", "utf8"));
+                      const path = require('path');
+                      const pkgJSON = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), "utf8"));
                       core.setOutput("PACKAGE_VERSION", "v"+pkgJSON.version);
 
             - name: build-test
