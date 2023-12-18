@@ -103,13 +103,17 @@ jobs:
               working-directory: launcher
               run: yarn build
 
+            - name: version
+              id: version
+              run: echo "version=$(echo ${{needs.version-check.outputs.current-version}} | cut -b 2-)" >> "$GITHUB_ENV"
+
             - name: release
               uses: softprops/action-gh-release@v1
               with:
                   files: |
-                      launcher/release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.msi
-                      launcher/release/Kensa Minecraft Launcher ${{needs.version-check.outputs.current-version}}.exe
-                      launcher/release/Kensa Minecraft Launcher-${{needs.version-check.outputs.current-version}}.zip
+                      "launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.msi"
+                      "launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe"
+                      "launcher/release/Kensa Minecraft Launcher-${{steps.version.outputs.version}}.zip"
                   draft: false
                   prerelease: false
                   tag_name: ${{ needs.version-check.outputs.current-version }}
