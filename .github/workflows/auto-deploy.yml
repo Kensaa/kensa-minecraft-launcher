@@ -1,0 +1,122 @@
+name: auto-deploy
+on:
+    push:
+        branches:
+            - main
+            - master
+    workflow_dispatch:
+
+jobs:
+    version-check:
+        name: Version Checking
+        runs-on: [self-hosted]
+        outputs:
+            status: ${{ steps.build-test.outputs.building }}
+            current-version: ${{ steps.get-pkgversion.outputs.PACKAGE_VERSION }}
+            previous-tag: ${{ steps.get-tag.outputs.TAG }}
+            changes: ${{ steps.get-tag.outputs.changes }}
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+
+            - name: fetch
+              run: |
+                  git fetch --tags
+                  git fetch --prune --unshallow
+
+            - name: get-tag
+              id: get-tag
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      let logs = '';
+                      let err = '';
+
+                      const options = {};
+                      options.listeners = {
+                          stdout: (data) => {
+                              logs += data.toString();
+                          },
+                          stderr: (data) => {
+                              err += data.toString();
+                          }
+                      };
+
+                      await exec.exec('git log --oneline --decorate=short --decorate-refs="refs/tags/" --all',"", options);
+                      let lines = logs.split('\n')
+
+                      lines = lines.map(line => line.substring(line.indexOf(' ')).trim())
+                      let tagLine = lines.find(line => line.includes("(tag: "))
+                      if (tagLine) {
+                          const tagName = tagLine.substring(tagLine.indexOf("(tag: ") + 6, tagLine.indexOf(")")).trim()
+                          const changes = lines.slice(0,lines.indexOf(tagLine)).map(line => `- ${line}`).join('\n')
+                          core.setOutput("TAG", tagName);
+                          core.setOutput("CHANGES", changes);
+                          console.log('tag:',tagName)
+                          console.log('changes:',changes)
+                      }else {
+                          const changes = lines.map(line => `- ${line}`).join('\n')
+                          core.setOutput("TAG", "v0.0.0");
+                          core.setOutput("CHANGES", changes);
+                          console.log('tag:',"v0.0.0")
+                          console.log('changes:',changes)
+                      }
+
+            - name: get-pkgversion
+              id: get-pkgversion
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const fs = require('fs');
+                      const path = require('path');
+                      const pkgJSON = JSON.parse(fs.readFileSync(path.join('launcher', 'package.json'), "utf8"));
+                      core.setOutput("PACKAGE_VERSION", "v"+pkgJSON.version);
+
+            - name: build-test
+              id: build-test
+              run: |
+                  if [[ "${{ steps.get-tag.outputs.TAG }}" == "${{steps.get-pkgversion.outputs.PACKAGE_VERSION}}" ]]; 
+                  then
+                    echo "building=false" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "building=true" >> "$GITHUB_OUTPUT"
+                  fi
+
+    build:
+        name: Build
+        runs-on: [self-hosted]
+        permissions: write-all
+        needs: version-check
+        if: ${{ needs.version-check.outputs.status == 'true' }}
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+
+            - name: setup node 21
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 21
+
+            - name: install dependencies
+              working-directory: launcher
+              run: yarn
+
+            - name: build
+              working-directory: launcher
+              run: yarn build
+
+            - name: version
+              id: version
+              run: echo "version=$(echo ${{needs.version-check.outputs.current-version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
+
+            - name: release
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: |
+                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.msi
+                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe
+                      launcher/release/kensa-minecraft-launcher-${{steps.version.outputs.version}}.zip
+                  draft: false
+                  prerelease: false
+                  tag_name: ${{ needs.version-check.outputs.current-version }}
+                  body: ${{ needs.version-check.outputs.changes }}
