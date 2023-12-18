@@ -60,6 +60,9 @@ jobs:
                           console.log('changes:',changes)
                       }
 
+            - name: change directory
+              run: cd launcher
+
             - name: get-pkgversion
               id: get-pkgversion
               uses: actions/github-script@v7
