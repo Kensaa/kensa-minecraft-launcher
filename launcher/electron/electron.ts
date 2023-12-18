@@ -8,7 +8,6 @@ import { Profile } from '../src/types'
 import { createLogger } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
-
 import 'source-map-support/register'
 import {
     JSONFetch,
@@ -44,6 +43,7 @@ if (!supportedPlatforms.includes(platform)) {
     process.exit(1)
 }
 const configFolder = path.join(os.homedir(), configFolders[platform])
+const configPath = path.join(configFolder, 'config.json')
 const rootDir = path.join(os.homedir(), rootDirs[platform])
 
 if (!fs.existsSync(configFolder)) fs.mkdirSync(configFolder)
@@ -103,27 +103,19 @@ async function createWindow() {
         }
     }
 
-    if (!fs.existsSync(path.join(configFolder, 'config.json'))) {
+    if (!fs.existsSync(configPath)) {
         config = { ...defaultConfig }
-        fs.writeFileSync(
-            path.join(configFolder, 'config.json'),
-            JSON.stringify(config, null, 4)
-        )
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         logger.child(config).info('created config file using default config:')
     } else {
-        config = JSON.parse(
-            fs.readFileSync(path.join(configFolder, 'config.json'), 'utf-8')
-        )
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
         // checking if config is missing field
         if (Object.keys(config).length !== Object.keys(defaultConfig).length) {
             logger.warn(
                 'config seems to be missing some fields, resetting to default config'
             )
             config = { ...defaultConfig }
-            fs.writeFileSync(
-                path.join(configFolder, 'config.json'),
-                JSON.stringify(config, null, 4)
-            )
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         }
         logger.child(config).info('Existing config as been loaded: ')
     }
@@ -211,19 +203,13 @@ ipcMain.on('set-config', (event, arg) => {
     logger.debug('set-config')
     const newConfig = JSON.parse(arg)
     config = { ...config, ...newConfig }
-    fs.writeFileSync(
-        path.join(configFolder, 'config.json'),
-        JSON.stringify(config, null, 4)
-    )
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 })
 
 ipcMain.on('reset-config', (event, arg) => {
     logger.debug('reset-config')
     config = { ...defaultConfig }
-    fs.writeFileSync(
-        path.join(configFolder, 'config.json'),
-        JSON.stringify(config, null, 4)
-    )
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
     event.returnValue = undefined
 })
 
@@ -233,11 +219,7 @@ ipcMain.on('prompt-folder', (event, args) => {
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openDirectory']
     })
-    if (dir) {
-        event.returnValue = dir[0]
-    } else {
-        event.returnValue = undefined
-    }
+    event.returnValue = dir ? dir[0] : undefined
 })
 
 ipcMain.on('prompt-file', (event, args) => {
@@ -246,11 +228,7 @@ ipcMain.on('prompt-file', (event, args) => {
     const dir = dialog.showOpenDialogSync(win, {
         properties: ['openFile']
     })
-    if (dir) {
-        event.returnValue = dir[0]
-    } else {
-        event.returnValue = undefined
-    }
+    event.returnValue = dir ? dir[0] : undefined
 })
 
 ipcMain.on('get-selected-profile', (event, args) => {
@@ -303,7 +281,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             )
         }
 
-        if (config.cdnServer && config.cdnServer !== '') {
+        if (config.cdnServer) {
             logger.info('CDN detected in config, testing if it is working')
             if (await checkServer(config.cdnServer)) {
                 logger.info('CDN working, setting it as download server')
@@ -372,18 +350,16 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
 
             checkExist(localPath)
 
-            const hashTree = (await JSONFetch(
-                urlJoin(primaryServer, '/hashes')
-            )) as any
+            const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
             const remoteTree = hashTree['gameFolders'][args.gameFolder]
-            const fileCount = (
-                (await JSONFetch(
-                    urlJoin(primaryServer, '/fileCount', args.gameFolder)
-                )) as { count: number }
+            const fileCount: number = (
+                await JSONFetch(
+                    urlJoin(primaryServer, 'fileCount', args.gameFolder)
+                )
             ).count
 
             logger.info('Remote tree fetched')
-            let localTree = await folderTree(localPath)
+            const localTree = await folderTree(localPath)
             logger.info('Local tree created')
             function getFolders(tree: any) {
                 return Object.keys(tree).filter(
@@ -540,7 +516,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             // sometimes multiple lines arrive at once
             for (const s of e.trim().split('\n')) logger.game(s.trim())
         })
-        launcher.on('start', e => {
+        launcher.on('start', () => {
             if (!config) return
             if (config.closeLauncher) setTimeout(app.quit, 5000)
             gameStarting = false
@@ -553,10 +529,10 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
     })
 })
 
-ipcMain.on('get-start-progress', (event, arg) => {
+ipcMain.on('get-start-progress', event => {
     event.returnValue = startProgress
 })
 
-ipcMain.on('get-login-progress', (event, arg) => {
+ipcMain.on('get-login-progress', event => {
     event.returnValue = loginProgress
 })
