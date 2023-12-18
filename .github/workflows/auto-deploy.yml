@@ -105,7 +105,7 @@ jobs:
 
             - name: version
               id: version
-              run: echo "version=$(echo ${{needs.version-check.outputs.current-version}} | cut -b 2-)" >> "$GITHUB_ENV"
+              run: echo "version=$(echo ${{needs.version-check.outputs.current-version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
 
             - name: release
               uses: softprops/action-gh-release@v1
