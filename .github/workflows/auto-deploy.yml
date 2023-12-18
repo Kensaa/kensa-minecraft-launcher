@@ -111,9 +111,9 @@ jobs:
               uses: softprops/action-gh-release@v1
               with:
                   files: |
-                      "launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.msi"
-                      "launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe"
-                      "launcher/release/Kensa Minecraft Launcher-${{steps.version.outputs.version}}.zip"
+                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.msi
+                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe
+                      launcher/release/Kensa Minecraft Launcher-${{steps.version.outputs.version}}.zip
                   draft: false
                   prerelease: false
                   tag_name: ${{ needs.version-check.outputs.current-version }}
