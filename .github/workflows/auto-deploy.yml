@@ -4,6 +4,8 @@ on:
         branches:
             - main
             - master
+    workflow_dispatch:
+
 jobs:
     version-check:
         name: Version Checking
