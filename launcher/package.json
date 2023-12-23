@@ -3,7 +3,7 @@
     "description": "A Minecraft launcher with auto-update feature to facilitate playing modded minecraft",
     "author": "Kensa",
     "private": true,
-    "version": "2.4.3",
+    "version": "2.4.4",
     "main": "dist-electron/electron.js",
     "scripts": {
         "dev": "vite",

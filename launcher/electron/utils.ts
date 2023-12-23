@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as http from 'http'
+import * as https from 'https'
 import { createHash } from 'crypto'
 import fetch from 'electron-fetch'
 
@@ -19,13 +19,15 @@ export function download(address: string, filepath: string) {
             fs.writeFileSync(filepath, '')
         }
         const file = fs.createWriteStream(filepath)
-        http.get(address, res => {
-            res.pipe(file)
-            file.on('finish', () => {
-                file.close()
-                resolve()
+        https
+            .get(address, res => {
+                res.pipe(file)
+                file.on('finish', () => {
+                    file.close()
+                    resolve()
+                })
             })
-        }).on('error', err => reject(err))
+            .on('error', err => reject(err))
     })
 }
 
