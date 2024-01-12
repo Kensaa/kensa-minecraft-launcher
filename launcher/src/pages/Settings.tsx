@@ -72,7 +72,13 @@ export default function Settings({ hide, showServerManager }: SettingsProps) {
                     <Button className='mx-1' onClick={resetConfig}>
                         Reset Config
                     </Button>
-                    <Button className='mx-1' onClick={showServerManager}>
+                    <Button
+                        className='mx-1'
+                        onClick={() => {
+                            hide()
+                            showServerManager()
+                        }}
+                    >
                         Server Manager
                     </Button>
                 </div>
