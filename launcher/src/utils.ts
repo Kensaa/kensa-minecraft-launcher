@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import type { Task } from './types'
+import { ipcRenderer } from 'electron'
 
 export function useFetch(address: string, options: RequestInit) {
     const [data, setData] = useState([])
@@ -26,4 +28,16 @@ export function urlJoin(...args: string[]) {
             .join('/')
             .replace(/\/+/g, '/')
     )
+}
+
+export function useTask() {
+    const [task, setTask] = useState<Task | undefined>(undefined)
+    useEffect(() => {
+        let interval = setInterval(() => {
+            setTask(ipcRenderer.sendSync('get-current-task'))
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [])
+
+    return task
 }

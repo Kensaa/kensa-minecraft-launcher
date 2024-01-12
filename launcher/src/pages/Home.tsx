@@ -1,7 +1,6 @@
 import { ipcRenderer } from 'electron'
 import { useEffect, useState } from 'react'
 import { Alert, Button } from 'react-bootstrap'
-import GameStartingOverlay from '../overlays/GameStartingOverlay'
 import HomeHeader from '../components/HomeHeader'
 
 import authStore from '../stores/auth'
@@ -10,6 +9,7 @@ import { Profile } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
+import TaskOverlay from '../components/TaskOverlay'
 
 export default function Home({
     setOverlay,
@@ -66,10 +66,10 @@ export default function Home({
     }, [])
 
     const startGame = () => {
-        setOverlay(<GameStartingOverlay />)
+        setOverlay(<TaskOverlay title='Starting Game' />)
         ipcRenderer
             .invoke('start-game', profiles[selectedProfile])
-            .then(res => setOverlay(undefined))
+            .then(() => setOverlay(undefined))
             .catch(error => console.log(error))
     }
     return (

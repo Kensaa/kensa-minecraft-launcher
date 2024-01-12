@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
-import { Client } from '@kensaa/minecraft-launcher-core'
+import { Client } from 'minecraft-launcher-core'
 import { Profile } from '../src/types'
 import { createLogger } from './logger'
 import decompress from 'decompress'
@@ -34,8 +34,7 @@ let win: BrowserWindow | null = null
 const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
-let startProgress = 0
-let loginProgress = 0
+let currentTask: { title: string; progress: number } | undefined = undefined
 let gameStarting = false
 
 if (!supportedPlatforms.includes(platform)) {
@@ -145,9 +144,16 @@ ipcMain.handle('msmc-connect', (event, arg) => {
     logger.debug('msmc-connect (async)')
     return new Promise<boolean>(resolve => {
         logger.info('Connecting to Microsoft sevices...')
+        currentTask = {
+            title: 'Logging in',
+            progress: 0
+        }
         msmc.fastLaunch('electron', info => {
             if (!info.percent) return
-            loginProgress = info.percent
+            currentTask = {
+                title: 'Logging in',
+                progress: info.percent ?? 0
+            }
         })
             .then(res => {
                 logger.info('Connected')
@@ -268,6 +274,11 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         checkExist(path.join(config.rootDir, 'profiles'))
         checkExist(path.join(config.rootDir, 'addedMods'))
         checkExist(path.join(config.rootDir, 'java'))
+
+        currentTask = {
+            title: 'Starting Game',
+            progress: 0
+        }
 
         // cdn check
         const primaryServer = config.servers[config.selectedServer]
@@ -425,17 +436,19 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                                 logger.info('Updating file "%s"', localPath)
                                 await download(fileUrl, filepath)
                                 count++
-                                startProgress = Math.round(
-                                    (count / fileCount) * 100
-                                )
+                                currentTask = {
+                                    title: 'Updating Mods',
+                                    progress: (count / fileCount) * 100
+                                }
                             }
                         } else {
                             logger.info('Downloading file "%s"', localPath)
                             await download(fileUrl, filepath)
                             count++
-                            startProgress = Math.round(
-                                (count / fileCount) * 100
-                            )
+                            currentTask = {
+                                title: 'Updating Mods',
+                                progress: (count / fileCount) * 100
+                            }
                         }
                     } else {
                         // Element is a folder
@@ -512,27 +525,41 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         }
         launcher.launch(opts as any)
 
+        let gameStarted = false
         launcher.on('data', e => {
+            if (!gameStarted) {
+                gameStarted = true
+                if (config.closeLauncher) setTimeout(app.quit, 5000)
+                gameStarting = false
+                resolve()
+            }
             // sometimes multiple lines arrive at once
             for (const s of e.trim().split('\n')) logger.game(s.trim())
         })
-        launcher.on('start', () => {
-            if (!config) return
-            if (config.closeLauncher) setTimeout(app.quit, 5000)
-            gameStarting = false
-            resolve()
-        })
+
         launcher.on('progress', progress => {
-            if (typeof progress !== 'number') return
-            startProgress = progress
+            console.log(progress)
+            const {
+                type,
+                task: current,
+                total
+            } = progress as { type: string; task: number; total: number }
+
+            if (['assets', 'natives'].includes(type)) {
+                currentTask = {
+                    title: `Downloading ${type}`,
+                    progress: (current / total) * 100
+                }
+            } else {
+                currentTask = {
+                    title: 'Starting Game',
+                    progress: (current / total) * 100
+                }
+            }
         })
     })
 })
 
-ipcMain.on('get-start-progress', event => {
-    event.returnValue = startProgress
-})
-
-ipcMain.on('get-login-progress', event => {
-    event.returnValue = loginProgress
+ipcMain.on('get-current-task', event => {
+    event.returnValue = currentTask
 })

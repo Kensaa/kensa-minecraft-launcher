@@ -6,13 +6,12 @@ import configStore from '../stores/config'
 
 interface SettingsProps {
     hide: () => void
-    setOverlay: (overlay: JSX.Element | undefined) => void
 }
 
 type SettingValue = string | number | boolean
 type Setter = (s: SettingValue) => void
 
-export default function Settings({ hide, setOverlay }: SettingsProps) {
+export default function Settings({ hide }: SettingsProps) {
     const config = configStore(store => ({ ...store }))
 
     const [rootDir, setRootDir] = useState(config.rootDir)
