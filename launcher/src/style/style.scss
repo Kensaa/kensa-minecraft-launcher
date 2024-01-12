@@ -1,4 +1,4 @@
-@import "~bootstrap/scss/bootstrap";
+@import '~bootstrap/scss/bootstrap';
 
 html,
 body,
@@ -15,6 +15,15 @@ body,
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 99;
+
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    color: #fff;
 }
 
 .small {
@@ -31,7 +40,9 @@ body,
 }
 
 .btn {
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, backdrop-filter 0.15s ease-in-out;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+        border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out,
+        backdrop-filter 0.15s ease-in-out;
 }
 
 .btn-transparent {
@@ -55,7 +66,7 @@ body,
     & ~ .dropdown-menu {
         backdrop-filter: blur(4px) brightness(80%);
         box-shadow: 4px 7px 14px 0.1rem rgb(0 0 0 / 50%);
-        
+
         --bs-dropdown-bg: rgba(0, 0, 0, 0.05);
         --bs-dropdown-link-hover-bg: rgba(255, 255, 255, 0.15);
     }
@@ -71,14 +82,14 @@ h6 {
 }
 
 .smooth-background-down {
-    background: linear-gradient(#1e1e1e, rgba(0, 0, 0, 0.0));
+    background: linear-gradient(#1e1e1e, rgba(0, 0, 0, 0));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
 .smooth-background-up {
-    background: linear-gradient(rgba(0, 0, 0, 0.0), #1e1e1e);
+    background: linear-gradient(rgba(0, 0, 0, 0), #1e1e1e);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

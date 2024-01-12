@@ -473,16 +473,6 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@kensaa/minecraft-launcher-core@^3.17.3":
-  version "3.17.3"
-  resolved "https://registry.yarnpkg.com/@kensaa/minecraft-launcher-core/-/minecraft-launcher-core-3.17.3.tgz#006d3321cbc59126283f15a8839e12bb8ff64d05"
-  integrity sha512-3UO6J6ExB8E8PMEIIa93uSaKlnzLuzasqFJ2GrzAzHwVMMd4vI0T2rBJLoO9dDOFJ5f4ZsdsLtIN6J42P/DJQA==
-  dependencies:
-    adm-zip "^0.4.13"
-    checksum "^0.1.1"
-    request "^2.88.0"
-    uuid "^8.3.2"
-
 "@malept/cross-spawn-promise@^1.1.0":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@malept/cross-spawn-promise/-/cross-spawn-promise-1.1.1.tgz#504af200af6b98e198bce768bc1730c6936ae01d"
@@ -2489,6 +2479,16 @@ mimic-response@^1.0.0, mimic-response@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/mimic-response/-/mimic-response-1.0.1.tgz#4923538878eef42063cb8a3e3b0798781487ab1b"
   integrity sha512-j5EctnkH7amfV/q5Hgmoal1g2QHFJRraOtmx0JpIqkxhBhI/lJSl1nMpQ45hVarwNETOoWEimndZ4QK0RHxuxQ==
+
+minecraft-launcher-core@^3.17.3:
+  version "3.17.3"
+  resolved "https://registry.yarnpkg.com/minecraft-launcher-core/-/minecraft-launcher-core-3.17.3.tgz#59432af9cd35e2fc2098e28063e9c81f5a4203cb"
+  integrity sha512-yA/WKkw6zcIFBKS4OCXEeQfdtKhXHZVz4cS5pmouOohxk8JZQI/i+BDMl7Ny3jHUnUv7n9VPK4ZQ6jhadhhXxQ==
+  dependencies:
+    adm-zip "^0.4.13"
+    checksum "^0.1.1"
+    request "^2.88.0"
+    uuid "^8.3.2"
 
 minimatch@3.0.4:
   version "3.0.4"

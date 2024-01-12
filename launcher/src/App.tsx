@@ -20,10 +20,7 @@ export default function App() {
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Settings
-                        setOverlay={setOverlay}
-                        hide={() => setSettingsShown(false)}
-                    />
+                    <Settings hide={() => setSettingsShown(false)} />
                 </Modal.Body>
             </Modal>
         </div>

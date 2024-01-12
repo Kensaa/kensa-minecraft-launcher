@@ -6,3 +6,8 @@ export interface Profile {
     }
     gameFolder?: string
 }
+
+export interface Task {
+    title: string
+    progress: number
+}
