@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client } from 'minecraft-launcher-core'
-import { Profile } from '../src/types'
+import { Profile, StartArgs } from '../src/types'
 import { createLogger } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
@@ -53,8 +53,11 @@ const logger = createLogger(LOG_FILE)
 const defaultConfig = {
     rootDir,
     ram: 4,
-    servers: ['http://redover.fr:40069', 'http://localhost:40069'],
-    selectedServer: 0,
+    servers: [
+        'http://redover.fr:40069',
+        'https://mclauncher.kensa.fr',
+        'http://localhost:40069'
+    ],
     cdnServer: '',
     closeLauncher: true
 }
@@ -240,7 +243,7 @@ ipcMain.on('prompt-file', (event, args) => {
 ipcMain.on('get-selected-profile', (event, args) => {
     logger.debug('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
-        event.returnValue = JSON.stringify(0)
+        event.returnValue = JSON.stringify([0, 0])
     } else {
         event.returnValue = JSON.parse(
             fs.readFileSync(
@@ -259,7 +262,7 @@ ipcMain.on('set-selected-profile', (event, args) => {
     )
 })
 
-ipcMain.handle('start-game', async (event, args: Profile) => {
+ipcMain.handle('start-game', async (_, args: StartArgs) => {
     logger.debug('start-game (async)')
     logger.info('Starting Game ...')
     return new Promise<void>(async (resolve, reject) => {
@@ -281,7 +284,8 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         }
 
         // cdn check
-        const primaryServer = config.servers[config.selectedServer]
+        const primaryServer = args.server
+        const profile = args.profile
         let downloadServer = primaryServer
 
         if (!(await checkServer(primaryServer))) {
@@ -305,7 +309,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         }
 
         logger.info('Checking if java is installed')
-        const MCVersionNumber = parseInt(args.version.mc.split('.')[1])
+        const MCVersionNumber = parseInt(profile.version.mc.split('.')[1])
         const javaVersion = MCVersionNumber >= 17 ? '17' : '8'
         const javaFolder = path.join(config.rootDir, 'java')
         const javaExecutable = path.join(
@@ -332,40 +336,40 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         }
 
         let forgeArgs
-        if (args.version.forge) {
+        if (profile.version.forge) {
             logger.info('Forge detected, downloading forge installer')
             const forgePath = path.join(
                 config.rootDir,
                 'forgeInstallers',
-                args.version.forge
+                profile.version.forge
             )
             if (!fs.existsSync(forgePath)) {
                 const forgeURL = urlJoin(
                     downloadServer,
                     '/static/forges/',
-                    args.version.forge
+                    profile.version.forge
                 )
                 logger.info(`downloading ${forgeURL} to ${forgePath}`)
                 await download(forgeURL, forgePath)
-                logger.info(`${args.version.forge} downloaded`)
+                logger.info(`${profile.version.forge} downloaded`)
             }
             forgeArgs = forgePath
         }
-        if (args.gameFolder) {
+        if (profile.gameFolder) {
             logger.info('A forced game folder is detected, downloading it...')
             const localPath = path.join(
                 config.rootDir,
                 'profiles',
-                args.gameFolder
+                profile.gameFolder
             )
 
             checkExist(localPath)
 
             const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
-            const remoteTree = hashTree['gameFolders'][args.gameFolder]
+            const remoteTree = hashTree['gameFolders'][profile.gameFolder]
             const fileCount: number = (
                 await JSONFetch(
-                    urlJoin(primaryServer, 'fileCount', args.gameFolder)
+                    urlJoin(primaryServer, 'fileCount', profile.gameFolder)
                 )
             ).count
 
@@ -395,7 +399,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
                 await downloadFolder(
                     remoteTree[folder],
                     localTree[folder],
-                    args.gameFolder,
+                    profile.gameFolder,
                     localPath,
                     [folder]
                 )
@@ -478,7 +482,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             logger.info(
                 'No forced game folder detected, creating an empty one...'
             )
-            args.gameFolder = args.name
+            profile.gameFolder = profile.name
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .toLowerCase()
         }
@@ -486,13 +490,13 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
         const gameFolder = path.join(
             config.rootDir,
             'profiles',
-            args.gameFolder
+            profile.gameFolder
         )
 
         const additionalFileFolder = path.join(
             config.rootDir,
             'additionalFiles',
-            args.gameFolder
+            profile.gameFolder
         )
         checkExist(additionalFileFolder)
         // Copy added mods
@@ -507,7 +511,7 @@ ipcMain.handle('start-game', async (event, args: Profile) => {
             authorization: msmc.getMCLC().getAuth(loginInfo),
             root: gameFolder,
             version: {
-                number: args.version.mc,
+                number: profile.version.mc,
                 type: 'release'
             },
             forge: forgeArgs,

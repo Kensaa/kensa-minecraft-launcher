@@ -11,3 +11,8 @@ export interface Task {
     title: string
     progress: number
 }
+
+export interface StartArgs {
+    server: string
+    profile: Profile
+}

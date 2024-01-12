@@ -5,7 +5,7 @@ import HomeHeader from '../components/HomeHeader'
 
 import authStore from '../stores/auth'
 import configStore from '../stores/config'
-import { Profile } from '../types'
+import { Profile, StartArgs } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
@@ -19,40 +19,57 @@ export default function Home({
     setSettingsShown: (show: boolean) => void
 }) {
     const auth = authStore(state => ({ connected: state.connected }))
-    const server = configStore(state => state.server)
+    const servers = configStore(state => state.servers)
 
-    const [profiles, setProfiles] = useState<Profile[]>([])
-    const [selectedProfile, setSelectedProfile] = useState<number>(0)
+    const [profiles, setProfiles] = useState<Record<string, Profile[]>>({})
+    const [selectedProfile, setSelectedProfile] = useState<[string, number]>([
+        '',
+        0
+    ])
     const [loading, setLoading] = useState<boolean>(false)
     const [error, setError] = useState('')
     const [info, setInfo] = useState('')
 
     useEffect(() => {
         setLoading(true)
-        fetch(server + '/profiles')
-            .then(res => res.json())
-            .then(data => {
-                setProfiles(data)
-                setLoading(false)
-            })
-            .catch(err => {
-                setError(
-                    'Unable to fetch profiles, check your internet connection or the server address'
-                )
-                setLoading(false)
-            })
-    }, [server])
+
+        const p: Record<string, Profile[]> = {}
+        Promise.all(
+            servers.map(server =>
+                fetch(server + '/profiles')
+                    .then(res => res.json())
+                    .then(data => [server, data])
+                    .catch(err => {
+                        console.log('unable to fetch profiles from ' + server)
+                        return [server, []]
+                    })
+            )
+        ).then(responses => {
+            console.log(responses)
+            for (const response of responses) {
+                if (!response) continue
+                const [server, data] = response
+                p[server] = data
+            }
+
+            setProfiles(p)
+            setLoading(false)
+        })
+    }, [servers])
 
     useEffect(() => {
-        if (profiles.length === 0) return
+        if (Object.keys(profiles).length === 0) return
         const sProfile = ipcRenderer.sendSync('get-selected-profile')
-        if (sProfile >= profiles.length) {
-            ipcRenderer.send('set-selected-profile', 0)
-            setSelectedProfile(0)
+        if (
+            !profiles[sProfile[0]] ||
+            sProfile[1] >= Object.keys(profiles[sProfile[0]]).length
+        ) {
+            ipcRenderer.send('set-selected-profile', [0, 0])
+            setSelectedProfile([servers[0], 0])
         } else {
             setSelectedProfile(sProfile)
         }
-    }, [profiles])
+    }, [profiles, servers])
 
     useEffect(() => {
         if (!(import.meta.env.MODE == 'production')) return
@@ -66,9 +83,14 @@ export default function Home({
     }, [])
 
     const startGame = () => {
+        const profile = profiles[selectedProfile[0]][selectedProfile[1]]
+
         setOverlay(<TaskOverlay title='Starting Game' />)
         ipcRenderer
-            .invoke('start-game', profiles[selectedProfile])
+            .invoke('start-game', {
+                profile,
+                server: selectedProfile[0]
+            } as StartArgs)
             .then(() => setOverlay(undefined))
             .catch(error => console.log(error))
     }
@@ -119,7 +141,9 @@ export default function Home({
             <div className='h-25 w-100 d-flex pb-5 justify-content-center align-items-end smooth-background-up position-absolute bottom-0'>
                 <Button
                     disabled={
-                        loading || !auth.connected || profiles.length === 0
+                        loading ||
+                        !auth.connected ||
+                        Object.keys(profiles).length === 0
                     }
                     variant='success'
                     onClick={startGame}
