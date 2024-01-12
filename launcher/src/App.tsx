@@ -8,7 +8,7 @@ import ServerManager from './pages/ServerManager'
 export default function App() {
     const [overlay, setOverlay] = useState<JSX.Element | undefined>(undefined)
     const [settingsShown, setSettingsShown] = useState<boolean>(false)
-    const [serverManagerShown, setServerManagerShown] = useState<boolean>(true)
+    const [serverManagerShown, setServerManagerShown] = useState<boolean>(false)
 
     return (
         <div className='w-100 h-100 d-flex'>
