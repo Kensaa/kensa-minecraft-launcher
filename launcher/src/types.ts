@@ -12,7 +12,15 @@ export interface Task {
     progress: number
 }
 
-export interface StartArgs {
+export type RemoteStartArgs = {
+    type: 'remote'
     server: string
     profile: Profile
 }
+
+export type LocalStartArgs = {
+    type: 'local'
+    profile: Profile
+}
+
+export type StartArgs = RemoteStartArgs | LocalStartArgs

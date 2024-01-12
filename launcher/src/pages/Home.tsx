@@ -5,7 +5,7 @@ import HomeHeader from '../components/HomeHeader'
 
 import authStore from '../stores/auth'
 import configStore from '../stores/config'
-import { Profile, StartArgs } from '../types'
+import { LocalStartArgs, Profile, RemoteStartArgs, StartArgs } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
@@ -84,16 +84,19 @@ export default function Home({
 
     const startGame = () => {
         const profile = profiles[selectedProfile[0]][selectedProfile[1]]
+        const args: RemoteStartArgs = {
+            type: 'remote',
+            profile,
+            server: selectedProfile[0]
+        }
 
         setOverlay(<TaskOverlay title='Starting Game' />)
         ipcRenderer
-            .invoke('start-game', {
-                profile,
-                server: selectedProfile[0]
-            } as StartArgs)
+            .invoke('start-game', args)
             .then(() => setOverlay(undefined))
             .catch(error => console.log(error))
     }
+
     return (
         <div
             className='w-100 h-100 d-flex flex-column align-items-center background'
