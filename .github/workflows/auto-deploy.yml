@@ -96,7 +96,6 @@ jobs:
               uses: actions/setup-node@v3
               with:
                   node-version: 21
-                  cache: 'yarn'
 
             - name: install dependencies
               working-directory: launcher
