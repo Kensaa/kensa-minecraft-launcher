@@ -7,10 +7,8 @@ services:
             - '40069:40069/tcp'
         environment:
             PORT: 40069
-            ADDRESS: ''
             staticFolder: '/data/static'
             profilesFile: '/data/profiles.json'
             SERVER_NAME: ''
-            CDNS: ''
         volumes:
             - /mnt/kensa-launcher/:/data

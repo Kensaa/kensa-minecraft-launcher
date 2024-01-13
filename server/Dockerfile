@@ -14,9 +14,7 @@ WORKDIR /app/
 ENV PROFILES_FILE="/data/profiles.json"
 ENV STATIC_FOLDER="/data/static/"
 ENV PORT="40069"
-ENV ADDRESS=""
 ENV SERVER_NAME=""
-ENV CDNS=""
 
 EXPOSE 40069
 
