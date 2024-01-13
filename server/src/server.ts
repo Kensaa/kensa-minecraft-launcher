@@ -5,13 +5,13 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 import 'source-map-support/register'
 
-const PORT = parseInt(process.env.PORT ?? '40069')
+const PORT = parseInt(process.env.PORT || '40069')
 const ADDRESS = process.env.ADDRESS
-const staticFolder = process.env.STATIC_FOLDER ?? './static'
-const profilesFile = process.env.PROFILES_FILE ?? './profiles.json'
-const CDNS = process.env.CDNS ?? ''
+const staticFolder = process.env.STATIC_FOLDER || './static'
+const profilesFile = process.env.PROFILES_FILE || './profiles.json'
+const CDNS = process.env.CDNS || ''
 const SERVER_NAME =
-    process.env.SERVER_NAME ?? crypto.randomBytes(4).toString('hex')
+    process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
 
 const version = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
