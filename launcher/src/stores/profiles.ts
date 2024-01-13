@@ -108,7 +108,7 @@ export const useSelectedProfile = () => {
             selectedProfile[1] >=
                 Object.keys(profiles[selectedProfile[0]]).length
         ) {
-            ipcRenderer.send('set-selected-profile', [0, 0])
+            ipcRenderer.send('set-selected-profile', [servers[0], 0])
             setSelectedProfile([servers[0], 0])
         }
     }, [profiles, servers])
