@@ -3,20 +3,18 @@ import { Dropdown, Spinner } from 'react-bootstrap'
 
 import { Profile } from '../types'
 import ProfileElement from './ProfileElement'
+import {
+    useIsFetching,
+    useProfiles,
+    useSelectedProfile
+} from '../stores/profiles'
+import LoadingSpinner from './LoadingSpinner'
 
-export interface ProfilePickerProps {
-    profiles: Record<string, Profile[]>
-    loading: boolean
-    selectedProfile: [string, number]
-    setSelectedProfile: (profile: [string, number]) => void
-}
+export default function ProfilePicker() {
+    const profiles = useProfiles()
+    const fetching = useIsFetching()
+    const { selectedProfile, setSelectedProfile } = useSelectedProfile()
 
-export default function ProfilePicker({
-    profiles,
-    loading,
-    selectedProfile,
-    setSelectedProfile
-}: ProfilePickerProps) {
     const selectProfile = (profile: [string, number]) => {
         setSelectedProfile(profile)
         ipcRenderer.send('set-selected-profile', profile)
@@ -32,19 +30,17 @@ export default function ProfilePicker({
         >
             <Dropdown className='w-100 h-100'>
                 <Dropdown.Toggle
-                    disabled={!currentServer.length}
+                    disabled={!currentServer.length || fetching}
                     style={{ width: '350px' }}
                     className='d-flex flex-column align-items-center'
-                    variant={!currentServer.length ? 'danger' : 'transparent'}
+                    variant={
+                        !currentServer.length && !fetching
+                            ? 'danger'
+                            : 'transparent'
+                    }
                 >
-                    {loading ? (
-                        <div>
-                            <Spinner animation='border' role='status'>
-                                <span className='visually-hidden'>
-                                    Loading...
-                                </span>
-                            </Spinner>
-                        </div>
+                    {fetching ? (
+                        <LoadingSpinner />
                     ) : (
                         <ProfileElement profile={profile} />
                     )}
@@ -54,7 +50,7 @@ export default function ProfilePicker({
                         ([server, profiles], serverIndex) => {
                             if (!profiles.length) return null
                             return (
-                                <>
+                                <div key={serverIndex}>
                                     <Divider text={server} />
                                     {profiles.map((profile, profileIndex) => (
                                         <Dropdown.Item
@@ -71,7 +67,7 @@ export default function ProfilePicker({
                                             <ProfileElement profile={profile} />
                                         </Dropdown.Item>
                                     ))}
-                                </>
+                                </div>
                             )
                         }
                     )}
@@ -83,7 +79,7 @@ export default function ProfilePicker({
 
 function Divider({ text }: { text: string }) {
     return (
-        <div className='d-flex flex-row align-items-center justify-content-center user-select-none'>
+        <div className='d-flex flex-row align-items-center justify-content-center user-select-none mt-3'>
             <label style={{ color: 'white' }}>{text}</label>
         </div>
     )

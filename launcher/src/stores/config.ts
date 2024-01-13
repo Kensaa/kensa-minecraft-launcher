@@ -16,7 +16,7 @@ interface configStore {
 }
 
 export default create<configStore>(set => {
-    const config = JSON.parse(ipcRenderer.sendSync('get-config'))
+    const config = ipcRenderer.sendSync('get-config')
 
     return {
         rootDir: config.rootDir,

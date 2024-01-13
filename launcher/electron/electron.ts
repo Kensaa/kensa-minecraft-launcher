@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client } from 'minecraft-launcher-core'
-import { LocalStartArgs, RemoteStartArgs, StartArgs } from '../src/types'
+import type { StartArgs } from '../src/types'
 import { createLogger } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
@@ -205,7 +205,7 @@ ipcMain.handle('is-up-to-date', (event, arg) => {
 
 ipcMain.on('get-config', (event, arg) => {
     logger.debug('get-config')
-    event.returnValue = JSON.stringify(config)
+    event.returnValue = config
 })
 
 ipcMain.on('set-config', (event, arg) => {
@@ -243,7 +243,7 @@ ipcMain.on('prompt-file', (event, args) => {
 ipcMain.on('get-selected-profile', (event, args) => {
     logger.debug('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
-        event.returnValue = JSON.stringify([0, 0])
+        event.returnValue = ['', 0]
     } else {
         event.returnValue = JSON.parse(
             fs.readFileSync(
@@ -259,6 +259,28 @@ ipcMain.on('set-selected-profile', (event, args) => {
     fs.writeFileSync(
         path.join(configFolder, 'selectedProfile.json'),
         JSON.stringify({ profile: args }, null, 4)
+    )
+})
+
+ipcMain.on('get-local-profiles', (event, args) => {
+    logger.debug('get-local-profiles')
+    if (!fs.existsSync(path.join(configFolder, 'localProfiles.json'))) {
+        event.returnValue = []
+    } else {
+        event.returnValue = JSON.parse(
+            fs.readFileSync(
+                path.join(configFolder, 'localProfiles.json'),
+                'utf-8'
+            )
+        )
+    }
+})
+
+ipcMain.on('set-local-profiles', (event, args) => {
+    logger.debug('set-local-profiles')
+    fs.writeFileSync(
+        path.join(configFolder, 'localProfiles.json'),
+        JSON.stringify(args, null, 4)
     )
 })
 
@@ -322,10 +344,11 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         })
 
         try {
-            if (args.type === 'remote') {
-                await launchGameRemote(args)
-            } else if (args.type === 'local') {
+            console.log(args)
+            if (args.server === 'local') {
                 await launchGameLocal(args)
+            } else if (args.server !== '') {
+                await launchGameRemote(args)
             } else {
                 reject('invalid start args')
             }
@@ -337,7 +360,7 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
     })
 })
 
-async function launchGameRemote(args: RemoteStartArgs) {
+async function launchGameRemote(args: StartArgs) {
     if (!config) return
     if (!loginInfo) return
     const profile = args.profile
@@ -563,7 +586,7 @@ async function launchGameRemote(args: RemoteStartArgs) {
     launcher.launch(opts as any)
 }
 
-async function launchGameLocal(args: LocalStartArgs) {
+async function launchGameLocal(args: StartArgs) {
     if (!config) return
     if (!loginInfo) return
     const profile = args.profile

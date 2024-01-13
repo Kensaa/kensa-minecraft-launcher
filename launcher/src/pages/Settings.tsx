@@ -7,12 +7,17 @@ import configStore from '../stores/config'
 interface SettingsProps {
     hide: () => void
     showServerManager: () => void
+    showProfileManager: () => void
 }
 
 type SettingValue = string | number | boolean
 type Setter = (s: SettingValue) => void
 
-export default function Settings({ hide, showServerManager }: SettingsProps) {
+export default function Settings({
+    hide,
+    showServerManager,
+    showProfileManager
+}: SettingsProps) {
     const config = configStore()
 
     const [rootDir, setRootDir] = useState(config.rootDir)
@@ -69,11 +74,13 @@ export default function Settings({ hide, showServerManager }: SettingsProps) {
                     setter={setCloseLauncher as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
-                    <Button className='mx-1' onClick={resetConfig}>
+                    <Button className='mx-1 flex-grow' onClick={resetConfig}>
                         Reset Config
                     </Button>
+                </div>
+                <div className='d-flex justify-content-center my-1'>
                     <Button
-                        className='mx-1'
+                        className='mx-1 flex-grow'
                         onClick={() => {
                             hide()
                             showServerManager()
@@ -81,11 +88,22 @@ export default function Settings({ hide, showServerManager }: SettingsProps) {
                     >
                         Server Manager
                     </Button>
+                    <Button
+                        className='mx-1 flex-grow'
+                        onClick={() => {
+                            hide()
+                            showProfileManager()
+                        }}
+                    >
+                        Local Profile Manager
+                    </Button>
+                </div>
+                <div className='d-flex justify-content-center my-1'>
+                    <Button className='mx-1 flex-grow' type='submit'>
+                        Save
+                    </Button>
                 </div>
             </div>
-            <Button className='my-1' type='submit'>
-                Save
-            </Button>
         </Form>
     )
 }
