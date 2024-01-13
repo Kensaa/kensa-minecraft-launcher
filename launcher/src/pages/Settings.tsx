@@ -2,22 +2,26 @@ import { ipcRenderer } from 'electron'
 import { FileSearch, FolderSearch } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
-import configStore from '../stores/config'
+import { useConfig } from '../stores/config'
 
 interface SettingsProps {
     hide: () => void
+    showServerManager: () => void
+    showProfileManager: () => void
 }
 
 type SettingValue = string | number | boolean
 type Setter = (s: SettingValue) => void
 
-export default function Settings({ hide }: SettingsProps) {
-    const config = configStore(store => ({ ...store }))
+export default function Settings({
+    hide,
+    showServerManager,
+    showProfileManager
+}: SettingsProps) {
+    const config = useConfig()
 
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
-    const [servers, setServers] = useState(config.servers)
-    const [selectedServer, setSelectedServer] = useState(config.selectedServer)
     const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
 
@@ -29,8 +33,6 @@ export default function Settings({ hide }: SettingsProps) {
         config.setRam(ram)
         config.setCdnServer(cdnServer)
         config.setCloseLauncher(closeLauncher)
-        config.setServers(servers)
-        config.setSelectedServer(selectedServer)
 
         setValidated(true)
         hide()
@@ -60,19 +62,6 @@ export default function Settings({ hide }: SettingsProps) {
                     min={1}
                     max={14}
                 />
-                <NewServerInput
-                    label='Add Server'
-                    value=''
-                    setter={server =>
-                        setServers([...servers, server as string])
-                    }
-                />
-                <ServerSelector
-                    label='Select Server'
-                    value={selectedServer}
-                    setter={setSelectedServer as Setter}
-                    servers={servers}
-                />
                 <TextInput
                     label='CDN server'
                     value={cdnServer}
@@ -85,14 +74,36 @@ export default function Settings({ hide }: SettingsProps) {
                     setter={setCloseLauncher as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
-                    <Button className='mx-1' onClick={resetConfig}>
+                    <Button className='mx-1 flex-grow' onClick={resetConfig}>
                         Reset Config
                     </Button>
                 </div>
+                <div className='d-flex justify-content-center my-1'>
+                    <Button
+                        className='mx-1 flex-grow'
+                        onClick={() => {
+                            hide()
+                            showServerManager()
+                        }}
+                    >
+                        Server Manager
+                    </Button>
+                    <Button
+                        className='mx-1 flex-grow'
+                        onClick={() => {
+                            hide()
+                            showProfileManager()
+                        }}
+                    >
+                        Local Profile Manager
+                    </Button>
+                </div>
+                <div className='d-flex justify-content-center my-1'>
+                    <Button className='mx-1 flex-grow' type='submit'>
+                        Save
+                    </Button>
+                </div>
             </div>
-            <Button className='my-1' type='submit'>
-                Save
-            </Button>
         </Form>
     )
 }

@@ -3,24 +3,25 @@ import { Dropdown, Spinner } from 'react-bootstrap'
 
 import { Profile } from '../types'
 import ProfileElement from './ProfileElement'
+import {
+    useIsFetching,
+    useProfiles,
+    useSelectedProfile
+} from '../stores/profiles'
+import LoadingSpinner from './LoadingSpinner'
 
-export interface ProfilePickerProps {
-    profiles: Profile[] | undefined
-    loading: boolean
-    selectedProfile: number
-    setSelectedProfile: (index: number) => void
-}
+export default function ProfilePicker() {
+    const profiles = useProfiles()
+    const fetching = useIsFetching()
+    const { selectedProfile, setSelectedProfile } = useSelectedProfile()
 
-export default function ProfilePicker({
-    profiles,
-    loading,
-    selectedProfile,
-    setSelectedProfile
-}: ProfilePickerProps) {
-    const selectProfile = (index: number) => {
-        setSelectedProfile(index)
-        ipcRenderer.send('set-selected-profile', index)
+    const selectProfile = (profile: [string, number]) => {
+        setSelectedProfile(profile)
+        ipcRenderer.send('set-selected-profile', profile)
     }
+
+    const currentServer = profiles[selectedProfile[0]] ?? []
+    const profile = currentServer[selectedProfile[1]] ?? undefined
 
     return (
         <div
@@ -29,39 +30,57 @@ export default function ProfilePicker({
         >
             <Dropdown className='w-100 h-100'>
                 <Dropdown.Toggle
-                    disabled={!profiles?.length}
+                    disabled={!currentServer.length || fetching}
                     style={{ width: '350px' }}
                     className='d-flex flex-column align-items-center'
-                    variant={!profiles?.length ? 'danger' : 'transparent'}
+                    variant={
+                        !currentServer.length && !fetching
+                            ? 'danger'
+                            : 'transparent'
+                    }
                 >
-                    {loading ? (
-                        <div>
-                            <Spinner animation='border' role='status'>
-                                <span className='visually-hidden'>
-                                    Loading...
-                                </span>
-                            </Spinner>
-                        </div>
+                    {fetching ? (
+                        <LoadingSpinner />
                     ) : (
-                        <ProfileElement
-                            profile={
-                                profiles ? profiles[selectedProfile] : undefined
-                            }
-                        />
+                        <ProfileElement profile={profile} />
                     )}
                 </Dropdown.Toggle>
-                <Dropdown.Menu className='w-100' style={{ zIndex: 99999 }}>
-                    {profiles &&
-                        profiles.map((profile, index) => (
-                            <Dropdown.Item
-                                key={index}
-                                onClick={() => selectProfile(index)}
-                            >
-                                <ProfileElement profile={profile} />
-                            </Dropdown.Item>
-                        ))}
+                <Dropdown.Menu className='w-100'>
+                    {Object.entries(profiles).map(
+                        ([server, profiles], serverIndex) => {
+                            if (!profiles.length) return null
+                            return (
+                                <div key={serverIndex}>
+                                    <Divider text={server} />
+                                    {profiles.map((profile, profileIndex) => (
+                                        <Dropdown.Item
+                                            key={
+                                                serverIndex + ',' + profileIndex
+                                            }
+                                            onClick={() =>
+                                                selectProfile([
+                                                    server,
+                                                    profileIndex
+                                                ])
+                                            }
+                                        >
+                                            <ProfileElement profile={profile} />
+                                        </Dropdown.Item>
+                                    ))}
+                                </div>
+                            )
+                        }
+                    )}
                 </Dropdown.Menu>
             </Dropdown>
+        </div>
+    )
+}
+
+function Divider({ text }: { text: string }) {
+    return (
+        <div className='d-flex flex-row align-items-center justify-content-center user-select-none mt-3'>
+            <label style={{ color: 'white' }}>{text}</label>
         </div>
     )
 }

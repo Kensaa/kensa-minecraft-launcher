@@ -1,12 +1,11 @@
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from 'react-bootstrap'
-import ProfilePicker, { ProfilePickerProps } from './ProfilePicker'
+import ProfilePicker from './ProfilePicker'
 import UserElement from './UserElement'
 
 export interface HomeHeaderProps {
     style?: React.CSSProperties
     className?: string
-    profileProps: ProfilePickerProps
     setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }
@@ -14,7 +13,6 @@ export interface HomeHeaderProps {
 export default function HomeHeader({
     style,
     className,
-    profileProps,
     setOverlay,
     setSettingsShown
 }: HomeHeaderProps) {
@@ -27,7 +25,7 @@ export default function HomeHeader({
             style={style}
         >
             <UserElement setOverlay={setOverlay} />
-            <ProfilePicker {...profileProps} />
+            <ProfilePicker />
             <Button
                 variant='light'
                 onClick={() => {
