@@ -58,7 +58,6 @@ const defaultConfig = {
         'https://mclauncher.kensa.fr',
         'http://localhost:40069'
     ],
-    cdnServer: '',
     closeLauncher: true
 }
 
@@ -363,25 +362,11 @@ async function launchGameRemote(args: StartArgs) {
     if (!loginInfo) return
     const profile = args.profile
     const primaryServer = args.server
-    let downloadServer = primaryServer
 
-    // cdn check
     if (!(await checkServer(primaryServer))) {
         // checking if server is accessible
         gameStarting = false
         throw "server is not accessible, either your config is wrong or you don't have an internet connection"
-    }
-
-    if (config.cdnServer) {
-        logger.info('CDN detected in config, testing if it is working')
-        if (await checkServer(config.cdnServer)) {
-            logger.info('CDN working, setting it as download server')
-            downloadServer = config.cdnServer
-        } else {
-            logger.info(
-                'CDN server appear to be inaccessible, using primary server as download server'
-            )
-        }
     }
 
     logger.info('Checking if java is installed')
@@ -406,7 +391,7 @@ async function launchGameRemote(args: StartArgs) {
         )
         if (!fs.existsSync(forgePath)) {
             const forgeURL = urlJoin(
-                downloadServer,
+                primaryServer,
                 '/static/forges/',
                 profile.version.forge
             )
@@ -485,7 +470,7 @@ async function launchGameRemote(args: StartArgs) {
                 const localPath = path.join(...pathA, element)
                 const filepath = path.join(folderPath, localPath) // = absolute path to file
                 const fileUrl = urlJoin(
-                    downloadServer,
+                    primaryServer,
                     '/static/gameFolders',
                     gameFolder,
                     ...pathA,

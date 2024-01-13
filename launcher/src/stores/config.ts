@@ -5,12 +5,10 @@ interface configStore {
     rootDir: string
     ram: number
     servers: string[]
-    cdnServer: string
     closeLauncher: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
     setServers: (servers: string[]) => void
-    setCdnServer: (cdnServer: string) => void
     setCloseLauncher: (closeLauncher: boolean) => void
     resetConfig: () => void
 }
@@ -22,7 +20,6 @@ const store = create<configStore>(set => {
         rootDir: config.rootDir,
         ram: config.ram,
         servers: config.servers,
-        cdnServer: config.cdnServer,
         closeLauncher: config.closeLauncher,
         setRootDir: (rootDir: string) => {
             set({ rootDir })
@@ -35,11 +32,6 @@ const store = create<configStore>(set => {
         setServers: (servers: string[]) => {
             set({ servers })
             ipcRenderer.send('set-config', JSON.stringify({ servers }))
-        },
-        setCdnServer: (cdnServer: string) => {
-            if (cdnServer.endsWith('/')) cdnServer = cdnServer.slice(0, -1)
-            set({ cdnServer })
-            ipcRenderer.send('set-config', JSON.stringify({ cdnServer }))
         },
         setCloseLauncher: (closeLauncher: boolean) => {
             set({ closeLauncher })

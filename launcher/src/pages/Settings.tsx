@@ -22,7 +22,6 @@ export default function Settings({
 
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
-    const [cdnServer, setCdnServer] = useState(config.cdnServer)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
 
     const [validated, setValidated] = useState(false)
@@ -31,7 +30,6 @@ export default function Settings({
         e.preventDefault()
         config.setRootDir(rootDir)
         config.setRam(ram)
-        config.setCdnServer(cdnServer)
         config.setCloseLauncher(closeLauncher)
 
         setValidated(true)
@@ -62,12 +60,6 @@ export default function Settings({
                     min={1}
                     max={14}
                 />
-                <TextInput
-                    label='CDN server'
-                    value={cdnServer}
-                    setter={setCdnServer as Setter}
-                />
-
                 <BooleanInput
                     label='Close launcher when the game launches'
                     value={closeLauncher}
