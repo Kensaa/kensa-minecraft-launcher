@@ -182,7 +182,11 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
                 <Button
                     type='submit'
                     variant='success'
-                    disabled={name === '' || version === ''}
+                    disabled={
+                        name === '' ||
+                        version === '' ||
+                        (!profile && localProfiles.some(p => p.name === name))
+                    }
                 >
                     Save
                 </Button>
