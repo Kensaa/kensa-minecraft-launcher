@@ -323,7 +323,6 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         })
 
         launcher.on('progress', progress => {
-            console.log(progress)
             const {
                 type,
                 task: current,
@@ -344,7 +343,6 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         })
 
         try {
-            console.log(args)
             if (args.server === 'local') {
                 await launchGameLocal(args)
             } else if (args.server !== '') {
