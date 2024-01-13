@@ -37,10 +37,12 @@ export default function Home({
     }, [])
 
     const startGame = () => {
-        const profile = profiles[selectedProfile[0]][selectedProfile[1]]
+        const profile =
+            profiles[selectedProfile[0]].profiles[selectedProfile[1]]
+        const address = profiles[selectedProfile[0]].address
         const args: StartArgs = {
             profile,
-            server: selectedProfile[0]
+            server: address
         }
 
         setOverlay(<TaskOverlay title='Starting Game' />)

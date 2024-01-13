@@ -5,13 +5,19 @@ import { useConfig } from './config'
 import { Profile } from '../types'
 import { useEffect, useState } from 'react'
 
+interface ServerProfiles {
+    address: string
+    profiles: Profile[]
+}
+
 interface profileStore {
-    remoteProfiles: Record<string, Profile[]>
+    remoteProfiles: Record<string, ServerProfiles>
     localProfiles: Profile[]
     fetching: boolean
     fetchRemoteProfiles: () => void
     setLocalProfiles: (profiles: Profile[]) => void
 
+    //[server name, profile index]
     selectedProfile: [string, number]
     setSelectedProfile: (profile: [string, number]) => void
 }
@@ -25,23 +31,51 @@ const useStore = create<profileStore>(set => {
 
     const fetchRemoteProfiles = () => {
         const servers = useConfig.getState().servers
-        const profiles: Record<string, Profile[]> = {}
+        const profiles: Record<string, ServerProfiles> = {}
         set({ fetching: true })
+
+        const seenServers = new Set<string>()
+
         Promise.all(
             servers.map(server =>
                 fetch(server + '/profiles')
-                    .then(res => res.json())
-                    .then(data => [server, data])
+                    .then(res => {
+                        //get the server name from the headers
+                        const serverName = res.headers.get('X-Server-Name')
+                        if (serverName) {
+                            // if there is a server name, check if we already have seen it, if so, return nothing
+                            if (seenServers.has(serverName)) return undefined
+                            // if we haven't seen it, add it to the list of seen servers
+                            seenServers.add(serverName)
+                        }
+                        //then return the profiles
+                        // the name is either the server name or the server address
+                        return res.json().then(serverProfiles => {
+                            return {
+                                name: serverName ?? server,
+                                data: {
+                                    address: server,
+                                    profiles: serverProfiles as Profile[]
+                                }
+                            }
+                        })
+                    })
                     .catch(err => {
+                        console.log(err)
                         console.log('unable to fetch profiles from ' + server)
-                        return [server, []]
+                        return {
+                            name: server,
+                            data: { address: server, profiles: [] as Profile[] }
+                        }
                     })
             )
         ).then(responses => {
+            console.log('resp', responses)
             for (const response of responses) {
                 if (!response) continue
-                const [server, data] = response
-                profiles[server] = data
+
+                const { name, data } = response
+                profiles[name] = data
             }
             set({ remoteProfiles: profiles, fetching: false })
         })
@@ -74,10 +108,13 @@ export const useProfiles = () => {
         remoteProfiles: state.remoteProfiles
     }))
 
-    const [profiles, setProfiles] = useState<Record<string, Profile[]>>({})
+    const [profiles, setProfiles] = useState<Record<string, ServerProfiles>>({})
 
     useEffect(() => {
-        setProfiles({ ...remoteProfiles, local: localProfiles })
+        setProfiles({
+            ...remoteProfiles,
+            local: { address: 'local', profiles: localProfiles }
+        })
     }, [localProfiles, remoteProfiles])
 
     return profiles
@@ -103,13 +140,15 @@ export const useSelectedProfile = () => {
 
     useEffect(() => {
         if (Object.keys(profiles).length === 0 || fetching) return
+
         if (
             !profiles[selectedProfile[0]] ||
-            selectedProfile[1] >=
-                Object.keys(profiles[selectedProfile[0]]).length
+            selectedProfile[1] >= profiles[selectedProfile[0]].profiles.length
         ) {
-            ipcRenderer.send('set-selected-profile', [servers[0], 0])
-            setSelectedProfile([servers[0], 0])
+            const firstServer = Object.entries(profiles)[0]
+            const newSelectedProfile = [firstServer[0], 0] as [string, number]
+            ipcRenderer.send('set-selected-profile', newSelectedProfile)
+            setSelectedProfile(newSelectedProfile)
         }
     }, [profiles, servers])
 

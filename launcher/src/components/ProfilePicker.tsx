@@ -20,8 +20,12 @@ export default function ProfilePicker() {
         ipcRenderer.send('set-selected-profile', profile)
     }
 
-    const currentServer = profiles[selectedProfile[0]] ?? []
-    const profile = currentServer[selectedProfile[1]] ?? undefined
+    console.log(selectedProfile)
+    const currentServer = profiles[selectedProfile[0]] ?? {
+        profiles: [],
+        address: ''
+    }
+    const profile = currentServer.profiles[selectedProfile[1]] ?? undefined
 
     return (
         <div
@@ -30,11 +34,11 @@ export default function ProfilePicker() {
         >
             <Dropdown className='w-100 h-100'>
                 <Dropdown.Toggle
-                    disabled={!currentServer.length || fetching}
+                    disabled={!currentServer.profiles.length || fetching}
                     style={{ width: '350px' }}
                     className='d-flex flex-column align-items-center'
                     variant={
-                        !currentServer.length && !fetching
+                        !currentServer.profiles.length && !fetching
                             ? 'danger'
                             : 'transparent'
                     }
@@ -47,11 +51,14 @@ export default function ProfilePicker() {
                 </Dropdown.Toggle>
                 <Dropdown.Menu className='w-100'>
                     {Object.entries(profiles).map(
-                        ([server, profiles], serverIndex) => {
+                        ([server, { profiles, address }], serverIndex) => {
                             if (!profiles.length) return null
                             return (
                                 <div key={serverIndex}>
-                                    <Divider text={server} />
+                                    <Divider
+                                        serverName={server}
+                                        address={address}
+                                    />
                                     {profiles.map((profile, profileIndex) => (
                                         <Dropdown.Item
                                             key={
@@ -77,10 +84,19 @@ export default function ProfilePicker() {
     )
 }
 
-function Divider({ text }: { text: string }) {
+interface DividerProps {
+    serverName: string
+    address: string
+}
+
+function Divider({ serverName, address }: DividerProps) {
     return (
         <div className='d-flex flex-row align-items-center justify-content-center user-select-none mt-3'>
-            <label style={{ color: 'white' }}>{text}</label>
+            <label style={{ color: 'white' }}>
+                {serverName === address
+                    ? serverName
+                    : `${serverName} (${address})`}
+            </label>
         </div>
     )
 }

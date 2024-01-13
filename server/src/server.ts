@@ -5,11 +5,13 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 import 'source-map-support/register'
 
-const PORT = process.env.PORT || 40069
+const PORT = parseInt(process.env.PORT ?? '40069')
 const ADDRESS = process.env.ADDRESS
-const staticFolder = process.env.STATIC_FOLDER || './static'
-const profilesFile = process.env.PROFILES_FILE || './profiles.json'
-const CDNS = process.env.CDNS || ''
+const staticFolder = process.env.STATIC_FOLDER ?? './static'
+const profilesFile = process.env.PROFILES_FILE ?? './profiles.json'
+const CDNS = process.env.CDNS ?? ''
+const SERVER_NAME =
+    process.env.SERVER_NAME ?? crypto.randomBytes(4).toString('hex')
 
 const version = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
@@ -25,6 +27,12 @@ const expectedBinaries = [
 if (!ADDRESS) {
     console.log(
         'ADDRESS environement variables is not defined, it must be defined to your external ip address'
+    )
+}
+
+if (process.env.SERVER_NAME === undefined) {
+    console.log(
+        `SERVER_NAME environement variables is not defined, using a random name : ${SERVER_NAME}`
     )
 }
 
@@ -98,9 +106,21 @@ function syncCDNS() {
     const app = express()
     let hashTree = (await hashFolder(staticFolder)) as Record<string, any>
 
-    app.use(cors())
+    app.use(
+        cors({
+            exposedHeaders: '*'
+        })
+    )
     app.use(express.json())
     app.use('/static/', express.static(staticFolder))
+
+    app.use((req, res, next) => {
+        // Access-Control-Request-Headers
+
+        //res.setHeader('Access-Control-Request-Headers', '*')
+        res.setHeader('X-Server-Name', SERVER_NAME)
+        next()
+    })
 
     app.get('/', (req, res) => {
         res.sendStatus(200)
