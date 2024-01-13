@@ -1,8 +1,10 @@
-export interface Profile{
-    name:string
+export interface Profile {
+    name: string
     version: {
-        mc:string
-        forge?:string
+        mc: string
+        forge?: string
     }
-    gameFolder?:string
+    gameFolder?: string
 }
+
+export type Tree = Record<string, any>
