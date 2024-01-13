@@ -179,7 +179,11 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
                 />
             </Form.Group>
             <Form.Group className='d-flex justify-content-center mt-2'>
-                <Button type='submit' variant='success'>
+                <Button
+                    type='submit'
+                    variant='success'
+                    disabled={name === '' || version === ''}
+                >
                     Save
                 </Button>
             </Form.Group>
