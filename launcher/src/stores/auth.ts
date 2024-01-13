@@ -8,7 +8,7 @@ interface authStore {
     logout: () => void
 }
 
-export default create<authStore>(set => {
+const store = create<authStore>(set => {
     const loginInfo = JSON.parse(ipcRenderer.sendSync('msmc-result'))
     const profile = loginInfo ? loginInfo.profile : undefined
 
@@ -37,3 +37,6 @@ export default create<authStore>(set => {
         }
     }
 })
+
+export const useAuth = store
+export const useIsConnected = () => store(state => state.connected)

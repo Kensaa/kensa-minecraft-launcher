@@ -15,7 +15,7 @@ interface configStore {
     resetConfig: () => void
 }
 
-export default create<configStore>(set => {
+const store = create<configStore>(set => {
     const config = ipcRenderer.sendSync('get-config')
 
     return {
@@ -52,3 +52,7 @@ export default create<configStore>(set => {
         }
     }
 })
+
+export const useConfig = store
+export const useServers = () =>
+    store(state => ({ servers: state.servers, setServers: state.setServers }))

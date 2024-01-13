@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react'
 import { Alert, Button } from 'react-bootstrap'
 import HomeHeader from '../components/HomeHeader'
 
-import authStore from '../stores/auth'
-import configStore from '../stores/config'
-import { Profile, StartArgs } from '../types'
+import { useIsConnected } from '../stores/auth'
+import type { StartArgs } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
@@ -19,7 +18,7 @@ export default function Home({
     setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }) {
-    const auth = authStore(state => ({ connected: state.connected }))
+    const connected = useIsConnected()
 
     const profiles = useProfiles()
     const { selectedProfile, setSelectedProfile } = useSelectedProfile()
@@ -94,9 +93,7 @@ export default function Home({
 
             <div className='h-25 w-100 d-flex pb-5 justify-content-center align-items-end smooth-background-up position-absolute bottom-0'>
                 <Button
-                    disabled={
-                        !auth.connected || Object.keys(profiles).length === 0
-                    }
+                    disabled={!connected || Object.keys(profiles).length === 0}
                     variant='success'
                     onClick={startGame}
                 >

@@ -2,7 +2,7 @@ import { ipcRenderer } from 'electron'
 import { FileSearch, FolderSearch } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
-import configStore from '../stores/config'
+import { useConfig } from '../stores/config'
 
 interface SettingsProps {
     hide: () => void
@@ -18,7 +18,7 @@ export default function Settings({
     showServerManager,
     showProfileManager
 }: SettingsProps) {
-    const config = configStore()
+    const config = useConfig()
 
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)

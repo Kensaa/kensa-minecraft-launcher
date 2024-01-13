@@ -1,4 +1,4 @@
-import authStore from '../stores/auth'
+import { useAuth } from '../stores/auth'
 import { Button, Dropdown, DropdownButton } from 'react-bootstrap'
 import { User, UserPlus } from 'lucide-react'
 
@@ -9,7 +9,7 @@ export default function UserElement({
 }: {
     setOverlay: (setOverlay: JSX.Element | undefined) => void
 }) {
-    const auth = authStore(state => ({ ...state }))
+    const auth = useAuth()
     const login = () => {
         setOverlay(<TaskOverlay />)
         auth.connect().then(() => setOverlay(undefined))

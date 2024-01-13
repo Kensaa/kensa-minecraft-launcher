@@ -1,13 +1,10 @@
 import React, { useState } from 'react'
 import { Button, Form, Table } from 'react-bootstrap'
-import configStore from '../stores/config'
+import { useServers } from '../stores/config'
 
 export default function ServerManager() {
     const [newServer, setNewServer] = useState('')
-    const { servers, setServers } = configStore(store => ({
-        servers: store.servers,
-        setServers: store.setServers
-    }))
+    const { servers, setServers } = useServers()
     return (
         <Table>
             <thead>

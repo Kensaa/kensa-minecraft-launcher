@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { ipcRenderer } from 'electron'
 
-import configStore from './config'
+import { useConfig } from './config'
 import { Profile } from '../types'
 import { useEffect, useState } from 'react'
 
@@ -17,14 +17,14 @@ interface profileStore {
 }
 
 const useStore = create<profileStore>(set => {
-    configStore.subscribe((config, prev) => {
+    useConfig.subscribe((config, prev) => {
         if (config.servers !== prev.servers) {
             fetchRemoteProfiles()
         }
     })
 
     const fetchRemoteProfiles = () => {
-        const servers = configStore.getState().servers
+        const servers = useConfig.getState().servers
         const profiles: Record<string, Profile[]> = {}
         set({ fetching: true })
         Promise.all(
@@ -99,7 +99,7 @@ export const useSelectedProfile = () => {
     )
 
     const profiles = useProfiles()
-    const servers = configStore(state => state.servers)
+    const servers = useConfig(state => state.servers)
 
     useEffect(() => {
         if (Object.keys(profiles).length === 0 || fetching) return
