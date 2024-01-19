@@ -660,6 +660,11 @@ async function installJava(server: string, version: string) {
     if (!fs.existsSync(javaExecutable)) {
         logger.info('Java not installed, installing it...')
 
+        currentTask = {
+            title: 'Installing Java',
+            progress: 0
+        }
+
         const zipPath = path.join(javaFolder, 'binaries.tar.gz')
         const zipUrl = urlJoin(
             server,
@@ -670,10 +675,12 @@ async function installJava(server: string, version: string) {
             throw 'java version not found on server'
         }
         await download(zipUrl, zipPath)
+        currentTask.progress = 50
         await decompress(zipPath, path.join(javaFolder, version), {
             strip: 1
         })
         fs.rmSync(zipPath)
+        currentTask.progress = 100
         logger.info('Java installed')
     }
 }
