@@ -9,7 +9,11 @@ import type { StartArgs } from '../types'
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
 import TaskOverlay from '../components/TaskOverlay'
-import { useProfiles, useSelectedProfile } from '../stores/profiles'
+import {
+    useIsFetching,
+    useProfiles,
+    useSelectedProfile
+} from '../stores/profiles'
 
 export default function Home({
     setOverlay,
@@ -21,6 +25,8 @@ export default function Home({
     const connected = useIsConnected()
 
     const profiles = useProfiles()
+    const fetching = useIsFetching()
+
     const { selectedProfile, setSelectedProfile } = useSelectedProfile()
     const [error, setError] = useState('')
     const [info, setInfo] = useState('')
@@ -95,7 +101,11 @@ export default function Home({
 
             <div className='h-25 w-100 d-flex pb-5 justify-content-center align-items-end smooth-background-up position-absolute bottom-0'>
                 <Button
-                    disabled={!connected || Object.keys(profiles).length === 0}
+                    disabled={
+                        !connected ||
+                        Object.keys(profiles).length === 0 ||
+                        fetching
+                    }
                     variant='success'
                     onClick={startGame}
                 >
