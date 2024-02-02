@@ -38,7 +38,10 @@ let currentTask: { title: string; progress: number } | undefined = undefined
 let gameStarting = false
 
 if (!supportedPlatforms.includes(platform)) {
-    console.log('unsupported platform')
+    dialog.showErrorBox(
+        'Unsupported Platform',
+        'This platform is not supported'
+    )
     process.exit(1)
 }
 const configFolder = path.join(os.homedir(), configFolders[platform])
@@ -641,7 +644,7 @@ async function launchGameLocal(args: StartArgs) {
         javaPath: javaExecutable,
         customArgs: ['-Djava.net.preferIPv6Stack=true'],
         overrides: {
-            detached: config.jrePath !== '',
+            detached: true,
             assetRoot: path.join(config.rootDir, 'assets'),
             libraryRoot: path.join(config.rootDir, 'libraries')
         }
