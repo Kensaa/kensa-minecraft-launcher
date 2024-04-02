@@ -5,6 +5,8 @@ import { useConfig } from './config'
 import { Profile } from '../types'
 import { useEffect, useState } from 'react'
 
+const FETCH_TIMEOUT = 1500
+
 interface ServerProfiles {
     address: string
     profiles: Profile[]
@@ -37,9 +39,17 @@ const useStore = create<profileStore>(set => {
         const seenServers = new Set<string>()
 
         Promise.all(
-            servers.map(server =>
-                fetch(server + '/profiles')
+            servers.map(server => {
+                const controller = new AbortController()
+                const timeoutID = setTimeout(
+                    () => controller.abort(),
+                    FETCH_TIMEOUT
+                )
+                return fetch(server + '/profiles', {
+                    signal: controller.signal
+                })
                     .then(res => {
+                        clearTimeout(timeoutID)
                         //get the server name from the headers
                         const serverName = res.headers.get('X-Server-Name')
                         if (serverName) {
@@ -61,16 +71,16 @@ const useStore = create<profileStore>(set => {
                         })
                     })
                     .catch(err => {
-                        console.log(err)
+                        //console.log(err)
                         console.log('unable to fetch profiles from ' + server)
                         return {
                             name: server,
                             data: { address: server, profiles: [] as Profile[] }
                         }
                     })
-            )
+            })
         ).then(responses => {
-            console.log('resp', responses)
+            //console.log('resp', responses)
             for (const response of responses) {
                 if (!response) continue
 
@@ -145,10 +155,15 @@ export const useSelectedProfile = () => {
             !profiles[selectedProfile[0]] ||
             selectedProfile[1] >= profiles[selectedProfile[0]].profiles.length
         ) {
-            const firstServer = Object.entries(profiles)[0]
-            const newSelectedProfile = [firstServer[0], 0] as [string, number]
-            ipcRenderer.send('set-selected-profile', newSelectedProfile)
-            setSelectedProfile(newSelectedProfile)
+            for (const server of Object.entries(profiles)) {
+                const [name, serverProfiles] = server
+                if (serverProfiles.profiles.length > 0) {
+                    setSelectedProfile([name, 0])
+                    return
+                }
+            }
+            // in case there are no server available
+            setSelectedProfile(['', 0])
         }
     }, [profiles, servers])
 
