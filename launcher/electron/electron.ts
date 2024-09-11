@@ -18,6 +18,7 @@ import {
     folderTree,
     getHash
 } from './utils'
+import { totalmem } from 'os'
 
 const launcher = new Client()
 
@@ -55,7 +56,7 @@ const logger = createLogger(LOG_FILE)
 
 const defaultConfig = {
     rootDir,
-    ram: 4,
+    ram: 4000,
     servers: [
         'http://redover.fr:40069',
         'https://mclauncher.kensa.fr',
@@ -119,6 +120,10 @@ async function createWindow() {
                 'config seems to be missing some fields, resetting to default config'
             )
             config = { ...defaultConfig }
+
+            // To fix old config where ram was in G
+            if (config.ram <= 30) config.ram *= 1024 ** 2
+
             fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         }
         logger.child(config).info('Existing config as been loaded: ')
@@ -288,6 +293,11 @@ ipcMain.on('set-local-profiles', (event, args) => {
 
 ipcMain.on('get-current-task', event => {
     event.returnValue = currentTask
+})
+
+ipcMain.on('get-system-ram', event => {
+    logger.debug('get-system-ram')
+    event.returnValue = Math.floor(totalmem() / 1024 ** 2)
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
@@ -558,8 +568,8 @@ async function launchGameRemote(args: StartArgs) {
         },
         forge: forgeArgs,
         memory: {
-            max: config.ram + 'G',
-            min: config.ram + 'G'
+            max: config.ram + 'M',
+            min: config.ram + 'M'
         },
         javaPath: javaExecutable,
         customArgs: ['-Djava.net.preferIPv6Stack=true'],
@@ -638,8 +648,8 @@ async function launchGameLocal(args: StartArgs) {
         },
         forge: forgeArgs,
         memory: {
-            max: config.ram + 'G',
-            min: config.ram + 'G'
+            max: config.ram + 'M',
+            min: config.ram + 'M'
         },
         javaPath: javaExecutable,
         customArgs: ['-Djava.net.preferIPv6Stack=true'],

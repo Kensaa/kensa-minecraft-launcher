@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron'
 import { FileSearch, FolderSearch } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import { useConfig } from '../stores/config'
 
@@ -36,6 +36,13 @@ export default function Settings({
         hide()
     }
 
+    const systemRam = useMemo(() => {
+        const res = ipcRenderer.sendSync('get-system-ram')
+        return res as number
+    }, [])
+
+    console.log(ram, systemRam)
+
     const resetConfig = () => {
         hide()
         config.resetConfig()
@@ -57,8 +64,8 @@ export default function Settings({
                     label='RAM'
                     value={ram}
                     setter={setRam as Setter}
-                    min={1}
-                    max={14}
+                    min={500}
+                    max={systemRam}
                 />
                 <BooleanInput
                     label='Close launcher when the game launches'
@@ -172,11 +179,14 @@ function FileInput(props: InputProps) {
 function NumberInput(props: InputProps & { min: number; max: number }) {
     return (
         <GenericInput {...props}>
-            <label className='me-2 mb-2'>{props.value}G</label>
+            <label className='me-2 mb-2'>{props.value}M</label>
             <Form.Range
                 className='mb-2'
                 value={props.value as number}
-                onChange={({ target }) => props.setter(target.value)}
+                onChange={({ target }) => {
+                    console.log(target.value)
+                    props.setter(target.value)
+                }}
                 max={props.max}
                 min={props.min}
             />
