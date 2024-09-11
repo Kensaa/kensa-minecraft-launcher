@@ -1,4 +1,4 @@
-import { ipcRenderer } from 'electron'
+import { ipcRenderer, shell } from 'electron'
 import { useEffect, useState } from 'react'
 import { Alert, Button } from 'react-bootstrap'
 import HomeHeader from '../components/HomeHeader'
@@ -29,14 +29,28 @@ export default function Home({
 
     const { selectedProfile, setSelectedProfile } = useSelectedProfile()
     const [error, setError] = useState('')
-    const [info, setInfo] = useState('')
+    const [info, setInfo] = useState<JSX.Element | undefined>(undefined)
 
     useEffect(() => {
         if (!(import.meta.env.MODE == 'production')) return
         ipcRenderer.invoke('is-up-to-date').then(res => {
             if (!res) {
                 setInfo(
-                    'A new update is available, please redownload the launcher at https://github.com/Kensaa/kensa-minecraft-launcher/releases/latest'
+                    <>
+                        A new update is available, please redownload the
+                        launcher{' '}
+                        <a
+                            onClick={e => {
+                                e.preventDefault()
+                                shell.openExternal(
+                                    'https://github.com/Kensaa/kensa-minecraft-launcher/releases/latest'
+                                )
+                            }}
+                            href=''
+                        >
+                            here
+                        </a>
+                    </>
                 )
             }
         })
@@ -92,7 +106,7 @@ export default function Home({
                         }}
                         dismissible
                         variant='warning'
-                        onClose={() => setInfo('')}
+                        onClose={() => setInfo(undefined)}
                     >
                         {info}
                     </Alert>
