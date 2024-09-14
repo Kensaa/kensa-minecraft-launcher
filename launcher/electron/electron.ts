@@ -35,6 +35,8 @@ let win: BrowserWindow | null = null
 const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
+const FOLDER_HASH_UPDATE_SKIP = ['config']
+
 let currentTask: { title: string; progress: number } | undefined = undefined
 let gameStarting = false
 
@@ -492,6 +494,13 @@ async function launchGameRemote(args: StartArgs) {
                 if (typeof remoteFolder[element] === 'string') {
                     // Element is a file
                     if (localFolder[element] !== undefined) {
+                        if (
+                            pathA[0] !== undefined &&
+                            FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+                        ) {
+                            // Used to skip certain forlders (like config) from being updated because we don't really care about them being up to date
+                            continue
+                        }
                         if (
                             (await getHash(filepath)) !== remoteFolder[element]
                         ) {
