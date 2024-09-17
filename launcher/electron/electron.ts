@@ -540,7 +540,16 @@ async function launchGameRemote(args: StartArgs) {
                 .filter(key => typeof localFolder[key] === 'string')
                 .filter(key => !Object.keys(remoteFolder).includes(key))
             for (const file of onlyLocalFile) {
-                fs.rmSync(path.join(folderPath, ...pathA, file), {
+                if (
+                    pathA[0] !== undefined &&
+                    FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+                ) {
+                    // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
+                    continue
+                }
+                const filepath = path.join(folderPath, ...pathA, file)
+                logger.info('Deleting file "%s"', filepath)
+                fs.rmSync(filepath, {
                     recursive: true
                 })
             }
