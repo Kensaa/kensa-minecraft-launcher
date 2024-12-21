@@ -20,9 +20,9 @@ const version = JSON.parse(
 
 const expectedBinaries = [
     'linux-8.tar.gz',
-    'linux-17.tar.gz',
+    'linux-22.tar.gz',
     'win32-8.tar.gz',
-    'win32-17.tar.gz'
+    'win32-22.tar.gz'
 ]
 
 if (process.env.SERVER_NAME === undefined) {
