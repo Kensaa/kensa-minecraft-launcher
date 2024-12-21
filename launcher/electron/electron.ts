@@ -386,7 +386,7 @@ async function launchGameRemote(args: StartArgs) {
 
     logger.info('Checking if java is installed')
     const MCVersionNumber = parseInt(profile.version.mc.split('.')[1])
-    const javaVersion = MCVersionNumber >= 17 ? '17' : '8'
+    const javaVersion = MCVersionNumber >= 17 ? '22' : '8'
     const javaExecutable = path.join(
         config.rootDir,
         'java',
@@ -607,7 +607,7 @@ async function launchGameLocal(args: StartArgs) {
 
     logger.info('Checking if java is installed')
     const MCVersionNumber = parseInt(profile.version.mc.split('.')[1])
-    const javaVersion = MCVersionNumber >= 17 ? '17' : '8'
+    const javaVersion = MCVersionNumber >= 17 ? '22' : '8'
     const javaFolder = path.join(config.rootDir, 'java')
     const javaExecutable = path.join(
         javaFolder,
