@@ -385,8 +385,9 @@ async function launchGameRemote(args: StartArgs) {
     }
 
     logger.info('Checking if java is installed')
-    const MCVersionNumber = parseInt(profile.version.mc.split('.')[1])
-    const javaVersion = MCVersionNumber >= 17 ? '22' : '8'
+    logger.info('Minecraft version: %s', profile.version.mc)
+    const javaVersion = getJavaVersion(profile.version.mc)
+    logger.info('Java version: %s', javaVersion)
     const javaExecutable = path.join(
         config.rootDir,
         'java',
@@ -606,8 +607,9 @@ async function launchGameLocal(args: StartArgs) {
     const profile = args.profile
 
     logger.info('Checking if java is installed')
-    const MCVersionNumber = parseInt(profile.version.mc.split('.')[1])
-    const javaVersion = MCVersionNumber >= 17 ? '22' : '8'
+    logger.info('Minecraft version: %s', profile.version.mc)
+    const javaVersion = getJavaVersion(profile.version.mc)
+    logger.info('Java version: %s', javaVersion)
     const javaFolder = path.join(config.rootDir, 'java')
     const javaExecutable = path.join(
         javaFolder,
@@ -713,5 +715,17 @@ async function installJava(server: string, version: string) {
         fs.rmSync(zipPath)
         currentTask.progress = 100
         logger.info('Java installed')
+    }
+}
+
+function getJavaVersion(mcversion: string): string {
+    const MCVersionNumber = parseInt(mcversion.split('.')[1])
+
+    if (MCVersionNumber < 17) {
+        return '8'
+    } else if (MCVersionNumber < 21) {
+        return '17'
+    } else {
+        return '22'
     }
 }
