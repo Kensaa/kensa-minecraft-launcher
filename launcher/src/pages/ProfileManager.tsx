@@ -1,7 +1,19 @@
 import React, { useState } from 'react'
-import { Button, Form, Modal, Table } from 'react-bootstrap'
+import {
+    Button,
+    Form,
+    Modal,
+    OverlayTrigger,
+    Table,
+    Tooltip
+} from 'react-bootstrap'
 import { Profile } from '../types'
-import { useIsFetching, useLocalProfiles } from '../stores/profiles'
+import {
+    useIsFetching,
+    useLocalProfiles,
+    useProfiles,
+    useSelectedProfile
+} from '../stores/profiles'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function ProfileManager() {
@@ -9,9 +21,20 @@ export default function ProfileManager() {
     const [createProfile, setCreateProfile] = useState<boolean>(false)
 
     const { localProfiles, setLocalProfiles } = useLocalProfiles()
+    const profiles = useProfiles()
+    const { selectedProfile } = useSelectedProfile()
     const fetching = useIsFetching()
 
     if (fetching) return <LoadingSpinner />
+
+    const cloneProfile = () => {
+        if (!profiles) return
+        const currentServer = profiles[selectedProfile[0]]
+        if (!currentServer) return
+        const profile = currentServer.profiles[selectedProfile[1]]
+        if (!profile) return
+        setEditProfile(profile)
+    }
 
     return (
         <div className='h-100' style={{ overflowY: 'auto' }}>
@@ -69,9 +92,32 @@ export default function ProfileManager() {
                 </tbody>
             </Table>
             <div className='d-flex justify-content-center'>
-                <Button onClick={() => setCreateProfile(true)}>
+                <Button className='mx-1' onClick={() => setCreateProfile(true)}>
                     Create new local profile
                 </Button>
+                <OverlayTrigger
+                    placement='bottom'
+                    overlay={
+                        <Tooltip>
+                            This converts the currently selected remote profile
+                            to a local profile, making it accessible offline.
+                            Don't forget to launch the remote profile at least
+                            once so that the profile files can be downloaded.
+                        </Tooltip>
+                    }
+                    delay={{ show: 500 }}
+                >
+                    <Button
+                        className='mx-1'
+                        onClick={cloneProfile}
+                        disabled={
+                            selectedProfile[0] == '' ||
+                            selectedProfile[0] == 'local'
+                        }
+                    >
+                        Convert remote profile to local
+                    </Button>
+                </OverlayTrigger>
             </div>
         </div>
     )
