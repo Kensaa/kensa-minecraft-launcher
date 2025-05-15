@@ -107,7 +107,7 @@ jobs:
 
             - name: build
               working-directory: launcher
-              run: yarn build
+              run: echo $USER && yarn build
 
             - name: version
               id: version
