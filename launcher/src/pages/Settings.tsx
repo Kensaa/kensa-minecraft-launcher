@@ -41,8 +41,6 @@ export default function Settings({
         return res as number
     }, [])
 
-    console.log(ram, systemRam)
-
     const resetConfig = () => {
         hide()
         config.resetConfig()
