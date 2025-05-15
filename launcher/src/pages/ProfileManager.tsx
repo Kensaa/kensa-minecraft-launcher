@@ -105,7 +105,7 @@ export default function ProfileManager() {
                             once so that the profile files can be downloaded.
                         </Tooltip>
                     }
-                    delay={{ show: 500 }}
+                    delay={{ show: 500, hide: 0 }}
                 >
                     <Button
                         className='mx-1'
