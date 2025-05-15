@@ -90,6 +90,9 @@ jobs:
         if: ${{ needs.version-check.outputs.status == 'true' || github.event_name == 'workflow_dispatch' }}
         container:
             image: docker.kensa.fr/electron-build-image
+            credentials:
+                username: ${{ secrets.REGISTRY_USERNAME }}
+                password: ${{ secrets.REGISTRY_PASSWORD }}
         steps:
             - name: checkout
               uses: actions/checkout@v4
