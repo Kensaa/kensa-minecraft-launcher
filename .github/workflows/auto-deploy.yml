@@ -45,14 +45,26 @@ jobs:
                   echo $changes
                   echo "changes=$changes" >> "$GITHUB_OUTPUT"
 
+    prepare-build:
+        runs-on: [self-hosted]
+        outputs:
+            uid: ${{ steps.get-ids.outputs.uid }}
+            gid: ${{ steps.get-ids.outputs.gid }}
+        steps:
+            - id: get-ids
+              run: |
+                  echo "uid=$(id -u)" >> $GITHUB_OUTPUT
+                  echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
     build:
         name: Build
         runs-on: [self-hosted]
         permissions: write-all
-        needs: version-check
+        needs: [version-check, prepare-build]
         if: ${{ needs.version-check.outputs.tag != needs.version-check.outputs.version || github.event_name == 'workflow_dispatch' }}
         container:
             image: docker.kensa.fr/electron-build-image
+            options: --user ${{ needs.prepare-build.outputs.uid }}:${{ needs.prepare-build.outputs.gid }}
             credentials:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
