@@ -13,6 +13,7 @@ jobs:
         outputs:
             version: ${{ steps.get-project-version.outputs.version }}
             tag: ${{ steps.get-tag.outputs.tag }}
+            changes: ${{ steps.changes.outputs.changes }}
         steps:
             - name: checkout
               uses: actions/checkout@v4
@@ -36,6 +37,13 @@ jobs:
                   version=v$(cat package.json | jq -r ".version")
                   echo $version
                   echo "version=$version" >> "$GITHUB_OUTPUT"
+
+            - name: get changes
+              id: changes
+              run: |
+                  changes=$(git log "$(git describe --tags --abbrev=0)..HEAD" --pretty=format:"- %s (%ad)" --date=short)
+                  echo $changes
+                  echo "changes=$changes" >> "$GITHUB_OUTPUT"
 
     build:
         name: Build
@@ -71,11 +79,6 @@ jobs:
               id: version
               run: echo "version=$(echo ${{needs.version-check.outputs.version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
 
-            - name: get changes
-              id: changes
-              run: |
-                  changes=$(git log "$(git describe --tags --abbrev=0)..HEAD" --pretty=format:"- %s (%ad)" --date=short)
-
             - name: release
               uses: softprops/action-gh-release@v1
               with:
@@ -86,4 +89,4 @@ jobs:
                   draft: false
                   prerelease: false
                   tag_name: ${{ needs.version-check.outputs.version }}
-                  body: ${{ steps.changes.outputs.changes }}
+                  body: ${{ needs.version-check.outputs.changes }}
