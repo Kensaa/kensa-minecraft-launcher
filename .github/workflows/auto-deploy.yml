@@ -84,7 +84,7 @@ jobs:
 
     build:
         name: Build
-        runs-on: [self-hosted]
+        runs-on: ubuntu-latest
         permissions: write-all
         needs: version-check
         if: ${{ needs.version-check.outputs.status == 'true' || github.event_name == 'workflow_dispatch' }}
