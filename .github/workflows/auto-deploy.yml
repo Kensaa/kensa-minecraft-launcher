@@ -28,6 +28,9 @@ jobs:
                   git fetch --tags
                   git fetch --prune --unshallow
 
+            - name: Mark repo as safe
+              run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
             - name: get-tag
               id: get-tag
               run: |
