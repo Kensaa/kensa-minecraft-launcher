@@ -93,8 +93,8 @@ jobs:
             credentials:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
-        # env:
-        #     WINEPREFIX: /tmp/wineprefix
+        env:
+            WINEPREFIX: /tmp/wineprefix
         steps:
             - name: checkout
               uses: actions/checkout@v4
