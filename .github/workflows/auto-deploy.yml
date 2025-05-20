@@ -86,7 +86,9 @@ jobs:
             # Removes the "v" in front of the version
             - name: version
               id: version
-              run: echo "version=$(echo ${{needs.version-check.outputs.version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
+              run: |
+                  echo ${{ needs.version-check.outputs.changes }}
+                  echo "version=$(echo ${{needs.version-check.outputs.version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
 
             - name: release
               uses: softprops/action-gh-release@v1
