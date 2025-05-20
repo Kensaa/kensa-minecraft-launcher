@@ -51,7 +51,7 @@ jobs:
               run: |
                   changes=$(git log "$(git describe --tags --abbrev=0)..HEAD" --pretty=format:'- %s (%ad)%n' --date=short)
                   echo $changes
-                  echo "changes=$(echo \"$changes\" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_OUTPUT"
+                  echo "changes=$changes" >> "$GITHUB_OUTPUT"
               #   echo "changes=$(echo \"$changes\" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_OUTPUT"
 
     build:
