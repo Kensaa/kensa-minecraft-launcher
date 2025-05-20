@@ -49,7 +49,7 @@ jobs:
             - name: get changes
               id: changes
               run: |
-                  changes=$(git log "$(git describe --tags --abbrev=0)..HEAD" --pretty=format:'- %s (%ad)%n' --date=short)
+                  changes=$(git log "$(git describe --tags --abbrev=0)..HEAD" --pretty=format:'- %s (%ad)' --date=short)
                   echo "changes<<EOF" >> $GITHUB_OUTPUT
                   echo "$changes" >> $GITHUB_OUTPUT
                   echo "EOF" >> $GITHUB_OUTPUT
