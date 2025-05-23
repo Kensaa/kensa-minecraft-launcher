@@ -45,7 +45,9 @@ export async function sync(serverState: ServerState) {
             console.log(`${gameFolder} has changed, recreating tarball`)
             const tarballPath =
                 path.join(tarballsFolder, gameFolder) + '.tar.gz'
-            fs.rmSync(tarballPath)
+            if (fs.existsSync(tarballPath)) {
+                fs.rmSync(tarballPath)
+            }
             tar.create(
                 {
                     file: tarballPath,
