@@ -1,11 +1,13 @@
-FROM node:19 as build_env
+FROM node:20 AS build_env
 
 WORKDIR /app
 COPY package.json ./
+COPY .yarnrc.yml .yarnrc.yml
+RUN corepack enable
 RUN yarn
 COPY . .
 RUN yarn build
-RUN yarn install --production
+RUN yarn workspaces focus --all --production
 
 FROM gcr.io/distroless/nodejs20-debian11
 COPY --from=build_env /app/ /app/

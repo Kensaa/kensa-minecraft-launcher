@@ -75,3 +75,7 @@ export function download(address: string, filepath: string) {
         })
     })
 }
+
+export async function fetchJson(address: string) {
+    return fetch(address).then(res => res.json())
+}

@@ -1,3 +1,5 @@
+import type { Application } from 'express'
+
 export interface Profile {
     name: string
     version: {
@@ -7,4 +9,20 @@ export interface Profile {
     gameFolder?: string
 }
 
-export type Tree = Record<string, any>
+// export type Tree = Record<string, string | Tree>
+export interface Tree {
+    [key: string]: string | Tree
+}
+
+export interface ServerState {
+    app: Application
+    hashes: Tree
+    profiles: Profile[]
+    env: {
+        port: number
+        staticFolder: string
+        profilesFile: string
+        serverName: string
+        masterServer?: string
+    }
+}
