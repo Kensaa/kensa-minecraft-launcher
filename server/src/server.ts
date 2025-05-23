@@ -5,7 +5,7 @@ import fs from 'fs'
 import crypto from 'crypto'
 import 'source-map-support/register'
 import { countFile } from './utils'
-import type { ServerState, Tree } from './types'
+import type { ServerState, ServerSyncFunction, Tree } from './types'
 import * as cloneServer from './servers/clone'
 import * as masterServer from './servers/master'
 
@@ -44,6 +44,7 @@ if (!fs.existsSync(STATIC_FOLDER)) {
         fs.mkdirSync(path.join(STATIC_FOLDER, 'forges'))
         fs.mkdirSync(path.join(STATIC_FOLDER, 'gameFolders'))
         fs.mkdirSync(path.join(STATIC_FOLDER, 'java'))
+        fs.mkdirSync(path.join(STATIC_FOLDER, 'tarballs'))
     }
 }
 
@@ -110,16 +111,13 @@ app.get('/fileCount/:gameFolder', (req, res) => {
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
 ;(async () => {
+    let serverSyncFunction: ServerSyncFunction
     if (MASTER_SERVER) {
         // IS A CLONING SERVER
         console.log('cloning server mode')
 
-        await cloneServer.sync(serverState)
+        serverSyncFunction = cloneServer.sync
         setInterval(cloneServer.sync, 1000 * 60 * 60)
-        app.post('/reload', async (req, res) => {
-            await cloneServer.sync(serverState)
-            res.status(200).send('reloaded')
-        })
     } else {
         // IS A MASTER SERVER
         console.log('master server mode')
@@ -144,12 +142,15 @@ app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
             )
             process.exit(1)
         }
-
-        await masterServer.sync(serverState)
-
-        app.post('/reload', async (req, res) => {
-            await masterServer.sync(serverState)
-            res.status(200).send('reloaded')
-        })
+        serverSyncFunction = masterServer.sync
     }
+
+    await serverSyncFunction(serverState)
+
+    app.post('/reload', async (req, res) => {
+        console.log('reloading...')
+        await serverSyncFunction(serverState)
+        console.log('reloaded')
+        res.status(200).send('reloaded')
+    })
 })()

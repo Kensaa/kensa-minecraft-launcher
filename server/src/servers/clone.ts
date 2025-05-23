@@ -10,9 +10,12 @@ export async function sync(serverState: ServerState) {
     const serverHashesUrl = urlJoin(masterServer!, '/hashes')
     const serverProfilesUrl = urlJoin(masterServer!, '/profiles')
 
+    console.log('fetching remote hash tree')
     const remoteHashTree = (await fetchJson(serverHashesUrl)) as Tree
+    console.log('creating local hash tree')
     const localHashTree = (await hashFolder(staticFolder)) as Tree
 
+    console.log('updating files')
     await compareTrees(
         masterServer!,
         staticFolder,
@@ -20,6 +23,7 @@ export async function sync(serverState: ServerState) {
         localHashTree
     )
     serverState.hashes = remoteHashTree
+    console.log('fetching profiles')
     serverState.profiles = await fetchJson(serverProfilesUrl)
 }
 

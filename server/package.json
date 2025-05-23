@@ -1,6 +1,6 @@
 {
     "name": "kensa-minecraft-launcher-server",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "main": "dist/server.js",
     "author": "Kensa",
     "license": "MIT",
@@ -11,7 +11,8 @@
     "dependencies": {
         "cors": "^2.8.5",
         "express": "^4.18.2",
-        "source-map-support": "^0.5.21"
+        "source-map-support": "^0.5.21",
+        "tar": "^7.4.3"
     },
     "devDependencies": {
         "@types/cors": "^2.8.18",

@@ -26,3 +26,5 @@ export interface ServerState {
         masterServer?: string
     }
 }
+
+export type ServerSyncFunction = (serverState: ServerState) => Promise<void>
