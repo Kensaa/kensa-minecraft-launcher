@@ -3,10 +3,9 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
+import { Tree } from './types'
 
-export async function hashFolder(
-    src: string
-): Promise<Record<string, any> | string> {
+export async function hashFolder(src: string): Promise<Tree | string> {
     if (fs.statSync(src).isFile()) {
         return await getHash(src)
     }
@@ -78,4 +77,20 @@ export function download(address: string, filepath: string) {
 
 export async function fetchJson(address: string) {
     return fetch(address).then(res => res.json())
+}
+
+export function hashTree(tree: Tree): string {
+    const sortedKeys = Object.keys(tree).sort((a, b) => a.localeCompare(b))
+
+    let treeString = ''
+    for (const key of sortedKeys) {
+        const val = tree[key]
+        if (typeof val == 'string') {
+            treeString += `${key}:${val}`
+        } else {
+            treeString += `${key}:${hashTree(val)}`
+        }
+    }
+
+    return crypto.createHash('md5').update(treeString).digest('hex')
 }
