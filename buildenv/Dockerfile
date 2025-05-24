@@ -1,4 +1,4 @@
 FROM archlinux
-RUN echo "[multilib]" >> /etc/pacman.conf && echo "Include = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf && pacman -Sy
+RUN printf "[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" >> /etc/pacman.conf
 
-RUN pacman -S --noconfirm nodejs npm wine wine-mono openjpeg2 git openssh jq github-cli
+RUN pacman -Syu --noconfirm nodejs npm wine wine-mono openjpeg2 git openssh jq github-cli
