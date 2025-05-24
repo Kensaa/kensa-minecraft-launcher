@@ -28,7 +28,7 @@ jobs:
 
             - name: fetch
               run: |
-                  git fetch --tags
+                  git fetch --tags --force
                   git fetch --prune --unshallow
 
             - name: get-tag
