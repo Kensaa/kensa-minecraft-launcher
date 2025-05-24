@@ -81,7 +81,7 @@
         },
         "publish": {
             "provider": "github",
-            "releaseType": "release"
+            "releaseType": "draft"
         }
     },
     "packageManager": "yarn@4.4.1"

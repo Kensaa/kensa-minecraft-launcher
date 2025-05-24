@@ -108,12 +108,12 @@ jobs:
             #       prerelease: false
             #       tag_name: ${{ needs.version-check.outputs.version }}
             #       body_path: changelog.txt
-            - name: Overwrite GitHub release body with changelog
+            - name: Overwrite GitHub release body with changelog and make release visible
               run: |
                   cat << EOF > changelog.txt
                   ${{ needs.version-check.outputs.changes }}
                   EOF
                   tag=${{ needs.version-check.outputs.version }}
-                  gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file changelog.txt
+                  gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file changelog.txt --draft=false
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
