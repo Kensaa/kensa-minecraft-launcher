@@ -425,134 +425,162 @@ async function launchGameRemote(args: StartArgs) {
             profile.gameFolder
         )
 
-        checkExist(localPath)
-
-        const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
-        const remoteTree = hashTree['gameFolders'][profile.gameFolder]
-        const fileCount: number = (
-            await JSONFetch(
-                urlJoin(primaryServer, 'fileCount', profile.gameFolder)
+        if (!fs.existsSync(localPath)) {
+            logger.info(
+                'The gameFolder does not exist, so instead of downloading each file 1 by 1, we download the gameFolder compressed'
             )
-        ).count
-
-        logger.info('Remote tree fetched')
-        const localTree = await folderTree(localPath)
-        logger.info('Local tree created')
-        function getFolders(tree: any) {
-            return Object.keys(tree).filter(
-                key => typeof tree[key] !== 'string'
-            )
-        }
-        const remoteFolders = getFolders(remoteTree)
-        const localFolders = getFolders(localTree)
-
-        logger.info('Starting update procedure')
-        // creates all the folder at the root that does not exists
-        for (const folder of remoteFolders) {
-            if (!localFolders.includes(folder)) {
-                fs.mkdirSync(path.join(localPath, folder))
-                localTree[folder] = {}
+            currentTask = {
+                title: 'Downloading Profile',
+                progress: 0
             }
-        }
-
-        let count = 0
-        for (const folder of remoteFolders) {
-            //start recursive function which will download all files for all the folders
-            await downloadFolder(
-                remoteTree[folder],
-                localTree[folder],
-                profile.gameFolder,
-                localPath,
-                [folder]
+            fs.mkdirSync(localPath)
+            const tarballFilename = profile.gameFolder + '.tar.gz'
+            const tarballPath = path.join(localPath, tarballFilename)
+            await download(
+                urlJoin(primaryServer, 'static/tarballs', tarballFilename),
+                tarballPath
             )
-        }
-        logger.info('Update finished')
-        /**
-         *
-         * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
-         * @param localFolder object representing the same folder but locally (I.E current state of the folder)
-         * @param gameFolder name of the remote folder on the server
-         * @param folderPath path to the local folder
-         * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
-         */
-        async function downloadFolder(
-            remoteFolder,
-            localFolder,
-            gameFolder: string,
-            folderPath: string,
-            pathA: string[] = []
-        ) {
-            for (const element of Object.keys(remoteFolder)) {
-                const localPath = path.join(...pathA, element)
-                const filepath = path.join(folderPath, localPath) // = absolute path to file
-                const fileUrl = urlJoin(
-                    primaryServer,
-                    '/static/gameFolders',
-                    gameFolder,
-                    ...pathA,
-                    element
+            currentTask.progress = 50
+            await decompress(tarballPath, localPath, {
+                strip: 1
+            })
+            fs.rmSync(tarballPath)
+            currentTask.progress = 100
+        } else {
+            currentTask = {
+                title: 'Checking for update',
+                progress: 0
+            }
+            const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
+            const remoteTree = hashTree['gameFolders'][profile.gameFolder]
+            const fileCount: number = (
+                await JSONFetch(
+                    urlJoin(primaryServer, 'fileCount', profile.gameFolder)
                 )
-                if (typeof remoteFolder[element] === 'string') {
-                    // Element is a file
-                    if (localFolder[element] !== undefined) {
-                        if (
-                            pathA[0] !== undefined &&
-                            FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
-                        ) {
-                            // Used to skip certain forlders (like config) from being updated because we don't really care about them being up to date
-                            continue
-                        }
-                        if (
-                            (await getHash(filepath)) !== remoteFolder[element]
-                        ) {
-                            logger.info('Updating file "%s"', localPath)
+            ).count
+
+            logger.info('Remote tree fetched')
+            currentTask.progress = 50
+            const localTree = await folderTree(localPath)
+            logger.info('Local tree created')
+            function getFolders(tree: any) {
+                return Object.keys(tree).filter(
+                    key => typeof tree[key] !== 'string'
+                )
+            }
+            const remoteFolders = getFolders(remoteTree)
+            const localFolders = getFolders(localTree)
+            currentTask.progress = 100
+
+            logger.info('Starting update procedure')
+            // creates all the folder at the root that does not exists
+            for (const folder of remoteFolders) {
+                if (!localFolders.includes(folder)) {
+                    fs.mkdirSync(path.join(localPath, folder))
+                    localTree[folder] = {}
+                }
+            }
+
+            let count = 0
+            for (const folder of remoteFolders) {
+                //start recursive function which will download all files for all the folders
+                await downloadFolder(
+                    remoteTree[folder],
+                    localTree[folder],
+                    profile.gameFolder,
+                    localPath,
+                    [folder]
+                )
+            }
+            logger.info('Update finished')
+            /**
+             *
+             * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
+             * @param localFolder object representing the same folder but locally (I.E current state of the folder)
+             * @param gameFolder name of the remote folder on the server
+             * @param folderPath path to the local folder
+             * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
+             */
+            async function downloadFolder(
+                remoteFolder,
+                localFolder,
+                gameFolder: string,
+                folderPath: string,
+                pathA: string[] = []
+            ) {
+                for (const element of Object.keys(remoteFolder)) {
+                    const localPath = path.join(...pathA, element)
+                    const filepath = path.join(folderPath, localPath) // = absolute path to file
+                    const fileUrl = urlJoin(
+                        primaryServer,
+                        '/static/gameFolders',
+                        gameFolder,
+                        ...pathA,
+                        element
+                    )
+                    if (typeof remoteFolder[element] === 'string') {
+                        // Element is a file
+                        if (localFolder[element] !== undefined) {
+                            if (
+                                pathA[0] !== undefined &&
+                                FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+                            ) {
+                                // Used to skip certain forlders (like config) from being updated because we don't really care about them being up to date
+                                continue
+                            }
+                            if (
+                                (await getHash(filepath)) !==
+                                remoteFolder[element]
+                            ) {
+                                logger.info('Updating file "%s"', localPath)
+                                await download(fileUrl, filepath)
+                                count++
+                                currentTask = {
+                                    title: 'Updating Profile',
+                                    progress: (count / fileCount) * 100
+                                }
+                            }
+                        } else {
+                            logger.info('Downloading file "%s"', localPath)
                             await download(fileUrl, filepath)
                             count++
                             currentTask = {
-                                title: 'Updating Mods',
+                                title: 'Updating Profile',
                                 progress: (count / fileCount) * 100
                             }
                         }
                     } else {
-                        logger.info('Downloading file "%s"', localPath)
-                        await download(fileUrl, filepath)
-                        count++
-                        currentTask = {
-                            title: 'Updating Mods',
-                            progress: (count / fileCount) * 100
+                        // Element is a folder
+                        if (!localFolder[element]) {
+                            fs.mkdirSync(filepath)
+                            localFolder[element] = {}
                         }
+                        await downloadFolder(
+                            remoteFolder[element],
+                            localFolder[element],
+                            gameFolder,
+                            folderPath,
+                            pathA.concat(element)
+                        )
                     }
-                } else {
-                    // Element is a folder
-                    if (!localFolder[element]) {
-                        fs.mkdirSync(filepath)
-                        localFolder[element] = {}
+                }
+                const onlyLocalFile = Object.keys(localFolder)
+                    .filter(key => typeof localFolder[key] === 'string')
+                    .filter(key => !Object.keys(remoteFolder).includes(key))
+                for (const file of onlyLocalFile) {
+                    if (
+                        pathA[0] !== undefined &&
+                        FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+                    ) {
+                        // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
+                        continue
                     }
-                    await downloadFolder(
-                        remoteFolder[element],
-                        localFolder[element],
-                        gameFolder,
-                        folderPath,
-                        pathA.concat(element)
-                    )
+                    const filepath = path.join(folderPath, ...pathA, file)
+                    logger.info('Deleting file "%s"', filepath)
+                    fs.rmSync(filepath, {
+                        recursive: true
+                    })
                 }
-            }
-            const onlyLocalFile = Object.keys(localFolder)
-                .filter(key => typeof localFolder[key] === 'string')
-                .filter(key => !Object.keys(remoteFolder).includes(key))
-            for (const file of onlyLocalFile) {
-                if (
-                    pathA[0] !== undefined &&
-                    FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
-                ) {
-                    // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
-                    continue
-                }
-                const filepath = path.join(folderPath, ...pathA, file)
-                logger.info('Deleting file "%s"', filepath)
-                fs.rmSync(filepath, {
-                    recursive: true
-                })
             }
         }
     } else {
