@@ -81,14 +81,15 @@ jobs:
 
             - name: build
               working-directory: launcher
-              run: yarn build
+              run: yarn release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            # Removes the "v" in front of the version
-            - name: version
-              id: version
-              run: |
-                  echo "${{ needs.version-check.outputs.changes }}"
-                  echo "version=$(echo ${{needs.version-check.outputs.version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
+            # - name: Get raw version string (without v)
+            #   id: version
+            #   run: |
+            #       echo "${{ needs.version-check.outputs.changes }}"
+            #       echo "version=$(echo ${{needs.version-check.outputs.version}} | cut -b 2-)" >> "$GITHUB_OUTPUT"
 
             - name: Write changelog to file
               run: |
@@ -96,14 +97,23 @@ jobs:
                   ${{ needs.version-check.outputs.changes }}
                   EOF
 
-            - name: release
-              uses: softprops/action-gh-release@v1
-              with:
-                  files: |
-                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.msi
-                      launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe
-                      launcher/release/kensa-minecraft-launcher-${{steps.version.outputs.version}}.zip
-                  draft: false
-                  prerelease: false
-                  tag_name: ${{ needs.version-check.outputs.version }}
-                  body_path: changelog.txt
+            # - name: release
+            #   uses: softprops/action-gh-release@v1
+            #   with:
+            #       files: |
+            #           launcher/release/Kensa Minecraft Launcher ${{steps.version.outputs.version}}.exe
+            #           launcher/release/Kensa Minecraft Launcher Setup ${{steps.version.outputs.version}}.exe
+            #           launcher/release/kensa-minecraft-launcher-${{steps.version.outputs.version}}.zip
+            #       draft: false
+            #       prerelease: false
+            #       tag_name: ${{ needs.version-check.outputs.version }}
+            #       body_path: changelog.txt
+            - name: Overwrite GitHub release body with changelog and make release visible
+              run: |
+                  cat << EOF > changelog.txt
+                  ${{ needs.version-check.outputs.changes }}
+                  EOF
+                  tag=${{ needs.version-check.outputs.version }}
+                  gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file changelog.txt --draft=false
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

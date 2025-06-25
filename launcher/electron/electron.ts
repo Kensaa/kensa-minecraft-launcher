@@ -19,6 +19,7 @@ import {
     getHash
 } from './utils'
 import { totalmem } from 'os'
+import * as electronUpdater from 'electron-updater'
 
 const launcher = new Client()
 
@@ -69,6 +70,11 @@ const defaultConfig = {
 
 let loginInfo: msmc.result | null
 let config: Record<string, any>
+
+const autoUpdater = electronUpdater.autoUpdater
+autoUpdater.autoDownload = false
+autoUpdater.logger = null
+// autoUpdater.forceDevUpdateConfig = true
 
 async function createWindow() {
     logger.info('Creating Launcher Window')
@@ -193,23 +199,48 @@ ipcMain.on('msmc-logout', (event, arg) => {
     fs.rmSync(path.join(configFolder, 'loginInfo.json'))
 })
 
-ipcMain.handle('is-up-to-date', (event, arg) => {
-    logger.debug('is-up-to-date (async)')
-    return new Promise<boolean>(async (resolve, reject) => {
-        const currentVersion = JSON.parse(
-            fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
-        ).version.trim()
-        const latestVersion = (
-            await JSONFetch(
-                'https://api.github.com/repos/Kensaa/kensa-minecraft-launcher/releases/latest'
+ipcMain.handle('get-update-status', (event, arg) => {
+    logger.debug('get-update-status (async)')
+    logger.info('Current version of Launcher: %s', autoUpdater.currentVersion)
+    return new Promise(async (res, rej) => {
+        autoUpdater.once('update-available', info => {
+            logger.info(
+                'Auto update is available for version: %s',
+                info.version
             )
-        ).tag_name
-            .trim()
-            .substring(1)
-        logger.info('Current version of Launcher: %s', currentVersion)
-        logger.info('Latest available version of Launcher: %s', latestVersion)
-        resolve(currentVersion == latestVersion)
+            res({
+                autoUpdate: true,
+                manualUpdate: true
+            })
+        })
+        autoUpdater.once('update-not-available', info => {
+            if (info.version === autoUpdater.currentVersion) {
+                res({
+                    autoUpdate: false,
+                    manualUpdate: false
+                })
+            } else {
+                logger.info(
+                    'Auto update is not available for version: %s (manual update required)',
+                    info.version
+                )
+                res({
+                    autoUpdate: false,
+                    manualUpdate: true
+                })
+            }
+        })
+        await autoUpdater.checkForUpdatesAndNotify()
     })
+})
+
+ipcMain.handle('start-update', async (event, arg) => {
+    logger.debug('start-update (async)')
+    autoUpdater.on('update-downloaded', () => {
+        logger.debug('update downloaded')
+        autoUpdater.quitAndInstall()
+    })
+    await autoUpdater.downloadUpdate()
 })
 
 ipcMain.on('get-config', (event, arg) => {

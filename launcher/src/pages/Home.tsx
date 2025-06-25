@@ -27,17 +27,38 @@ export default function Home({
     const profiles = useProfiles()
     const fetching = useIsFetching()
 
-    const { selectedProfile, setSelectedProfile } = useSelectedProfile()
+    const { selectedProfile } = useSelectedProfile()
     const [error, setError] = useState('')
     const [info, setInfo] = useState<JSX.Element | undefined>(undefined)
 
     useEffect(() => {
         if (!(import.meta.env.MODE == 'production')) return
-        ipcRenderer.invoke('is-up-to-date').then(res => {
-            if (!res) {
+        ipcRenderer.invoke('get-update-status').then(res => {
+            const { autoUpdate, manualUpdate } = res
+            console.log(res)
+            if (autoUpdate) {
                 setInfo(
                     <>
-                        A new update is available, please redownload the
+                        <>
+                            An update is available, install it by clicking{' '}
+                            <a
+                                onClick={e => {
+                                    e.preventDefault()
+                                    ipcRenderer.invoke('start-update')
+                                    setInfo(undefined)
+                                }}
+                                href=''
+                            >
+                                here
+                            </a>
+                        </>
+                    </>
+                )
+            } else if (manualUpdate) {
+                // manual update
+                setInfo(
+                    <>
+                        A new version is available, please redownload the
                         launcher{' '}
                         <a
                             onClick={e => {
