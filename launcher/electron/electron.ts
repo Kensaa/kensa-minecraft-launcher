@@ -214,7 +214,8 @@ ipcMain.handle('get-update-status', (event, arg) => {
             })
         })
         autoUpdater.once('update-not-available', info => {
-            if (info.version === autoUpdater.currentVersion) {
+            if (info.version === autoUpdater.currentVersion.toString()) {
+                logger.info('No update needed')
                 res({
                     autoUpdate: false,
                     manualUpdate: false
