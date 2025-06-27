@@ -71,6 +71,15 @@ jobs:
             - name: checkout
               uses: actions/checkout@v4
 
+            - name: Clear Previous wine setup
+              run: |
+                  pkill -f wine || true
+                  pkill -f wineserver || true
+                  rm -rf /tmp/wineprefix
+                  rm -rf /tmp/xdg-runtime
+                  mkdir -p /tmp/wineprefix
+                  mkdir -p /tmp/xdg-runtime
+
             - name: enable corepack
               working-directory: launcher
               run: corepack enable
