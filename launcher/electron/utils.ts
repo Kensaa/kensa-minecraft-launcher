@@ -1,9 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { get as httpGet } from 'http'
-import { get as httpsGet } from 'https'
 import { createHash } from 'crypto'
 import fetch from 'electron-fetch'
+import type { Readable } from 'stream'
 
 export function checkExist(path: string) {
     if (!fs.existsSync(path)) {
@@ -11,8 +10,12 @@ export function checkExist(path: string) {
     }
 }
 
-export function download(address: string, filepath: string) {
-    return new Promise<void>((resolve, reject) => {
+export function download(
+    address: string,
+    filepath: string,
+    headers?: Record<string, string>
+) {
+    return new Promise<void>(async (resolve, reject) => {
         if (!fs.existsSync(path.dirname(filepath))) {
             fs.mkdirSync(path.dirname(filepath), { recursive: true })
         }
@@ -20,14 +23,15 @@ export function download(address: string, filepath: string) {
             fs.writeFileSync(filepath, '')
         }
         const file = fs.createWriteStream(filepath)
-        const get = address.startsWith('https') ? httpsGet : httpGet
-        get(address, res => {
-            res.pipe(file)
-            file.on('finish', () => {
-                file.close()
-                resolve()
+        fetch(address, { headers })
+            .then(res => res.body as Readable)
+            .then(data => {
+                data.pipe(file)
+                file.on('finish', () => {
+                    file.close()
+                    resolve()
+                })
             })
-        }).on('error', err => reject(err))
     })
 }
 

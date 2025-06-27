@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
@@ -19,7 +19,6 @@ import {
     getHash
 } from './utils'
 import { totalmem } from 'os'
-import * as electronUpdater from 'electron-updater'
 
 interface Task {
     title: string
@@ -72,11 +71,6 @@ const defaultConfig = {
 
 let loginInfo: msmc.result | null
 let config: Record<string, any>
-
-const autoUpdater = electronUpdater.autoUpdater
-autoUpdater.autoDownload = false
-autoUpdater.logger = null
-// autoUpdater.forceDevUpdateConfig = true
 
 async function createWindow() {
     logger.info('Creating Launcher Window')
@@ -209,47 +203,52 @@ ipcMain.on('msmc-logout', (event, arg) => {
 
 ipcMain.handle('get-update-status', (event, arg) => {
     logger.debug('get-update-status (async)')
-    logger.info('Current version of Launcher: %s', autoUpdater.currentVersion)
     return new Promise(async (res, rej) => {
-        autoUpdater.once('update-available', info => {
-            logger.info(
-                'Auto update is available for version: %s',
-                info.version
-            )
-            res({
-                autoUpdate: true,
-                manualUpdate: true
-            })
-        })
-        autoUpdater.once('update-not-available', info => {
-            if (info.version === autoUpdater.currentVersion.toString()) {
-                logger.info('No update needed')
-                res({
-                    autoUpdate: false,
-                    manualUpdate: false
-                })
-            } else {
-                logger.info(
-                    'Auto update is not available for version: %s (manual update required)',
-                    info.version
-                )
-                res({
-                    autoUpdate: false,
-                    manualUpdate: true
-                })
-            }
-        })
-        await autoUpdater.checkForUpdatesAndNotify()
+        const currentVersion = JSON.parse(
+            fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
+        ).version.trim()
+        const latestRelease = await JSONFetch(
+            'https://api.github.com/repos/Kensaa/kensa-minecraft-launcher/releases/latest'
+        )
+
+        const latestVersion = latestRelease.tag_name.substring(1)
+
+        logger.info('Current version of Launcher: %s', currentVersion)
+        logger.info('Latest version of Launcher: %s', latestVersion)
+
+        const needsUpdate = currentVersion != latestVersion
+        if (platform === 'win32') {
+            res({ autoUpdate: needsUpdate, manualUpdate: false })
+        } else {
+            res({ autoUpdate: false, manualUpdate: needsUpdate })
+        }
     })
 })
 
 ipcMain.handle('start-update', async (event, arg) => {
     logger.debug('start-update (async)')
-    autoUpdater.on('update-downloaded', () => {
-        logger.debug('update downloaded')
-        autoUpdater.quitAndInstall()
+    return new Promise(async (res, rej) => {
+        const latestRelease = await JSONFetch(
+            'https://api.github.com/repos/Kensaa/kensa-minecraft-launcher/releases/latest'
+        )
+        const version = latestRelease.name
+        const installer = latestRelease.assets.find(
+            asset =>
+                asset.name == `Kensa-Minecraft-Launcher-Setup-${version}.exe`
+        )
+        if (!installer) {
+            rej('no installer found')
+            return
+        }
+        const filepath = path.join(os.tmpdir(), installer.name)
+        const url = installer.url
+        await download(url, filepath, {
+            Accept: 'application/octet-stream'
+        })
+
+        shell.openPath(filepath)
+        app.exit(0)
     })
-    await autoUpdater.downloadUpdate()
 })
 
 ipcMain.on('get-config', (event, arg) => {
