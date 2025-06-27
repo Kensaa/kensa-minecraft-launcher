@@ -364,7 +364,7 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         launcher.on('data', e => {
             if (!gameStarted) {
                 gameStarted = true
-                // updateTask(undefined)
+                updateTask(undefined)
                 if (config.closeLauncher) setTimeout(app.quit, 5000)
                 gameStarting = false
                 resolve()
