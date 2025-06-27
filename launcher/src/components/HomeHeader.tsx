@@ -6,14 +6,12 @@ import UserElement from './UserElement'
 export interface HomeHeaderProps {
     style?: React.CSSProperties
     className?: string
-    setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }
 
 export default function HomeHeader({
     style,
     className,
-    setOverlay,
     setSettingsShown
 }: HomeHeaderProps) {
     return (
@@ -24,7 +22,7 @@ export default function HomeHeader({
             }
             style={style}
         >
-            <UserElement setOverlay={setOverlay} />
+            <UserElement />
             <ProfilePicker />
             <Button
                 variant='light'

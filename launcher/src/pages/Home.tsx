@@ -1,6 +1,6 @@
 import { ipcRenderer, shell } from 'electron'
 import { useEffect, useState } from 'react'
-import { Alert, Button } from 'react-bootstrap'
+import { Alert, Button, ProgressBar } from 'react-bootstrap'
 import HomeHeader from '../components/HomeHeader'
 
 import { useIsConnected } from '../stores/auth'
@@ -8,18 +8,16 @@ import type { StartArgs } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
-import TaskOverlay from '../components/TaskOverlay'
 import {
     useIsFetching,
     useProfiles,
     useSelectedProfile
 } from '../stores/profiles'
+import TaskProgressBar from '../components/TaskProgressBar'
 
 export default function Home({
-    setOverlay,
     setSettingsShown
 }: {
-    setOverlay: (overlay: JSX.Element | undefined) => void
     setSettingsShown: (show: boolean) => void
 }) {
     const connected = useIsConnected()
@@ -86,14 +84,9 @@ export default function Home({
             server: address
         }
 
-        setOverlay(<TaskOverlay title='Starting Game' />)
-        ipcRenderer
-            .invoke('start-game', args)
-            .then(() => setOverlay(undefined))
-            .catch(error => {
-                setOverlay(undefined)
-                setError(error.message)
-            })
+        ipcRenderer.invoke('start-game', args).catch(error => {
+            setError(error.message)
+        })
     }
 
     return (
@@ -103,7 +96,6 @@ export default function Home({
         >
             <HomeHeader
                 {...{
-                    setOverlay,
                     setSettingsShown
                 }}
             />
@@ -147,6 +139,7 @@ export default function Home({
                     Launch Game
                 </Button>
             </div>
+            <TaskProgressBar />
         </div>
     )
 }

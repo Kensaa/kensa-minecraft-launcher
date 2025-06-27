@@ -7,7 +7,6 @@ import ServerManager from './pages/ServerManager'
 import ProfileManager from './pages/ProfileManager'
 
 export default function App() {
-    const [overlay, setOverlay] = useState<JSX.Element | undefined>(undefined)
     const [settingsShown, setSettingsShown] = useState<boolean>(false)
     const [serverManagerShown, setServerManagerShown] = useState<boolean>(false)
     const [profileManagerShown, setProfileManagerShown] =
@@ -15,8 +14,7 @@ export default function App() {
 
     return (
         <div className='w-100 h-100 d-flex'>
-            {overlay}
-            <Home setOverlay={setOverlay} setSettingsShown={setSettingsShown} />
+            <Home setSettingsShown={setSettingsShown} />
 
             <Modal show={settingsShown} onHide={() => setSettingsShown(false)}>
                 <Modal.Header closeButton>
@@ -46,6 +44,7 @@ export default function App() {
                     <ServerManager />
                 </Modal.Body>
             </Modal>
+
             <Modal
                 show={profileManagerShown}
                 onHide={() => setProfileManagerShown(false)}

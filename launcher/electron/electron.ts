@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
 import * as msmc from 'msmc'
-import { Client } from 'minecraft-launcher-core'
+import { Client, ILauncherOptions } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
 import { createLogger } from './logger'
 import decompress from 'decompress'
@@ -21,7 +21,10 @@ import {
 import { totalmem } from 'os'
 import * as electronUpdater from 'electron-updater'
 
-const launcher = new Client()
+interface Task {
+    title: string
+    progress: number
+}
 
 const configFolders = {
     win32: path.join('AppData', 'Roaming', 'kensa-minecraft-launcher'),
@@ -38,7 +41,6 @@ const supportedPlatforms = ['win32', 'linux']
 
 const FOLDER_HASH_UPDATE_SKIP = ['config']
 
-let currentTask: { title: string; progress: number } | undefined = undefined
 let gameStarting = false
 
 if (!supportedPlatforms.includes(platform)) {
@@ -152,6 +154,11 @@ if (app.isPackaged) {
     })
 }
 
+function updateTask(task: Task | undefined) {
+    if (!win) return
+    win.webContents.send('task-update', task)
+}
+
 ipcMain.on('msmc-result', async (event, arg) => {
     logger.debug('msmc-result')
     const res = loginInfo ? loginInfo : {}
@@ -162,19 +169,20 @@ ipcMain.handle('msmc-connect', (event, arg) => {
     logger.debug('msmc-connect (async)')
     return new Promise<boolean>(resolve => {
         logger.info('Connecting to Microsoft sevices...')
-        currentTask = {
+        updateTask({
             title: 'Logging in',
             progress: 0
-        }
+        })
         msmc.fastLaunch('electron', info => {
             if (!info.percent) return
-            currentTask = {
+            updateTask({
                 title: 'Logging in',
                 progress: info.percent ?? 0
-            }
+            })
         })
             .then(res => {
                 logger.info('Connected')
+                updateTask(undefined)
                 if (msmc.errorCheck(res)) {
                     resolve(false)
                 } else {
@@ -325,10 +333,6 @@ ipcMain.on('set-local-profiles', (event, args) => {
     )
 })
 
-ipcMain.on('get-current-task', event => {
-    event.returnValue = currentTask
-})
-
 ipcMain.on('get-system-ram', event => {
     logger.debug('get-system-ram')
     event.returnValue = Math.floor(totalmem() / 1024 ** 2)
@@ -350,16 +354,18 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         checkExist(path.join(config.rootDir, 'addedMods'))
         checkExist(path.join(config.rootDir, 'java'))
 
-        currentTask = {
+        updateTask({
             title: 'Starting Game',
             progress: 0
-        }
+        })
 
         let gameStarted = false
 
+        const launcher = new Client()
         launcher.on('data', e => {
             if (!gameStarted) {
                 gameStarted = true
+                // updateTask(undefined)
                 if (config.closeLauncher) setTimeout(app.quit, 5000)
                 gameStarting = false
                 resolve()
@@ -376,35 +382,42 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
             } = progress as { type: string; task: number; total: number }
 
             if (['assets', 'natives'].includes(type)) {
-                currentTask = {
+                updateTask({
                     title: `Downloading ${type}`,
                     progress: (current / total) * 100
-                }
+                })
             } else {
-                currentTask = {
+                updateTask({
                     title: 'Starting Game',
                     progress: (current / total) * 100
-                }
+                })
             }
         })
 
+        let launchOption: ILauncherOptions | undefined
         try {
             if (args.server === 'local') {
-                await launchGameLocal(args)
+                launchOption = await launchGameLocal(args)
             } else if (args.server !== '') {
-                await launchGameRemote(args)
-            } else {
-                reject('invalid start args')
+                launchOption = await launchGameRemote(args)
             }
         } catch (err) {
             logger.warning(err)
             gameStarting = false
             reject(err)
         }
+
+        if (!launchOption) {
+            reject('failed to start game : invalid launch option')
+            return
+        }
+        launcher.launch(launchOption)
     })
 })
 
-async function launchGameRemote(args: StartArgs) {
+async function launchGameRemote(
+    args: StartArgs
+): Promise<ILauncherOptions | undefined> {
     if (!config) return
     if (!loginInfo) return
     const profile = args.profile
@@ -461,10 +474,10 @@ async function launchGameRemote(args: StartArgs) {
             logger.info(
                 'The gameFolder does not exist, so instead of downloading each file 1 by 1, we download the gameFolder compressed'
             )
-            currentTask = {
+            updateTask({
                 title: 'Downloading Profile',
                 progress: 0
-            }
+            })
             fs.mkdirSync(localPath)
             const tarballFilename = profile.gameFolder + '.tar.gz'
             const tarballPath = path.join(localPath, tarballFilename)
@@ -472,17 +485,23 @@ async function launchGameRemote(args: StartArgs) {
                 urlJoin(primaryServer, 'static/tarballs', tarballFilename),
                 tarballPath
             )
-            currentTask.progress = 50
+            updateTask({
+                title: 'Downloading Profile',
+                progress: 50
+            })
             await decompress(tarballPath, localPath, {
                 strip: 1
             })
             fs.rmSync(tarballPath)
-            currentTask.progress = 100
+            updateTask({
+                title: 'Downloading Profile',
+                progress: 100
+            })
         } else {
-            currentTask = {
+            updateTask({
                 title: 'Checking for update',
                 progress: 0
-            }
+            })
             const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
             const remoteTree = hashTree['gameFolders'][profile.gameFolder]
             const fileCount: number = (
@@ -492,7 +511,10 @@ async function launchGameRemote(args: StartArgs) {
             ).count
 
             logger.info('Remote tree fetched')
-            currentTask.progress = 50
+            updateTask({
+                title: 'Checking for update',
+                progress: 50
+            })
             const localTree = await folderTree(localPath)
             logger.info('Local tree created')
             function getFolders(tree: any) {
@@ -502,7 +524,10 @@ async function launchGameRemote(args: StartArgs) {
             }
             const remoteFolders = getFolders(remoteTree)
             const localFolders = getFolders(localTree)
-            currentTask.progress = 100
+            updateTask({
+                title: 'Checking for update',
+                progress: 100
+            })
 
             logger.info('Starting update procedure')
             // creates all the folder at the root that does not exists
@@ -567,19 +592,19 @@ async function launchGameRemote(args: StartArgs) {
                                 logger.info('Updating file "%s"', localPath)
                                 await download(fileUrl, filepath)
                                 count++
-                                currentTask = {
+                                updateTask({
                                     title: 'Updating Profile',
                                     progress: (count / fileCount) * 100
-                                }
+                                })
                             }
                         } else {
                             logger.info('Downloading file "%s"', localPath)
                             await download(fileUrl, filepath)
                             count++
-                            currentTask = {
+                            updateTask({
                                 title: 'Updating Profile',
                                 progress: (count / fileCount) * 100
-                            }
+                            })
                         }
                     } else {
                         // Element is a folder
@@ -637,8 +662,8 @@ async function launchGameRemote(args: StartArgs) {
         copyFolder(additionalFileFolder, gameFolder)
     }
 
-    const opts = {
-        clientPackage: null,
+    return {
+        clientPackage: undefined,
         authorization: msmc.getMCLC().getAuth(loginInfo),
         root: gameFolder,
         version: {
@@ -658,10 +683,11 @@ async function launchGameRemote(args: StartArgs) {
             libraryRoot: path.join(config.rootDir, 'libraries')
         }
     }
-    launcher.launch(opts as any)
 }
 
-async function launchGameLocal(args: StartArgs) {
+async function launchGameLocal(
+    args: StartArgs
+): Promise<ILauncherOptions | undefined> {
     if (!config) return
     if (!loginInfo) return
     const profile = args.profile
@@ -718,8 +744,8 @@ async function launchGameLocal(args: StartArgs) {
 
     const gameFolder = path.join(config.rootDir, 'profiles', profile.gameFolder)
 
-    const opts = {
-        clientPackage: null,
+    return {
+        clientPackage: undefined,
         authorization: msmc.getMCLC().getAuth(loginInfo),
         root: gameFolder,
         version: {
@@ -739,7 +765,6 @@ async function launchGameLocal(args: StartArgs) {
             libraryRoot: path.join(config.rootDir, 'libraries')
         }
     }
-    launcher.launch(opts as any)
 }
 
 async function installJava(server: string, version: string) {
@@ -753,10 +778,10 @@ async function installJava(server: string, version: string) {
     if (!fs.existsSync(javaExecutable)) {
         logger.info('Java not installed, installing it...')
 
-        currentTask = {
+        updateTask({
             title: 'Installing Java',
             progress: 0
-        }
+        })
 
         const zipPath = path.join(javaFolder, 'binaries.tar.gz')
         const zipUrl = urlJoin(
@@ -768,12 +793,18 @@ async function installJava(server: string, version: string) {
             throw 'java version not found on server'
         }
         await download(zipUrl, zipPath)
-        currentTask.progress = 50
+        updateTask({
+            title: 'Installing Java',
+            progress: 50
+        })
         await decompress(zipPath, path.join(javaFolder, version), {
             strip: 1
         })
         fs.rmSync(zipPath)
-        currentTask.progress = 100
+        updateTask({
+            title: 'Installing Java',
+            progress: 100
+        })
         logger.info('Java installed')
     }
 }
