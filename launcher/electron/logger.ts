@@ -14,14 +14,18 @@ export function createLogger(LOG_FILE: string) {
     const logger = pino(
         { level: 'trace', customLevels },
         multistream([
-            { level: 'trace', stream: fs.createWriteStream(LOG_FILE) },
+            { level: 'trace', stream: pino.destination(LOG_FILE) },
             {
                 level: 'trace',
                 stream: pretty({
                     customLevels,
-                    //@ts-ignore
-                    customColors:
-                        'trace:gray,debug:blue,warning:red,info:green,game:yellow'
+                    customColors: {
+                        trace: 'gray',
+                        debug: 'blue',
+                        warning: 'red',
+                        info: 'green',
+                        game: 'yellow'
+                    }
                 })
             }
         ])

@@ -66,7 +66,7 @@ export function checkServer(address: string) {
     })
 }
 
-export function JSONFetch(address: string) {
+export async function JSONFetch(address: string) {
     return fetch(address).then(res => res.json())
 }
 
