@@ -13,7 +13,7 @@ export default function TaskProgressBar() {
         })
     }, [])
 
-    if (!task) return
+    if (!task) return <></>
     return (
         <ProgressBar
             variant='success'
