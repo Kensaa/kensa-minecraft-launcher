@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client, ILauncherOptions } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
-import { createLogger } from './logger'
+import { createLogger, setLogWindow } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
@@ -35,6 +35,7 @@ const rootDirs = {
 }
 
 let win: BrowserWindow | null = null
+let logWin: BrowserWindow | null = null
 const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
@@ -335,6 +336,35 @@ ipcMain.on('set-local-profiles', (event, args) => {
 ipcMain.on('get-system-ram', event => {
     logger.debug('get-system-ram')
     event.returnValue = Math.floor(totalmem() / 1024 ** 2)
+})
+
+ipcMain.handle('open-logs', async (event, args) => {
+    return new Promise<void>(resolve => {
+        if (logWin && !logWin.isDestroyed()) {
+            logWin.focus()
+            resolve()
+            return
+        }
+        logWin = new BrowserWindow({
+            title: 'Launcher Logs',
+            width: 800,
+            height: 500,
+            autoHideMenuBar: true,
+            resizable: !app.isPackaged,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false
+            }
+        })
+
+        if (app.isPackaged) {
+            logWin.loadFile(path.join(__dirname, '..', 'dist', 'logs.html'))
+        } else {
+            logWin.loadURL('http://localhost:5173/logs.html')
+        }
+        setLogWindow(logWin)
+        resolve()
+    })
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {

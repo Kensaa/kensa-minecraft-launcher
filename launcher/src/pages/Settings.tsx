@@ -46,6 +46,10 @@ export default function Settings({
         config.resetConfig()
     }
 
+    const openLogs = () => {
+        ipcRenderer.invoke('open-logs')
+    }
+
     return (
         <Form
             onSubmit={handleSubmit}
@@ -93,6 +97,11 @@ export default function Settings({
                         }}
                     >
                         Local Profile Manager
+                    </Button>
+                </div>
+                <div className='d-flex justify-content-center my-1'>
+                    <Button className='mx-1 flex-grow' onClick={openLogs}>
+                        Open Logs
                     </Button>
                 </div>
                 <div className='d-flex justify-content-center my-1'>

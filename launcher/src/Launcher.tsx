@@ -6,7 +6,7 @@ import Settings from './pages/Settings'
 import ServerManager from './pages/ServerManager'
 import ProfileManager from './pages/ProfileManager'
 
-export default function App() {
+export default function Launcher() {
     const [settingsShown, setSettingsShown] = useState<boolean>(false)
     const [serverManagerShown, setServerManagerShown] = useState<boolean>(false)
     const [profileManagerShown, setProfileManagerShown] =

@@ -1,6 +1,25 @@
+import type { BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import { pino, multistream } from 'pino'
 import pretty from 'pino-pretty'
+import { Writable } from 'stream'
+
+let logWindow: BrowserWindow | null = null
+
+export function setLogWindow(win: BrowserWindow | null) {
+    logWindow = win
+}
+
+function createLogWindowStream() {
+    return new Writable({
+        write(chunk, _encoding, callback) {
+            if (logWindow && !logWindow.isDestroyed()) {
+                logWindow.webContents.send('log-line', chunk.toString())
+            }
+            callback()
+        }
+    })
+}
 
 export function createLogger(LOG_FILE: string) {
     if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '')
@@ -27,6 +46,10 @@ export function createLogger(LOG_FILE: string) {
                         game: 'yellow'
                     }
                 })
+            },
+            {
+                level: 'debug',
+                stream: createLogWindowStream()
             }
         ])
     )
