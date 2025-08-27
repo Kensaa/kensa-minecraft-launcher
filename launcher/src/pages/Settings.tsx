@@ -23,6 +23,7 @@ export default function Settings({
     const [rootDir, setRootDir] = useState(config.rootDir)
     const [ram, setRam] = useState(config.ram)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
+    const [openLogs, setOpenLogs] = useState(config.openLogs)
 
     const [validated, setValidated] = useState(false)
 
@@ -31,6 +32,7 @@ export default function Settings({
         config.setRootDir(rootDir)
         config.setRam(ram)
         config.setCloseLauncher(closeLauncher)
+        config.setOpenLogs(openLogs)
 
         setValidated(true)
         hide()
@@ -44,10 +46,6 @@ export default function Settings({
     const resetConfig = () => {
         hide()
         config.resetConfig()
-    }
-
-    const openLogs = () => {
-        ipcRenderer.invoke('open-logs')
     }
 
     return (
@@ -73,6 +71,11 @@ export default function Settings({
                     label='Close launcher when the game launches'
                     value={closeLauncher}
                     setter={setCloseLauncher as Setter}
+                />
+                <BooleanInput
+                    label='Open logs when game starts'
+                    value={openLogs}
+                    setter={setOpenLogs as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
                     <Button className='mx-1 flex-grow' onClick={resetConfig}>
@@ -100,7 +103,10 @@ export default function Settings({
                     </Button>
                 </div>
                 <div className='d-flex justify-content-center my-1'>
-                    <Button className='mx-1 flex-grow' onClick={openLogs}>
+                    <Button
+                        className='mx-1 flex-grow'
+                        onClick={() => ipcRenderer.invoke('open-logs')}
+                    >
                         Open Logs
                     </Button>
                 </div>

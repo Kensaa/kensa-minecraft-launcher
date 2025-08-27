@@ -6,10 +6,12 @@ interface configStore {
     ram: number
     servers: string[]
     closeLauncher: boolean
+    openLogs: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
     setServers: (servers: string[]) => void
     setCloseLauncher: (closeLauncher: boolean) => void
+    setOpenLogs: (openLogs: boolean) => void
     resetConfig: () => void
 }
 
@@ -21,6 +23,7 @@ const store = create<configStore>(set => {
         ram: config.ram,
         servers: config.servers,
         closeLauncher: config.closeLauncher,
+        openLogs: config.openLogs,
         setRootDir: (rootDir: string) => {
             set({ rootDir })
             ipcRenderer.send('set-config', JSON.stringify({ rootDir }))
@@ -36,6 +39,10 @@ const store = create<configStore>(set => {
         setCloseLauncher: (closeLauncher: boolean) => {
             set({ closeLauncher })
             ipcRenderer.send('set-config', JSON.stringify({ closeLauncher }))
+        },
+        setOpenLogs: (openLogs: boolean) => {
+            set({ openLogs })
+            ipcRenderer.send('set-config', JSON.stringify({ openLogs }))
         },
         resetConfig: () => {
             ipcRenderer.sendSync('reset-config')

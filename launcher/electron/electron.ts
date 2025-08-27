@@ -68,7 +68,8 @@ const defaultConfig = {
         'https://mclauncher.kensa.fr',
         'http://localhost:40069'
     ],
-    closeLauncher: true
+    closeLauncher: true,
+    openLogs: false
 }
 
 let loginInfo: msmc.result | null
@@ -148,7 +149,7 @@ async function createWindow() {
             fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         }
 
-            // To fix old config where ram was in G
+        // To fix old config where ram was in G
         if (config.ram <= 30) {
             logger.warning(
                 'Config: The current ram amount is too small (<30) (probably because of a previous config format where ram was stored in GiB), converting it'
@@ -364,32 +365,7 @@ ipcMain.on('get-system-ram', event => {
 })
 
 ipcMain.handle('open-logs', async (event, args) => {
-    return new Promise<void>(resolve => {
-        if (logWin && !logWin.isDestroyed()) {
-            logWin.focus()
-            resolve()
-            return
-        }
-        logWin = new BrowserWindow({
-            title: 'Launcher Logs',
-            width: 800,
-            height: 500,
-            autoHideMenuBar: true,
-            resizable: !app.isPackaged,
-            webPreferences: {
-                nodeIntegration: true,
-                contextIsolation: false
-            }
-        })
-
-        if (app.isPackaged) {
-            logWin.loadFile(path.join(__dirname, '..', 'dist', 'logs.html'))
-        } else {
-            logWin.loadURL('http://localhost:5173/logs.html')
-        }
-        setLogWindow(logWin)
-        resolve()
-    })
+    await openLogs()
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
@@ -421,7 +397,11 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
             if (!gameStarted) {
                 gameStarted = true
                 updateTask(undefined)
-                if (config.closeLauncher) setTimeout(app.quit, 5000)
+                if (config.closeLauncher) {
+                    setTimeout(app.quit, 5000)
+                } else if (config.openLogs) {
+                    openLogs()
+                }
                 gameStarting = false
                 resolve()
             }
@@ -882,4 +862,29 @@ function getJavaVersion(mcversion: string): string {
     } else {
         return '22'
     }
+}
+
+async function openLogs() {
+    if (logWin && !logWin.isDestroyed()) {
+        logWin.focus()
+        return
+    }
+    logWin = new BrowserWindow({
+        title: 'Launcher Logs',
+        width: 800,
+        height: 500,
+        autoHideMenuBar: true,
+        resizable: !app.isPackaged,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    })
+
+    if (app.isPackaged) {
+        logWin.loadFile(path.join(__dirname, '..', 'dist', 'logs.html'))
+    } else {
+        logWin.loadURL('http://localhost:5173/logs.html')
+    }
+    setLogWindow(logWin)
 }
