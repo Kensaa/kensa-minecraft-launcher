@@ -391,7 +391,8 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         let gameStarted = false
 
         const launcher = new Client()
-        launcher.on('data', e => {
+        const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
+        launcher.on('data', (e: string) => {
             if (!gameStarted) {
                 gameStarted = true
                 updateTask(undefined)
@@ -400,7 +401,15 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
                 resolve()
             }
             // sometimes multiple lines arrive at once
-            for (const s of e.trim().split('\n')) logger.game(s.trim())
+            for (const line of e.trim().split('\n')) {
+                // remove the time in front of the game logs
+                const matches = line.match(timeExp)
+                if (!matches) {
+                    continue
+                }
+                const data = matches[matches.length - 1]
+                logger.game(data.trim())
+            }
         })
 
         launcher.on('progress', progress => {
