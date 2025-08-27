@@ -87,3 +87,13 @@ export function copyFolder(source: string, destination: string) {
         }
     }
 }
+
+export function setDifference<T>(set1: Set<T>, set2: Set<T>): Set<T> {
+    const result = new Set<T>()
+    for (const e of set1) {
+        if (!set2.has(e)) {
+            result.add(e)
+        }
+    }
+    return result
+}

@@ -22,5 +22,13 @@ export default defineConfig({
         alias: {
             '~bootstrap': resolve(__dirname, 'node_modules/bootstrap')
         }
+    },
+    build: {
+        rollupOptions: {
+            input: {
+                main: resolve(__dirname, 'index.html'),
+                logs: resolve(__dirname, 'logs.html')
+            }
+        }
     }
 })

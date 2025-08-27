@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import * as msmc from 'msmc'
 import { Client, ILauncherOptions } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
-import { createLogger } from './logger'
+import { createLogger, setLogWindow } from './logger'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
@@ -16,7 +16,8 @@ import {
     copyFolder,
     download,
     folderTree,
-    getHash
+    getHash,
+    setDifference
 } from './utils'
 import { totalmem } from 'os'
 
@@ -35,6 +36,7 @@ const rootDirs = {
 }
 
 let win: BrowserWindow | null = null
+let logWin: BrowserWindow | null = null
 const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
@@ -66,7 +68,8 @@ const defaultConfig = {
         'https://mclauncher.kensa.fr',
         'http://localhost:40069'
     ],
-    closeLauncher: true
+    closeLauncher: true,
+    openLogs: false
 }
 
 let loginInfo: msmc.result | null
@@ -115,23 +118,47 @@ async function createWindow() {
     if (!fs.existsSync(configPath)) {
         config = { ...defaultConfig }
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-        logger.child(config).info('created config file using default config:')
+        logger.info('Created config file using default config')
     } else {
         config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
         // checking if config is missing field
-        if (Object.keys(config).length !== Object.keys(defaultConfig).length) {
+        const currentConfigKeys = new Set(Object.keys(config))
+        const defaultConfigKeys = new Set(Object.keys(defaultConfig))
+        const onlyCurrentConfigKeys = setDifference(
+            currentConfigKeys,
+            defaultConfigKeys
+        )
+        const onlyDefaultConfigKeys = setDifference(
+            defaultConfigKeys,
+            currentConfigKeys
+        )
+        if (onlyCurrentConfigKeys.size !== 0) {
             logger.warning(
-                'config seems to be missing some fields, resetting to default config'
+                'Config: The current config contains fields that are not in the default config, removing them'
             )
-            config = { ...defaultConfig }
-
-            // To fix old config where ram was in G
-            if (config.ram <= 30) config.ram *= 1024 ** 2
-
+            onlyCurrentConfigKeys.forEach(key => delete config[key])
             fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         }
-        logger.child(config).info('Existing config as been loaded: ')
+        if (onlyDefaultConfigKeys.size !== 0) {
+            logger.warning(
+                'Config: The current config is missing fields that are in the default config, adding them'
+            )
+            onlyDefaultConfigKeys.forEach(
+                key => (config[key] = defaultConfig[key])
+            )
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+        }
+
+        // To fix old config where ram was in G
+        if (config.ram <= 30) {
+            logger.warning(
+                'Config: The current ram amount is too small (<30) (probably because of a previous config format where ram was stored in GiB), converting it'
+            )
+            config.ram *= 1024 ** 2
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+        }
     }
+    logger.child(config).info('Effective config:')
     checkExist(config.rootDir)
 
     if (app.isPackaged) {
@@ -337,6 +364,10 @@ ipcMain.on('get-system-ram', event => {
     event.returnValue = Math.floor(totalmem() / 1024 ** 2)
 })
 
+ipcMain.handle('open-logs', async (event, args) => {
+    await openLogs()
+})
+
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
     logger.debug('start-game (async)')
     logger.info('Starting Game ...')
@@ -361,16 +392,29 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         let gameStarted = false
 
         const launcher = new Client()
-        launcher.on('data', e => {
+        const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
+        launcher.on('data', (e: string) => {
             if (!gameStarted) {
                 gameStarted = true
                 updateTask(undefined)
-                if (config.closeLauncher) setTimeout(app.quit, 5000)
+                if (config.closeLauncher) {
+                    setTimeout(app.quit, 5000)
+                } else if (config.openLogs) {
+                    openLogs()
+                }
                 gameStarting = false
                 resolve()
             }
             // sometimes multiple lines arrive at once
-            for (const s of e.trim().split('\n')) logger.game(s.trim())
+            for (const line of e.trim().split('\n')) {
+                // remove the time in front of the game logs
+                const matches = line.match(timeExp)
+                if (!matches) {
+                    continue
+                }
+                const data = matches[matches.length - 1]
+                logger.game(data.trim())
+            }
         })
 
         launcher.on('progress', progress => {
@@ -818,4 +862,29 @@ function getJavaVersion(mcversion: string): string {
     } else {
         return '22'
     }
+}
+
+async function openLogs() {
+    if (logWin && !logWin.isDestroyed()) {
+        logWin.focus()
+        return
+    }
+    logWin = new BrowserWindow({
+        title: 'Launcher Logs',
+        width: 800,
+        height: 500,
+        autoHideMenuBar: true,
+        resizable: !app.isPackaged,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    })
+
+    if (app.isPackaged) {
+        logWin.loadFile(path.join(__dirname, '..', 'dist', 'logs.html'))
+    } else {
+        logWin.loadURL('http://localhost:5173/logs.html')
+    }
+    setLogWindow(logWin)
 }
