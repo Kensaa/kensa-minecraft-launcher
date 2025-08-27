@@ -69,7 +69,7 @@ function Line({ line }: LineProps) {
         <div className='log-line'>
             <div>
                 <span style={{ color: 'gray' }}>{time} </span>
-                <span style={{ color: line.levelColor }}>
+                <span style={{ color: getColor(line.levelColor) }}>
                     {line.levelName.toUpperCase()}
                 </span>
                 <span>: </span>
@@ -78,4 +78,10 @@ function Line({ line }: LineProps) {
             {hasData && <div>{JSON.stringify(lineData, null, 2)}</div>}
         </div>
     )
+}
+
+// This is a bit cringe, but I can't be bothered to do it better
+function getColor(color: string) {
+    if (color === 'yellow') return 'orange'
+    return color
 }

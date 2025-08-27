@@ -19,12 +19,13 @@ const customLevels = {
 const reversedCustomLevels = Object.fromEntries(
     Object.entries(customLevels).map(entry => [entry[1], entry[0]])
 ) as Record<number, string>
+
 const customColors = {
     trace: 'gray',
     debug: 'blue',
     warning: 'red',
     info: 'green',
-    game: 'orange'
+    game: 'yellow'
 }
 
 ipcMain.on('get-logs-history', (event, args) => {
