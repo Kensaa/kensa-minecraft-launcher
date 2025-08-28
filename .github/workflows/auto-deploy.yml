@@ -66,9 +66,9 @@ jobs:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
         env:
-            WINEPREFIX: /tmp/wineprefix
+            WINEPREFIX: /github/home/.wineprefix
             WINEDLLOVERRIDES: vulkan,d3d11,d3d9=n
-            XDG_RUNTIME_DIR: /tmp/xdg-runtime
+            XDG_RUNTIME_DIR: /github/home/.xdg-runtime
             DISPLAY: ''
         steps:
             - name: checkout
@@ -78,10 +78,10 @@ jobs:
               run: |
                   pkill -f wine || true
                   pkill -f wineserver || true
-                  rm -rf /tmp/wineprefix
-                  rm -rf /tmp/xdg-runtime
-                  mkdir -p /tmp/wineprefix
-                  mkdir -p /tmp/xdg-runtime
+                  rm -rf /github/home/.wineprefix
+                  rm -rf /github/home/.xdg-runtime
+                  mkdir -p /github/home/.wineprefix
+                  mkdir -p /github/home/.xdg-runtime
 
             - name: enable corepack
               working-directory: launcher
