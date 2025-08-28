@@ -105,7 +105,10 @@ export default function Settings({
                 <div className='d-flex justify-content-center my-1'>
                     <Button
                         className='mx-1 flex-grow'
-                        onClick={() => ipcRenderer.invoke('open-logs')}
+                        onClick={() => {
+                            ipcRenderer.invoke('open-logs')
+                            hide()
+                        }}
                     >
                         Open Logs
                     </Button>
