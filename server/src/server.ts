@@ -4,7 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import crypto from 'crypto'
 import 'source-map-support/register'
-import { countFile } from './utils'
+import { countFile, download } from './utils'
 import type { ServerState, ServerSyncFunction, Tree } from './types'
 import * as cloneServer from './servers/clone'
 import * as masterServer from './servers/master'
@@ -15,19 +15,14 @@ const PROFILES_FILE = process.env.PROFILES_FILE || './profiles.json'
 const SERVER_NAME =
     process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
 const MASTER_SERVER = process.env.MASTER_SERVER
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN
 
 const version = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
 ).version
 
-const expectedBinaries = [
-    'linux-8.tar.gz',
-    'linux-17.tar.gz',
-    'linux-22.tar.gz',
-    'win32-8.tar.gz',
-    'win32-17.tar.gz',
-    'win32-22.tar.gz'
-]
+const expectedJavaRuntimesVersion = [8, 17, 22]
+const expectedJavaRuntimesPlatform = ['linux', 'win32']
 
 if (process.env.SERVER_NAME === undefined) {
     console.log(
@@ -122,19 +117,22 @@ app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
         // IS A MASTER SERVER
         console.log('master server mode')
 
-        const binaryFiles = fs.readdirSync(path.join(STATIC_FOLDER, 'java'))
-        let missingBinaries = false
-        for (const expectedBinary of expectedBinaries) {
-            if (!binaryFiles.includes(expectedBinary)) {
-                console.error(`missing binary ${expectedBinary}`)
-                missingBinaries = true
+        const runtimeFiles = fs.readdirSync(path.join(STATIC_FOLDER, 'java'))
+        for (const runtimeVersion of expectedJavaRuntimesVersion) {
+            for (const runtimePlatform of expectedJavaRuntimesPlatform) {
+                const runtimeFile = `${runtimePlatform}-${runtimeVersion}.tar.gz`
+                if (!runtimeFiles.includes(runtimeFile)) {
+                    console.log(
+                        `missing runtime version ${runtimeVersion} for ${runtimePlatform}, downloading ...`
+                    )
+                    await downloadJavaRuntime(
+                        runtimeVersion,
+                        runtimePlatform,
+                        path.join(STATIC_FOLDER, 'java', runtimeFile)
+                    )
+                    console.log(`downloaded runtime`)
+                }
             }
-        }
-        if (missingBinaries) {
-            console.error(
-                'note: naming convention is [platform]-[version].tar.gz'
-            )
-            process.exit(1)
         }
         if (!fs.existsSync(serverState.env.staticFolder)) {
             console.error(
@@ -154,3 +152,48 @@ app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
         res.status(200).send('reloaded')
     })
 })()
+
+async function downloadJavaRuntime(
+    version: number,
+    platform: string,
+    destination: string
+): Promise<void> {
+    const urlPlatform = platform === 'win32' ? 'windows' : platform
+    const expectedExt = platform === 'win32' ? '.zip' : '.tar.gz'
+
+    const apiURL = `https://api.github.com/repos/adoptium/temurin${version}-binaries/releases/latest`
+    const requestHeaders = GITHUB_TOKEN
+        ? {
+              Authorization: 'Bearer ' + GITHUB_TOKEN
+          }
+        : undefined
+
+    const repoData = await fetch(apiURL, { headers: requestHeaders }).then(
+        res => res.json()
+    )
+    const assets = repoData.assets as any[]
+    if (!assets) {
+        console.error(
+            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
+        )
+        process.exit(1)
+    }
+
+    const matchingAssets = assets.filter(
+        asset =>
+            asset.name.includes(`jre_x64_${urlPlatform}`) &&
+            asset.name.endsWith(expectedExt)
+    )
+    if (matchingAssets.length !== 1) {
+        console.error(
+            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
+        )
+        process.exit(1)
+    }
+    const asset = matchingAssets[0]
+
+    await download(asset.url, destination, {
+        Accept: 'application/octet-stream',
+        ...requestHeaders
+    })
+}

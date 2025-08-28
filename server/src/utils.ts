@@ -4,6 +4,7 @@ import * as crypto from 'crypto'
 import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
 import { Tree } from './types'
+import type { Readable } from 'stream'
 
 export async function hashFolder(src: string): Promise<Tree | string> {
     if (fs.statSync(src).isFile()) {
@@ -49,29 +50,33 @@ export function urlJoin(...args: string[]) {
     )
 }
 
-export function download(address: string, filepath: string) {
-    const get = address.startsWith('https') ? httpsGet : httpGet
+export async function download(
+    address: string,
+    filepath: string,
+    headers?: Record<string, string>
+) {
+    if (!fs.existsSync(path.dirname(filepath))) {
+        fs.mkdirSync(path.dirname(filepath), { recursive: true })
+    }
+    const res = await fetch(address, { headers })
 
-    return new Promise<void>((resolve, reject) => {
-        if (fs.existsSync(path.dirname(filepath))) {
-            fs.mkdirSync(path.dirname(filepath), { recursive: true })
-        }
-        if (fs.existsSync(filepath)) {
-            fs.writeFileSync(filepath, '')
-        }
-        const file = fs.createWriteStream(filepath)
-        console.log(address)
-        get(address, res => {
-            res.pipe(file)
-            file.on('finish', () => {
-                file.close()
-                resolve()
-            })
-        }).on('error', async err => {
-            console.log(err)
-            await download(address, filepath)
-            resolve()
-        })
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => '<failed to read body>')
+        throw new Error(
+            `An error occurred while downloading ${address}, ` +
+                `code: ${res.status} ${res.statusText}, body: ${bodyText}`
+        )
+    }
+
+    const buffer = Buffer.from(await res.arrayBuffer())
+
+    await new Promise<void>((resolve, reject) => {
+        const file = fs.createWriteStream(filepath, { flags: 'w' })
+        file.on('error', reject)
+        file.on('finish', resolve)
+
+        file.write(buffer)
+        file.end()
     })
 }
 

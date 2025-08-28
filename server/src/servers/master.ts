@@ -15,7 +15,6 @@ export async function sync(serverState: ServerState) {
     console.log('updating local hash tree')
     serverState.hashes = (await hashFolder(staticFolder)) as Tree
 
-    console.log('recreating tarballs...')
     const tarballsFolder = path.join(staticFolder, 'tarballs')
     const gameFoldersFolder = path.join(staticFolder, 'gameFolders')
     const gameFolders = fs.readdirSync(gameFoldersFolder)
