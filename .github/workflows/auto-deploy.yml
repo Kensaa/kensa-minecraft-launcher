@@ -69,6 +69,8 @@ jobs:
             WINEPREFIX: /tmp/wineprefix
             WINEDLLOVERRIDES: vulkan,d3d11,d3d9=n
             XDG_RUNTIME_DIR: /tmp/xdg-runtime
+            DISPLAY: ''
+            WINEDEBUG: -all
         steps:
             - name: checkout
               uses: actions/checkout@v4
