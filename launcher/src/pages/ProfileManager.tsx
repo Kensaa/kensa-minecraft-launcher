@@ -96,7 +96,7 @@ export default function ProfileManager() {
                     Create new local profile
                 </Button>
                 <OverlayTrigger
-                    placement='bottom'
+                    placement='top'
                     overlay={
                         <Tooltip>
                             This converts the currently selected remote profile
