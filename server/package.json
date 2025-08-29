@@ -1,6 +1,6 @@
 {
     "name": "kensa-minecraft-launcher-server",
-    "version": "4.1.0",
+    "version": "4.2.0",
     "main": "dist/server.js",
     "author": "Kensa",
     "license": "MIT",
@@ -9,12 +9,13 @@
         "start": "yarn build && dotenv -- node ."
     },
     "dependencies": {
+        "archiver": "^7.0.1",
         "cors": "^2.8.5",
         "express": "^4.18.2",
-        "source-map-support": "^0.5.21",
-        "tar": "^7.4.3"
+        "source-map-support": "^0.5.21"
     },
     "devDependencies": {
+        "@types/archiver": "^6.0.3",
         "@types/cors": "^2.8.18",
         "@types/express": "^5.0.2",
         "@types/node": "^22.15.21",

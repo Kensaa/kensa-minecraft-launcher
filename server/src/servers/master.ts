@@ -2,9 +2,9 @@
 
 import { ServerState, Tree } from '../types'
 import fs from 'fs'
-import { getHash, hashFolder, hashTree } from '../utils'
-import * as tar from 'tar'
+import { createArchive, getHash, hashFolder, hashTree } from '../utils'
 import path from 'path'
+import { tmpdir } from 'os'
 
 export async function sync(serverState: ServerState) {
     const { staticFolder, profilesFile } = serverState.env
@@ -16,51 +16,110 @@ export async function sync(serverState: ServerState) {
     serverState.hashes = (await hashFolder(staticFolder)) as Tree
 
     const tarballsFolder = path.join(staticFolder, 'tarballs')
+    const curseforgeFolder = path.join(staticFolder, 'curseforgeProfiles')
     const gameFoldersFolder = path.join(staticFolder, 'gameFolders')
     const gameFolders = fs.readdirSync(gameFoldersFolder)
 
     const gameFolderHashes = serverState.hashes['gameFolders'] as Tree
-    if (!gameFolderHashes) {
-        console.error('missing gameFolder folder in static folder')
-        process.exit(1)
-    }
-
     const tarballsHashes = serverState.hashes['tarballs'] as Tree
-    if (!tarballsHashes) {
-        console.error('missing tarballs folder in static folder')
-        process.exit(1)
-    }
+    const curseforgeHashes = serverState.hashes['curseforgeProfiles'] as Tree
 
     for (const gameFolder of gameFolders) {
+        const gameFolderPath = path.join(gameFoldersFolder, gameFolder)
+        if (!fs.statSync(gameFolderPath).isDirectory()) continue
         const gameFolderTree = gameFolderHashes[gameFolder] as Tree
-        const oldTreeHashPath = path.join(tarballsFolder, gameFolder + '.hash')
-        const treeHash = hashTree(gameFolderTree)
-        let oldTreeHash = ''
-        if (fs.existsSync(oldTreeHashPath)) {
-            oldTreeHash = fs.readFileSync(oldTreeHashPath, 'hex')
+
+        const gameFolderHashFile = path.join(
+            gameFoldersFolder,
+            gameFolder + '.hash'
+        )
+        const gameFolderHash = hashTree(gameFolderTree)
+        let oldGameFolderHash = ''
+        if (fs.existsSync(gameFolderHashFile)) {
+            oldGameFolderHash = fs.readFileSync(gameFolderHashFile, 'hex')
         }
 
-        if (treeHash != oldTreeHash) {
-            console.log(`${gameFolder} has changed, recreating tarball`)
-            const tarballPath =
-                path.join(tarballsFolder, gameFolder) + '.tar.gz'
-            if (fs.existsSync(tarballPath)) {
-                fs.rmSync(tarballPath)
+        if (gameFolderHash != oldGameFolderHash) {
+            console.log(
+                `${gameFolder} has changed, recreating tarball and curseforge profile`
+            )
+            const tarballPath = path.join(
+                tarballsFolder,
+                gameFolder + '.tar.gz'
+            )
+            await createArchive('tar', gameFolderPath, tarballPath, false)
+            const tarballHash = await getHash(tarballPath)
+            tarballsHashes[gameFolder + '.tar.gz'] = tarballHash
+            fs.writeFileSync(gameFolderHashFile, gameFolderHash, 'hex')
+
+            const profile = serverState.profiles.find(
+                profile => profile.gameFolder === gameFolder
+            )
+            if (!profile) {
+                console.log(
+                    `couldn't find the profile associated with gamefolder ${gameFolder}, make sure that it is explicitly referenced in a profile definition`
+                )
+                continue
             }
-            tar.create(
-                {
-                    file: tarballPath,
-                    gzip: true,
-                    sync: true,
-                    cwd: path.resolve(gameFoldersFolder)
-                },
-                [gameFolder]
+
+            // This will need to be changed when I get around to making the launcher download its own forge
+            let forgeVersion: string | undefined = undefined
+            if (profile.version.forge) {
+                // matches every version in the forge installer name (ex: 1.2.3)
+                const reg = /(\d+.\d+.\d+)/g
+                const matches = profile.version.forge.match(reg)
+                if (!matches) {
+                    console.log(
+                        'could not find the forge version out of the string ' +
+                            profile.version.forge
+                    )
+                    continue
+                }
+                // the forge version should be the last match
+                forgeVersion = matches[matches.length - 1]
+            }
+            const curseforgeProfilePath = path.join(
+                curseforgeFolder,
+                gameFolder + '.zip'
             )
 
-            fs.writeFileSync(oldTreeHashPath, treeHash, 'hex')
+            const tmpFolder = fs.mkdtempSync(
+                path.join(tmpdir(), `curseforgeProfile-${gameFolder}-`)
+            )
+            const overrideFolder = path.join(tmpFolder, 'overrides')
+            fs.cpSync(gameFolderPath, overrideFolder, { recursive: true })
+            fs.writeFileSync(
+                path.join(tmpFolder, 'manifest.json'),
+                JSON.stringify(
+                    {
+                        minecraft: {
+                            version: profile.version.mc,
+                            modLoaders: forgeVersion
+                                ? [
+                                      {
+                                          id: `forge-${forgeVersion}`,
+                                          primary: true
+                                      }
+                                  ]
+                                : undefined
+                        },
+                        manifestType: 'minecraftModpack',
+                        manifestVersion: 1,
+                        name: profile.name,
+                        version: '',
+                        author: '',
+                        files: [],
+                        overrides: 'overrides'
+                    },
+                    null,
+                    4
+                )
+            )
 
-            const fileHash = await getHash(tarballPath)
-            tarballsHashes[gameFolder + '.tar.gz'] = fileHash
+            await createArchive('zip', tmpFolder, curseforgeProfilePath, true)
+            fs.rmSync(tmpFolder, { recursive: true })
+            const curseforgeProfileHash = await getHash(curseforgeProfilePath)
+            curseforgeHashes[gameFolder + '.zip'] = curseforgeProfileHash
         }
     }
 }

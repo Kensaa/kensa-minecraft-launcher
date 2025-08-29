@@ -1,10 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
-import { get as httpGet } from 'http'
-import { get as httpsGet } from 'https'
 import { Tree } from './types'
-import type { Readable } from 'stream'
+import archiver from 'archiver'
 
 export async function hashFolder(src: string): Promise<Tree | string> {
     if (fs.statSync(src).isFile()) {
@@ -98,4 +96,45 @@ export function hashTree(tree: Tree): string {
     }
 
     return crypto.createHash('md5').update(treeString).digest('hex')
+}
+
+export function checkExist(path: string) {
+    if (!fs.existsSync(path)) {
+        fs.mkdirSync(path, { recursive: true })
+    }
+}
+
+/**
+ * Creates an archive from a directory
+ * @param format zip or tar
+ * @param directoryPath the path of the dir to add to the archive
+ * @param outputFile the path to the archive
+ * @param strip whether of not to strip the top layer of the input directory
+ * @returns a promise that resolves when the archive is created
+ */
+export async function createArchive(
+    format: 'zip' | 'tar',
+    directoryPath: string,
+    outputFile: string,
+    strip: boolean
+): Promise<void> {
+    // return new Promise((res, rej) => {
+    const writeStream = fs.createWriteStream(outputFile, { flags: 'w' })
+    const archive = archiver(format, {
+        zlib: {
+            level: 9
+        },
+        gzip: true,
+        gzipOptions: {
+            level: 9
+        }
+    })
+    archive.pipe(writeStream)
+
+    archive.directory(
+        directoryPath,
+        strip ? false : path.basename(directoryPath)
+    )
+    await archive.finalize()
+    // })
 }
