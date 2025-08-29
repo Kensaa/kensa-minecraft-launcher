@@ -6,21 +6,23 @@ import * as msmc from 'msmc'
 import { Client, ILauncherOptions } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
+import { fetchMcVersions } from './mcversions'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
 import {
     JSONFetch,
+    Tree,
     checkExist,
     checkServer,
-    copyFolder,
     download,
     folderTree,
+    formatStartArgs,
     getHash,
     setDifference
 } from './utils'
 import { totalmem } from 'os'
-
+import semver from 'semver'
 interface Task {
     title: string
     progress: number
@@ -342,12 +344,34 @@ ipcMain.on('get-local-profiles', (event, args) => {
     if (!fs.existsSync(path.join(configFolder, 'localProfiles.json'))) {
         event.returnValue = []
     } else {
-        event.returnValue = JSON.parse(
+        let localProfiles = JSON.parse(
             fs.readFileSync(
                 path.join(configFolder, 'localProfiles.json'),
                 'utf-8'
             )
         )
+
+        // Migration from forge installer to forge version
+        for (const profile of localProfiles) {
+            if (
+                profile.version.forge &&
+                profile.version.forge.endsWith('.jar')
+            ) {
+                // profile still is a file
+                const reg = /forge-.*-(.*)-installer.jar/
+                const matches = profile.version.forge.match(reg)
+                if (matches) {
+                    const forgeVersion = matches[matches.length - 1]
+                    logger.debug(
+                        `forge migration: inferred forge version ${forgeVersion} from file ${profile.version.forge} for profile ${profile.name}`
+                    )
+                    profile.version.forge = forgeVersion
+                } else {
+                }
+            }
+        }
+
+        event.returnValue = localProfiles
     }
 })
 
@@ -365,7 +389,13 @@ ipcMain.on('get-system-ram', event => {
 })
 
 ipcMain.handle('open-logs', async (event, args) => {
+    logger.debug('open-logs')
     await openLogs()
+})
+
+ipcMain.handle('fetch-mcversions', async (event, args) => {
+    logger.debug('fetch-mcversions (async)')
+    return fetchMcVersions()
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
@@ -437,102 +467,123 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
             }
         })
 
-        let launchOption: ILauncherOptions | undefined
         try {
-            if (args.server === 'local') {
-                launchOption = await launchGameLocal(args)
-            } else if (args.server !== '') {
-                launchOption = await launchGameRemote(args)
-            }
+            const launchOptions = await launchGame(args)
+            launcher.launch(launchOptions)
         } catch (err) {
             logger.warning(err)
             gameStarting = false
             reject(err)
         }
-
-        if (!launchOption) {
-            reject('failed to start game : invalid launch option')
-            return
-        }
-        launcher.launch(launchOption)
     })
 })
 
-async function launchGameRemote(
-    args: StartArgs
-): Promise<ILauncherOptions | undefined> {
-    if (!config) return
-    if (!loginInfo) return
+async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
+    if (!config) throw new Error('no launcher config found')
+    if (!loginInfo) throw new Error('no launcher login info found')
     const profile = args.profile
-    const primaryServer = args.server
+    logger.info('launching the game with args : %s', formatStartArgs(args))
+    const server = args.server !== 'local' ? args.server : undefined
 
-    if (!(await checkServer(primaryServer))) {
-        // checking if server is accessible
-        gameStarting = false
-        throw "server is not accessible, either your config is wrong or you don't have an internet connection"
+    // if the profile is remote, check for server availability
+    if (server) {
+        if (!(await checkServer(server))) {
+            throw new Error(
+                "server is not accessible, either your config is wrong or you don't have an internet connection"
+            )
+        }
     }
 
-    logger.info('Checking if java is installed')
-    logger.info('Minecraft version: %s', profile.version.mc)
     const javaVersion = getJavaVersion(profile.version.mc)
-    logger.info('Java version: %s', javaVersion)
-    const javaExecutable = path.join(
+    logger.info('Checking if java %s is installed', javaVersion)
+    const javaPath = path.join(
         config.rootDir,
         'java',
         javaVersion,
         'bin',
         platform === 'win32' ? 'java.exe' : 'java'
     )
-    await installJava(primaryServer, javaVersion)
 
-    let forgeArgs
-    if (profile.version.forge) {
-        logger.info('Forge detected, downloading forge installer')
-        const forgePath = path.join(
-            config.rootDir,
-            'forgeInstallers',
-            profile.version.forge
-        )
-        if (!fs.existsSync(forgePath)) {
-            const forgeURL = urlJoin(
-                primaryServer,
-                '/static/forges/',
-                profile.version.forge
-            )
-            logger.info(`downloading ${forgeURL} to ${forgePath}`)
-            await download(forgeURL, forgePath)
-            logger.info(`${profile.version.forge} downloaded`)
+    // Two cases
+    if (server) {
+        // remote profile => download from server
+        await installJava(server, javaVersion)
+    } else {
+        // local profile => try to download from any server
+        let installed = false
+        for (const server of config.servers) {
+            try {
+                await installJava(server, javaVersion)
+                installed = true
+                break
+            } catch {}
         }
-        forgeArgs = forgePath
+        if (!installed) {
+            throw new Error('Failed to install java from any server')
+        }
     }
-    if (profile.gameFolder) {
-        logger.info('A forced game folder is detected, downloading it...')
-        const localPath = path.join(
+
+    let forgePath: string | undefined
+    if (profile.version.forge) {
+        // if forge is specified
+        // two cases (as before) (even if the server will only be used in case of a legacy forge download)
+        if (server) {
+            forgePath = await downloadForge(
+                profile.version.mc,
+                profile.version.forge,
+                server
+            )
+        } else {
+            let installed = false
+            for (const server of config.servers) {
+                try {
+                    forgePath = await downloadForge(
+                        profile.version.mc,
+                        profile.version.forge,
+                        server
+                    )
+                    installed = true
+                } catch {}
+            }
+
+            if (!installed) {
+                throw new Error('Failed to download forge from any server')
+            }
+        }
+    }
+
+    // gamefolder handling
+    // if remote and specified=> download/update
+    // if remote and not specified => create
+    // if local => create
+    if (server && profile.gameFolder) {
+        logger.info('A forced game folder is detected, checking for updates...')
+        const gameFolderPath = path.join(
             config.rootDir,
             'profiles',
             profile.gameFolder
         )
 
-        if (!fs.existsSync(localPath)) {
+        if (!fs.existsSync(gameFolderPath)) {
             logger.info(
-                'The gameFolder does not exist, so instead of downloading each file 1 by 1, we download the gameFolder compressed'
+                "The gamefolder doesn't exist, downloading a compressed version"
             )
             updateTask({
                 title: 'Downloading Profile',
                 progress: 0
             })
-            fs.mkdirSync(localPath)
+            fs.mkdirSync(gameFolderPath)
             const tarballFilename = profile.gameFolder + '.tar.gz'
-            const tarballPath = path.join(localPath, tarballFilename)
+            const tarballPath = path.join(gameFolderPath, tarballFilename)
             await download(
-                urlJoin(primaryServer, 'static/tarballs', tarballFilename),
+                urlJoin(server, 'static/tarballs', tarballFilename),
                 tarballPath
             )
             updateTask({
                 title: 'Downloading Profile',
                 progress: 50
             })
-            await decompress(tarballPath, localPath, {
+            await decompress(tarballPath, gameFolderPath, {
                 strip: 1
             })
             fs.rmSync(tarballPath)
@@ -545,11 +596,13 @@ async function launchGameRemote(
                 title: 'Checking for update',
                 progress: 0
             })
-            const hashTree = await JSONFetch(urlJoin(primaryServer, 'hashes'))
-            const remoteTree = hashTree['gameFolders'][profile.gameFolder]
+            const hashTree = await JSONFetch(urlJoin(server, 'hashes'))
+            const remoteTree = hashTree['gameFolders'][
+                profile.gameFolder
+            ] as Tree
             const fileCount: number = (
                 await JSONFetch(
-                    urlJoin(primaryServer, 'fileCount', profile.gameFolder)
+                    urlJoin(server, 'fileCount', profile.gameFolder)
                 )
             ).count
 
@@ -558,7 +611,7 @@ async function launchGameRemote(
                 title: 'Checking for update',
                 progress: 50
             })
-            const localTree = await folderTree(localPath)
+            const localTree = (await folderTree(gameFolderPath)) as Tree
             logger.info('Local tree created')
             function getFolders(tree: any) {
                 return Object.keys(tree).filter(
@@ -576,231 +629,74 @@ async function launchGameRemote(
             // creates all the folder at the root that does not exists
             for (const folder of remoteFolders) {
                 if (!localFolders.includes(folder)) {
-                    fs.mkdirSync(path.join(localPath, folder))
+                    fs.mkdirSync(path.join(gameFolderPath, folder))
                     localTree[folder] = {}
                 }
             }
 
-            let count = 0
             for (const folder of remoteFolders) {
                 //start recursive function which will download all files for all the folders
                 await downloadFolder(
-                    remoteTree[folder],
-                    localTree[folder],
+                    server,
+                    remoteTree[folder] as Tree,
+                    localTree[folder] as Tree,
                     profile.gameFolder,
-                    localPath,
-                    [folder]
+                    gameFolderPath,
+                    [folder],
+                    fileCount
                 )
             }
             logger.info('Update finished')
-            /**
-             *
-             * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
-             * @param localFolder object representing the same folder but locally (I.E current state of the folder)
-             * @param gameFolder name of the remote folder on the server
-             * @param folderPath path to the local folder
-             * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
-             */
-            async function downloadFolder(
-                remoteFolder,
-                localFolder,
-                gameFolder: string,
-                folderPath: string,
-                pathA: string[] = []
-            ) {
-                for (const element of Object.keys(remoteFolder)) {
-                    const localPath = path.join(...pathA, element)
-                    const filepath = path.join(folderPath, localPath) // = absolute path to file
-                    const fileUrl = urlJoin(
-                        primaryServer,
-                        '/static/gameFolders',
-                        gameFolder,
-                        ...pathA,
-                        element
-                    )
-                    if (typeof remoteFolder[element] === 'string') {
-                        // Element is a file
-                        if (localFolder[element] !== undefined) {
-                            if (
-                                pathA[0] !== undefined &&
-                                FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
-                            ) {
-                                // Used to skip certain forlders (like config) from being updated because we don't really care about them being up to date
-                                continue
-                            }
-                            if (
-                                (await getHash(filepath)) !==
-                                remoteFolder[element]
-                            ) {
-                                logger.info('Updating file "%s"', localPath)
-                                await download(fileUrl, filepath)
-                                count++
-                                updateTask({
-                                    title: 'Updating Profile',
-                                    progress: (count / fileCount) * 100
-                                })
-                            }
-                        } else {
-                            logger.info('Downloading file "%s"', localPath)
-                            await download(fileUrl, filepath)
-                            count++
-                            updateTask({
-                                title: 'Updating Profile',
-                                progress: (count / fileCount) * 100
-                            })
-                        }
-                    } else {
-                        // Element is a folder
-                        if (!localFolder[element]) {
-                            fs.mkdirSync(filepath)
-                            localFolder[element] = {}
-                        }
-                        await downloadFolder(
-                            remoteFolder[element],
-                            localFolder[element],
-                            gameFolder,
-                            folderPath,
-                            pathA.concat(element)
-                        )
-                    }
-                }
-                const onlyLocalFile = Object.keys(localFolder)
-                    .filter(key => typeof localFolder[key] === 'string')
-                    .filter(key => !Object.keys(remoteFolder).includes(key))
-                for (const file of onlyLocalFile) {
-                    if (
-                        pathA[0] !== undefined &&
-                        FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
-                    ) {
-                        // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
-                        continue
-                    }
-                    const filepath = path.join(folderPath, ...pathA, file)
-                    logger.info('Deleting file "%s"', filepath)
-                    fs.rmSync(filepath, {
-                        recursive: true
-                    })
-                }
-            }
         }
     } else {
-        logger.info('No forced game folder detected, creating an empty one...')
-        profile.gameFolder = profile.name
-            .replace(/[^a-zA-Z0-9]/g, '_')
-            .toLowerCase()
+        if (!profile.gameFolder) {
+            logger.info(
+                'No forced game folder detected, creating an empty one...'
+            )
+            profile.gameFolder = profile.name
+                .replace(/[^a-zA-Z0-9]/g, '_')
+                .toLowerCase()
+        } else {
+            logger.info(
+                'A forced game folder is detected, but profile is local, skipping update'
+            )
+        }
     }
 
-    const gameFolder = path.join(config.rootDir, 'profiles', profile.gameFolder)
+    const gameFolderPath = path.join(
+        config.rootDir,
+        'profiles',
+        profile.gameFolder
+    )
 
+    // handle additional files
+    logger.info('Copying additional files')
     const additionalFileFolder = path.join(
         config.rootDir,
         'additionalFiles',
         profile.gameFolder
     )
     checkExist(additionalFileFolder)
-    // Copy added mods
     const additionalFiles = fs.readdirSync(additionalFileFolder)
     if (additionalFiles.length > 0) {
-        checkExist(gameFolder)
-        copyFolder(additionalFileFolder, gameFolder)
+        checkExist(gameFolderPath)
+        fs.cpSync(additionalFileFolder, gameFolderPath, { recursive: true })
     }
 
     return {
         clientPackage: undefined,
         authorization: msmc.getMCLC().getAuth(loginInfo),
-        root: gameFolder,
+        root: gameFolderPath,
         version: {
             number: profile.version.mc,
             type: 'release'
         },
-        forge: forgeArgs,
+        forge: forgePath,
         memory: {
             max: config.ram + 'M',
             min: config.ram + 'M'
         },
-        javaPath: javaExecutable,
-        customArgs: ['-Djava.net.preferIPv6Stack=true'],
-        overrides: {
-            detached: config.jrePath !== '',
-            assetRoot: path.join(config.rootDir, 'assets'),
-            libraryRoot: path.join(config.rootDir, 'libraries')
-        }
-    }
-}
-
-async function launchGameLocal(
-    args: StartArgs
-): Promise<ILauncherOptions | undefined> {
-    if (!config) return
-    if (!loginInfo) return
-    const profile = args.profile
-
-    logger.info('Checking if java is installed')
-    logger.info('Minecraft version: %s', profile.version.mc)
-    const javaVersion = getJavaVersion(profile.version.mc)
-    logger.info('Java version: %s', javaVersion)
-    const javaFolder = path.join(config.rootDir, 'java')
-    const javaExecutable = path.join(
-        javaFolder,
-        javaVersion,
-        'bin',
-        platform === 'win32' ? 'java.exe' : 'java'
-    )
-    if (!fs.existsSync(javaExecutable)) {
-        logger.info('Java not installed, trying to install it from server list')
-        let installed = false
-        for (const server of config.servers) {
-            try {
-                await installJava(server, javaVersion)
-                installed = true
-                break
-            } catch {
-                logger.info('Failed to install java from %s', server)
-            }
-        }
-        if (!installed) {
-            logger.info('Failed to install java from any server')
-            throw 'Failed to install java from any server'
-        }
-    }
-
-    let forgeArgs
-    if (profile.version.forge) {
-        logger.info('Forge detected, checking if forge installer is present')
-        const forgePath = path.join(
-            config.rootDir,
-            'forgeInstallers',
-            profile.version.forge
-        )
-        if (!fs.existsSync(forgePath)) {
-            throw (
-                "Forge installer isn't found, please add it to the location : " +
-                forgePath
-            )
-        }
-        forgeArgs = forgePath
-    }
-
-    profile.gameFolder = profile.gameFolder
-        ? profile.gameFolder
-        : profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-
-    const gameFolder = path.join(config.rootDir, 'profiles', profile.gameFolder)
-
-    return {
-        clientPackage: undefined,
-        authorization: msmc.getMCLC().getAuth(loginInfo),
-        root: gameFolder,
-        version: {
-            number: profile.version.mc,
-            type: 'release'
-        },
-        forge: forgeArgs,
-        memory: {
-            max: config.ram + 'M',
-            min: config.ram + 'M'
-        },
-        javaPath: javaExecutable,
+        javaPath: javaPath,
         customArgs: ['-Djava.net.preferIPv6Stack=true'],
         overrides: {
             detached: true,
@@ -887,4 +783,162 @@ async function openLogs() {
         logWin.loadURL('http://localhost:5173/logs.html')
     }
     setLogWindow(logWin)
+}
+
+/**
+ * Downloads forge for a given version
+ * If the forge version given as argument is a file (ex: forge-1.20.1-47.3.0-installer.jar), it will use the legacy way of downloading (downloading for the server given as 3rd param), else it will download the version from forge's servers
+ * @param mcVersion the version of Minecraft
+ * @param forgeVersion the version of Forge
+ * @param server the server to download from if using legacy way of downloading
+ * @returns the path to the downloaded file
+ */
+async function downloadForge(
+    mcVersion: string,
+    forgeVersion: string,
+    server?: string
+): Promise<string> {
+    // Check for old forge format (directly the forge installer)
+    if (forgeVersion.endsWith('.jar')) {
+        // LEGACY WAY OF DOWNLOADING FOR (FROM THE SERVER)
+        logger.info('Forge legacy mode (downloading from launcher server)')
+        const forgePath = path.join(
+            config.rootDir,
+            'forgeInstallers',
+            forgeVersion
+        )
+        if (!fs.existsSync(forgePath)) {
+            if (!server) {
+                throw new Error(
+                    'Not able to download this version of forge: ' +
+                        forgeVersion +
+                        'please change the profile to the new forge version format'
+                )
+            }
+            const forgeURL = urlJoin(server, '/static/forges/', forgeVersion)
+            logger.info(`downloading ${forgeURL} to ${forgePath}`)
+            await download(forgeURL, forgePath)
+            logger.info(`${forgeVersion} downloaded`)
+        }
+        return forgePath
+    } else {
+        // NEW WAY : DOWNLOAD THE INSTALLER DIRECTLY
+        logger.info(
+            'Forge new mode (downloading directly from forge repository)'
+        )
+        // The launcher library says that for version below 1.13, the "universal" jar is needed, and for 1.13+, the "installer" jar is needed
+        const semverMcVersion = semver.coerce(mcVersion)
+        if (!semverMcVersion) {
+            throw `the following minecraft version is not supported for forge: ${mcVersion}`
+        }
+        const fileType = semver.satisfies(semverMcVersion, '<1.13.0')
+            ? 'universal'
+            : 'installer'
+        const filename = `forge-${mcVersion}-${forgeVersion}-${fileType}.jar`
+        const filepath = path.join(config.rootDir, 'forgeInstallers', filename)
+
+        if (!fs.existsSync(filepath)) {
+            const downloadURL = `https://maven.minecraftforge.net/net/minecraftforge/forge/${mcVersion}-${forgeVersion}/${filename}`
+            logger.info(`downloading ${downloadURL} to ${filepath}`)
+            await download(downloadURL, filepath)
+            logger.info(`${forgeVersion} downloaded`)
+        }
+        return filepath
+    }
+}
+
+/**
+ *
+ * @param server the server url
+ * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
+ * @param localFolder object representing the same folder but locally (I.E current state of the folder)
+ * @param folderName name of the remote folder on the server
+ * @param folderPath path to the local folder
+ * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
+ * @param totalFileCount the total number of file, used to update the current task
+ * @param downloadStatus object used to count the file updated through the callstack to update the current task
+ */
+export async function downloadFolder(
+    server: string,
+    remoteFolder: Tree,
+    localFolder: Tree,
+    folderName: string,
+    folderPath: string,
+    pathA: string[] = [],
+    totalFileCount: number,
+    downloadStatus: { count: number } = { count: 0 }
+) {
+    for (const element of Object.keys(remoteFolder)) {
+        const localPath = path.join(...pathA, element)
+        const filepath = path.join(folderPath, localPath) // = absolute path to file
+        const fileUrl = urlJoin(
+            server,
+            '/static/gameFolders',
+            folderName,
+            ...pathA,
+            element
+        )
+        if (typeof remoteFolder[element] === 'string') {
+            // Element is a file
+            if (localFolder[element] !== undefined) {
+                // if (
+                //     pathA[0] !== undefined &&
+                //     FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+                // ) {
+                //     // Used to skip certain folder (like config) from being updated because we don't really care about them being up to date
+                //     continue
+                // }
+                if ((await getHash(filepath)) !== remoteFolder[element]) {
+                    logger.info('Updating file "%s"', localPath)
+                    await download(fileUrl, filepath)
+                    downloadStatus.count++
+                    updateTask({
+                        title: 'Updating Profile',
+                        progress: (downloadStatus.count / totalFileCount) * 100
+                    })
+                }
+            } else {
+                logger.info('Downloading file "%s"', localPath)
+                await download(fileUrl, filepath)
+                downloadStatus.count++
+                updateTask({
+                    title: 'Updating Profile',
+                    progress: (downloadStatus.count / totalFileCount) * 100
+                })
+            }
+        } else {
+            // Element is a folder
+            if (!localFolder[element]) {
+                fs.mkdirSync(filepath)
+                localFolder[element] = {}
+            }
+            await downloadFolder(
+                server,
+                remoteFolder[element],
+                localFolder[element] as Tree,
+                folderName,
+                folderPath,
+                pathA.concat(element),
+                totalFileCount,
+                downloadStatus
+            )
+        }
+    }
+    const onlyLocalFile = Object.keys(localFolder)
+        .filter(key => typeof localFolder[key] === 'string')
+        .filter(key => !Object.keys(remoteFolder).includes(key))
+    for (const file of onlyLocalFile) {
+        if (
+            pathA[0] !== undefined &&
+            FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+        ) {
+            // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
+            continue
+        }
+        const filepath = path.join(folderPath, ...pathA, file)
+        logger.info('Deleting file "%s"', filepath)
+        fs.rmSync(filepath, {
+            recursive: true
+        })
+    }
 }

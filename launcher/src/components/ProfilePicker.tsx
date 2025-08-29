@@ -98,7 +98,7 @@ interface DividerProps {
 
 function Divider({ serverName, address }: DividerProps) {
     return (
-        <div className='d-flex flex-row align-items-center justify-content-center user-select-none mt-3'>
+        <div className='d-flex flex-row align-items-center justify-content-center user-select-none mt-2'>
             <label style={{ color: 'white' }}>
                 {serverName === address
                     ? serverName

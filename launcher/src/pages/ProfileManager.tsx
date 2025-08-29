@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
     Button,
     Form,
@@ -15,6 +15,7 @@ import {
     useSelectedProfile
 } from '../stores/profiles'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { mcversions } from '../mcversions'
 
 export default function ProfileManager() {
     const [editProfile, setEditProfile] = useState<Profile | undefined>()
@@ -96,7 +97,7 @@ export default function ProfileManager() {
                     Create new local profile
                 </Button>
                 <OverlayTrigger
-                    placement='bottom'
+                    placement='top'
                     overlay={
                         <Tooltip>
                             This converts the currently selected remote profile
@@ -172,6 +173,14 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
         profile?.gameFolder ?? ''
     )
 
+    const forgeVersions = useMemo(() => {
+        const v = mcversions.find(v => v.version === version)
+        if (!v) {
+            return []
+        }
+        return v.forgeVersions
+    }, [version])
+
     const save = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
@@ -202,19 +211,34 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
             </Form.Group>
             <Form.Group>
                 <Form.Label>Version</Form.Label>
-                <Form.Control
+                <Form.Select
                     value={version}
                     onChange={({ target }) => setVersion(target.value)}
-                    placeholder='minecraft version of the profile'
-                />
+                >
+                    <option value=''>Select a version</option>
+                    {mcversions.map((version, i) => (
+                        <option value={version.version} key={i}>
+                            {version.version}
+                        </option>
+                    ))}
+                </Form.Select>
             </Form.Group>
             <Form.Group>
                 <Form.Label>Forge Version</Form.Label>
-                <Form.Control
+                <Form.Select
                     value={forge}
                     onChange={({ target }) => setForge(target.value)}
-                    placeholder='forge installer name of the profile (optional)'
-                />
+                    disabled={forgeVersions.length === 0}
+                >
+                    <option value=''>Select a forge version (optional)</option>
+                    {forgeVersions.map((forgeVersion, i) => (
+                        <option key={i} value={forgeVersion.version}>
+                            {forgeVersion.version}{' '}
+                            {forgeVersion.latest ? '(latest)' : ''}{' '}
+                            {forgeVersion.recommended ? '(recommended)' : ''}
+                        </option>
+                    ))}
+                </Form.Select>
             </Form.Group>
             <Form.Group>
                 <Form.Label>Game Folder</Form.Label>
