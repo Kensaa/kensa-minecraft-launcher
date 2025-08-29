@@ -38,11 +38,15 @@ export default function ProfileElement({ profile }: ProfileElementProps) {
 }
 
 function getVersionString(version: Profile['version']) {
-    let versionString = version.mc
-    if (version.forge) {
-        let forge = version.forge
-        forge = forge.substring(0, forge.lastIndexOf('-'))
-        versionString = forge
+    const { mc, forge } = version
+    let versionString = mc
+    if (forge) {
+        // compat with both forge version format
+        if (forge.endsWith('.jar')) {
+            versionString = forge.substring(0, forge.lastIndexOf('-'))
+        } else {
+            versionString = `forge-${mc}-${forge}`
+        }
     }
     return versionString
 }
