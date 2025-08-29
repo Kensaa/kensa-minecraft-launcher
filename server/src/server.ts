@@ -4,7 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import crypto from 'crypto'
 import 'source-map-support/register'
-import { countFile, download } from './utils'
+import { checkExist, countFile, download } from './utils'
 import type { ServerState, ServerSyncFunction, Tree } from './types'
 import * as cloneServer from './servers/clone'
 import * as masterServer from './servers/master'
@@ -31,17 +31,15 @@ if (process.env.SERVER_NAME === undefined) {
 }
 
 if (!fs.existsSync(STATIC_FOLDER)) {
-    console.error(`static folder ${STATIC_FOLDER} does not exist`)
-    process.exit(1)
-} else {
-    const files = fs.readdirSync(STATIC_FOLDER)
-    if (files.length === 0) {
-        fs.mkdirSync(path.join(STATIC_FOLDER, 'forges'))
-        fs.mkdirSync(path.join(STATIC_FOLDER, 'gameFolders'))
-        fs.mkdirSync(path.join(STATIC_FOLDER, 'java'))
-        fs.mkdirSync(path.join(STATIC_FOLDER, 'tarballs'))
-    }
+    console.log(`static folder ${STATIC_FOLDER} does not exist, creating it`)
+    fs.mkdirSync(STATIC_FOLDER)
 }
+
+checkExist(path.join(STATIC_FOLDER, 'forges'))
+checkExist(path.join(STATIC_FOLDER, 'gameFolders'))
+checkExist(path.join(STATIC_FOLDER, 'java'))
+checkExist(path.join(STATIC_FOLDER, 'tarballs'))
+checkExist(path.join(STATIC_FOLDER, 'curseforgeProfiles'))
 
 const app = express()
 
