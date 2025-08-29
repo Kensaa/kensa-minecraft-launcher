@@ -62,21 +62,24 @@ export async function sync(serverState: ServerState) {
                 continue
             }
 
-            // This will need to be changed when I get around to making the launcher download its own forge
             let forgeVersion: string | undefined = undefined
             if (profile.version.forge) {
-                // matches every version in the forge installer name (ex: 1.2.3)
-                const reg = /(\d+.\d+.\d+)/g
-                const matches = profile.version.forge.match(reg)
-                if (!matches) {
-                    console.log(
-                        'could not find the forge version out of the string ' +
-                            profile.version.forge
-                    )
-                    continue
+                if (profile.version.forge.endsWith('.jar')) {
+                    // matches every version in the forge installer name (ex: 1.2.3)
+                    const reg = /(\d+.\d+.\d+)/g
+                    const matches = profile.version.forge.match(reg)
+                    if (!matches) {
+                        console.log(
+                            'could not find the forge version out of the string ' +
+                                profile.version.forge
+                        )
+                        continue
+                    }
+                    // the forge version should be the last match
+                    forgeVersion = matches[matches.length - 1]
+                } else {
+                    forgeVersion = profile.version.forge
                 }
-                // the forge version should be the last match
-                forgeVersion = matches[matches.length - 1]
             }
             const curseforgeProfilePath = path.join(
                 curseforgeFolder,
