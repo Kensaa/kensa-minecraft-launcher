@@ -16,3 +16,13 @@ export type StartArgs = {
     server: string
     profile: Profile
 }
+
+export type Version = {
+    version: string
+    forgeVersions: ForgeVersion[]
+}
+export type ForgeVersion = {
+    version: string
+    latest: boolean
+    recommended: boolean
+}

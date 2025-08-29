@@ -1,15 +1,6 @@
 import semver, { compare } from 'semver'
 import fetch from 'electron-fetch'
-
-export type Version = {
-    version: string
-    forgeVersions: ForgeVersion[]
-}
-export type ForgeVersion = {
-    version: string
-    latest: boolean
-    recommended: boolean
-}
+import { ForgeVersion, Version } from '../src/types'
 
 export async function fetchMcVersions() {
     const mcversions: Version[] = []
