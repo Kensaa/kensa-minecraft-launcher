@@ -6,6 +6,7 @@ import * as msmc from 'msmc'
 import { Client, ILauncherOptions } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
+import { fetchMcVersions } from './mcversions'
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
@@ -365,7 +366,13 @@ ipcMain.on('get-system-ram', event => {
 })
 
 ipcMain.handle('open-logs', async (event, args) => {
+    logger.debug('open-logs')
     await openLogs()
+})
+
+ipcMain.handle('fetch-mcversions', async (event, args) => {
+    logger.debug('fetch-mcversions (async)')
+    return fetchMcVersions()
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
