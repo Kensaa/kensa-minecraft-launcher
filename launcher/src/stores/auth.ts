@@ -9,31 +9,39 @@ interface authStore {
 }
 
 const store = create<authStore>(set => {
-    const loginInfo = JSON.parse(ipcRenderer.sendSync('msmc-result'))
-    const profile = loginInfo ? loginInfo.profile : undefined
+    // const profile = loginInfo ? loginInfo.profile : undefined
+    const fetchAuthInfo = () => {
+        ipcRenderer.invoke('auth-info').then(info => {
+            console.log(info)
+            if (info) {
+                set({ connected: true, profile: info.profile })
+            } else {
+                set({ connected: false, profile: undefined })
+            }
+        })
+    }
 
+    fetchAuthInfo()
     return {
-        profile,
-        connected: profile ? true : false,
+        profile: {},
+        connected: false,
         connect: async () => {
-            return new Promise<boolean>(resolve => {
-                ipcRenderer.invoke('msmc-connect').then(res => {
-                    if (res) {
-                        const loginInfo = JSON.parse(
-                            ipcRenderer.sendSync('msmc-result')
-                        )
-                        set({
-                            profile: loginInfo.profile,
-                            connected: loginInfo.profile ? true : false
-                        })
-                    }
-                    resolve(res)
+            try {
+                const loginRes = await ipcRenderer.invoke('auth-login')
+                console.log(loginRes)
+                set({
+                    profile: loginRes.profile as Record<string, any>,
+                    connected: true
                 })
-            })
+                return true
+            } catch (err) {
+                set({ profile: {}, connected: false })
+                return false
+            }
         },
         logout: () => {
             set({ profile: undefined, connected: false })
-            ipcRenderer.send('msmc-logout')
+            ipcRenderer.send('auth-logout')
         }
     }
 })

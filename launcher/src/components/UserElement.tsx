@@ -8,6 +8,7 @@ export default function UserElement() {
         auth.connect()
     }
 
+    console.log(auth)
     return auth.connected ? (
         <DropdownButton
             title={
