@@ -2,8 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
-import * as msmc from 'msmc'
-import { Client, ILauncherOptions } from 'minecraft-launcher-core'
+import { Auth, Xbox } from 'msmc'
+import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
 import { fetchMcVersions } from './mcversions'
@@ -56,6 +56,7 @@ if (!supportedPlatforms.includes(platform)) {
 const configFolder = path.join(os.homedir(), configFolders[platform])
 const configPath = path.join(configFolder, 'config.json')
 const rootDir = path.join(os.homedir(), rootDirs[platform])
+const authInfoPath = path.join(configFolder, 'authInfo.json')
 
 if (!fs.existsSync(configFolder)) fs.mkdirSync(configFolder)
 
@@ -74,7 +75,8 @@ const defaultConfig = {
     openLogs: false
 }
 
-let loginInfo: msmc.result | null
+const authInstance = new Auth('select_account')
+let authInfo: Xbox | undefined
 let config: Record<string, any>
 
 async function createWindow() {
@@ -92,28 +94,17 @@ async function createWindow() {
     })
     logger.info('Window Created')
 
-    const loginInfoPath = path.join(configFolder, 'loginInfo.json')
-    if (fs.existsSync(loginInfoPath)) {
-        loginInfo = JSON.parse(fs.readFileSync(loginInfoPath, 'utf-8'))
-        if (loginInfo && loginInfo.profile) {
-            if (!msmc.validate(loginInfo.profile)) {
-                logger.info('login info expired, refreshing...')
-                msmc.refresh(loginInfo.profile)
-                    .then(res => {
-                        logger.info('refreshed login info')
-                        loginInfo = res
-                        fs.writeFileSync(
-                            loginInfoPath,
-                            JSON.stringify(loginInfo, null, 4)
-                        )
-                    })
-                    .catch(err =>
-                        logger.warning('failed to refresh login info: %o', err)
-                    )
-            }
-        } else {
-            logger.warning('login info file is corrupted, deleting')
-            fs.rmSync(loginInfoPath)
+    if (fs.existsSync(authInfoPath)) {
+        logger.info('loading auth infos')
+        try {
+            authInfo = await authInstance.refresh(
+                fs.readFileSync(authInfoPath, 'utf-8')
+            )
+            fs.writeFileSync(authInfoPath, authInfo.save(), 'utf-8')
+            logger.info('loaded auth infos')
+        } catch (err) {
+            logger.warning('failed to load auth infos: %s', err)
+            fs.rmSync(authInfoPath)
         }
     }
 
@@ -182,52 +173,40 @@ function updateTask(task: Task | undefined) {
     win.webContents.send('task-update', task)
 }
 
-ipcMain.on('msmc-result', async (event, arg) => {
-    logger.debug('msmc-result')
-    const res = loginInfo ? loginInfo : {}
-    event.returnValue = JSON.stringify(res)
+ipcMain.handle('auth-info', async (event, args) => {
+    logger.debug('auth-info (async)')
+    if (authInfo) {
+        return await authInfo.getMinecraft()
+    }
 })
 
-ipcMain.handle('msmc-connect', (event, arg) => {
+ipcMain.handle('auth-login', async (event, arg) => {
     logger.debug('msmc-connect (async)')
-    return new Promise<boolean>(resolve => {
-        logger.info('Connecting to Microsoft sevices...')
+    updateTask({
+        title: 'Logging in',
+        progress: 0
+    })
+    try {
+        const res = await authInstance.launch('electron')
         updateTask({
             title: 'Logging in',
-            progress: 0
+            progress: 50
         })
-        msmc.fastLaunch('electron', info => {
-            if (!info.percent) return
-            updateTask({
-                title: 'Logging in',
-                progress: info.percent ?? 0
-            })
-        })
-            .then(res => {
-                logger.info('Connected')
-                updateTask(undefined)
-                if (msmc.errorCheck(res)) {
-                    resolve(false)
-                } else {
-                    loginInfo = res
-                    fs.writeFileSync(
-                        path.join(configFolder, 'loginInfo.json'),
-                        JSON.stringify(loginInfo, null, 4)
-                    )
-                    resolve(true)
-                }
-            })
-            .catch(err => {
-                logger.error('Connection failed: %o', err)
-                resolve(false)
-            })
-    })
+        authInfo = res
+        fs.writeFileSync(authInfoPath, res.save(), 'utf-8')
+        const minecraftInfo = await authInfo.getMinecraft()
+        updateTask(undefined)
+        return minecraftInfo
+    } catch (err) {
+        logger.warning('failed to login: %s', err)
+        throw err
+    }
 })
 
-ipcMain.on('msmc-logout', (event, arg) => {
-    logger.debug('msmc-logout')
-    loginInfo = null
-    fs.rmSync(path.join(configFolder, 'loginInfo.json'))
+ipcMain.on('auth-logout', (event, arg) => {
+    logger.debug('auth-logout')
+    authInfo = undefined
+    fs.rmSync(authInfoPath)
 })
 
 ipcMain.handle('get-update-status', (event, arg) => {
@@ -401,86 +380,81 @@ ipcMain.handle('fetch-mcversions', async (event, args) => {
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
     logger.debug('start-game (async)')
     logger.info('Starting Game ...')
-    return new Promise<void>(async (resolve, reject) => {
-        if (gameStarting) {
-            reject('game already started')
+    if (gameStarting) {
+        throw new Error('game already starting')
+    }
+    gameStarting = true
+    if (!config) throw new Error('no config loaded')
+    if (!authInfo) throw new Error('not logged in')
+    checkExist(path.join(config.rootDir, 'forgeInstallers'))
+    checkExist(path.join(config.rootDir, 'profiles'))
+    checkExist(path.join(config.rootDir, 'addedMods'))
+    checkExist(path.join(config.rootDir, 'java'))
+
+    updateTask({
+        title: 'Starting Game',
+        progress: 0
+    })
+
+    let gameStarted = false
+
+    const launcher = new Client()
+    const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
+    launcher.on('data', (e: string) => {
+        if (!gameStarted) {
+            gameStarted = true
+            updateTask(undefined)
+            if (config.closeLauncher) {
+                setTimeout(app.quit, 5000)
+            } else if (config.openLogs) {
+                openLogs()
+            }
+            gameStarting = false
             return
         }
-        gameStarting = true
-        if (!config) return
-        if (!loginInfo) return
-        checkExist(path.join(config.rootDir, 'forgeInstallers'))
-        checkExist(path.join(config.rootDir, 'profiles'))
-        checkExist(path.join(config.rootDir, 'addedMods'))
-        checkExist(path.join(config.rootDir, 'java'))
-
-        updateTask({
-            title: 'Starting Game',
-            progress: 0
-        })
-
-        let gameStarted = false
-
-        const launcher = new Client()
-        const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
-        launcher.on('data', (e: string) => {
-            if (!gameStarted) {
-                gameStarted = true
-                updateTask(undefined)
-                if (config.closeLauncher) {
-                    setTimeout(app.quit, 5000)
-                } else if (config.openLogs) {
-                    openLogs()
-                }
-                gameStarting = false
-                resolve()
+        // sometimes multiple lines arrive at once
+        for (const line of e.trim().split('\n')) {
+            // remove the time in front of the game logs
+            const matches = line.match(timeExp)
+            if (!matches) {
+                continue
             }
-            // sometimes multiple lines arrive at once
-            for (const line of e.trim().split('\n')) {
-                // remove the time in front of the game logs
-                const matches = line.match(timeExp)
-                if (!matches) {
-                    continue
-                }
-                const data = matches[matches.length - 1]
-                logger.game(data.trim())
-            }
-        })
-
-        launcher.on('progress', progress => {
-            const {
-                type,
-                task: current,
-                total
-            } = progress as { type: string; task: number; total: number }
-
-            if (['assets', 'natives'].includes(type)) {
-                updateTask({
-                    title: `Downloading ${type}`,
-                    progress: (current / total) * 100
-                })
-            } else {
-                updateTask({
-                    title: 'Starting Game',
-                    progress: (current / total) * 100
-                })
-            }
-        })
-
-        try {
-            const launchOptions = await launchGame(args)
-            launcher.launch(launchOptions)
-        } catch (err) {
-            logger.warning(err)
-            gameStarting = false
-            reject(err)
+            const data = matches[matches.length - 1]
+            logger.game(data.trim())
         }
     })
+
+    launcher.on('progress', progress => {
+        const {
+            type,
+            task: current,
+            total
+        } = progress as { type: string; task: number; total: number }
+
+        if (['assets', 'natives'].includes(type)) {
+            updateTask({
+                title: `Downloading ${type}`,
+                progress: (current / total) * 100
+            })
+        } else {
+            updateTask({
+                title: 'Starting Game',
+                progress: (current / total) * 100
+            })
+        }
+    })
+
+    try {
+        const launchOptions = await launchGame(args)
+        launcher.launch(launchOptions)
+    } catch (err) {
+        logger.warning(err)
+        gameStarting = false
+        throw err
+    }
 })
 
 async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
-    if (!config) throw new Error('no launcher config found')
-    if (!loginInfo) throw new Error('no launcher login info found')
     const profile = args.profile
     logger.info('launching the game with args : %s', formatStartArgs(args))
     const server = args.server !== 'local' ? args.server : undefined
@@ -683,9 +657,12 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         fs.cpSync(additionalFileFolder, gameFolderPath, { recursive: true })
     }
 
+    await refreshAuth()
+    const auth = await authInfo?.getMinecraft()
+    if (!auth) throw new Error('failed to get Minecraft auth info')
     return {
         clientPackage: undefined,
-        authorization: msmc.getMCLC().getAuth(loginInfo),
+        authorization: auth.mclc(true) as IUser,
         root: gameFolderPath,
         version: {
             number: profile.version.mc,
@@ -940,5 +917,12 @@ export async function downloadFolder(
         fs.rmSync(filepath, {
             recursive: true
         })
+    }
+}
+
+async function refreshAuth() {
+    if (authInfo) {
+        authInfo = await authInfo?.refresh()
+        fs.writeFileSync(authInfoPath, authInfo.save(), 'utf-8')
     }
 }
