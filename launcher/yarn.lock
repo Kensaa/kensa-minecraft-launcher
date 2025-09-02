@@ -3517,7 +3517,7 @@ __metadata:
     electron-fetch: "npm:^1.9.1"
     lucide-react: "npm:^0.104.1"
     minecraft-launcher-core: "npm:^3.18.1"
-    msmc: "npm:^5.0.5"
+    msmc: "patch:msmc@npm%3A5.0.5#~/.yarn/patches/msmc-npm-5.0.5-d83892c101.patch"
     pino: "npm:^9.7.0"
     pino-pretty: "npm:^13.0.0"
     react: "npm:^18.2.0"
@@ -3881,13 +3881,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msmc@npm:^5.0.5":
+"msmc@npm:5.0.5":
   version: 5.0.5
   resolution: "msmc@npm:5.0.5"
   dependencies:
     node-fetch: "npm:2.x"
     tslib: "npm:^2.6.2"
   checksum: 10c0/ba4df9543a98c4af48d50553253eef4ffa5bff9a5eb3ab19fc7e7a75c85f05dd4fccf44c59ac52bdd8584788ac06063599323a65052fb1a9bc729519b54d1d3a
+  languageName: node
+  linkType: hard
+
+"msmc@patch:msmc@npm%3A5.0.5#~/.yarn/patches/msmc-npm-5.0.5-d83892c101.patch":
+  version: 5.0.5
+  resolution: "msmc@patch:msmc@npm%3A5.0.5#~/.yarn/patches/msmc-npm-5.0.5-d83892c101.patch::version=5.0.5&hash=18c7c0"
+  dependencies:
+    node-fetch: "npm:2.x"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/5ff92fee3a0379e32f886acd54a1a64b90407b66a479bc907aab4bac8c5b5c6b8a776294f98ef38ead932fa238ac188be1f737e42cccfd18a5d03b51d33cf3ad
   languageName: node
   linkType: hard
 

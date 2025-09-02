@@ -1,0 +1,64 @@
+diff --git a/dist/cjs/gui/common.js b/dist/cjs/gui/common.js
+index 0456743490a3c0e5845dbe72550c88ea7d1c16b6..bcd80b7a26f650dacbb8142c467a10ded88ba9c1 100644
+--- a/dist/cjs/gui/common.js
++++ b/dist/cjs/gui/common.js
+@@ -4,31 +4,36 @@ exports.launch = exports.getDefaultWinProperties = void 0;
+ const lexicon_js_1 = require("../util/lexicon.js");
+ const lexicon_js_2 = require("../util/lexicon.js");
+ function getDefaultWinProperties() {
+-    return {
+-        width: 500,
+-        height: 650,
+-        resizable: false,
+-        title: (0, lexicon_js_1.getCode)("gui.title"),
+-    };
++  return {
++    width: 500,
++    height: 650,
++    resizable: false,
++    title: (0, lexicon_js_1.getCode)("gui.title"),
++  };
+ }
+ exports.getDefaultWinProperties = getDefaultWinProperties;
+ async function launch(auth, framework, windowProperties) {
+-    let func = null;
+-    switch (framework) {
+-        case "raw":
+-            func = await import("./raw.js");
+-            break;
+-        case "nwjs":
+-            func = await import("./nwjs.js");
+-            break;
+-        case "electron":
+-            func = await import("./electron.js");
+-            break;
+-        default:
+-            (0, lexicon_js_2.error)("error.state.invalid.gui");
+-            return;
+-    }
+-    console.log(func);
+-    return await auth.login(await (func?.default?.default || func?.default || func)(auth, windowProperties));
++  let func = null;
++  switch (framework) {
++    case "raw":
++      func = require("./raw.js");
++      break;
++    case "nwjs":
++      func = require("./nwjs.js");
++      break;
++    case "electron":
++      func = require("./electron.js");
++      break;
++    default:
++      (0, lexicon_js_2.error)("error.state.invalid.gui");
++      return;
++  }
++  console.log(func);
++  return await auth.login(
++    await (func?.default?.default || func?.default || func)(
++      auth,
++      windowProperties
++    )
++  );
+ }
+ exports.launch = launch;
