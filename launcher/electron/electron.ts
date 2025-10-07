@@ -198,7 +198,7 @@ ipcMain.handle('auth-login', async (event, arg) => {
         updateTask(undefined)
         return minecraftInfo
     } catch (err) {
-        logger.warning('failed to login: %s', err)
+        logger.child(err as object).warning('failed to login:')
         throw err
     }
 })
