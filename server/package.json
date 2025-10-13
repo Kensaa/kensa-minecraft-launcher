@@ -5,6 +5,7 @@
     "author": "Kensa",
     "license": "MIT",
     "scripts": {
+        "drizzle-kit": "dotenv -- drizzle-kit",
         "build": "tsc",
         "start": "yarn build && dotenv -- node --enable-source-maps ."
     },
@@ -12,7 +13,9 @@
         "archiver": "^7.0.1",
         "better-sqlite3": "^12.4.1",
         "cors": "^2.8.5",
-        "express": "^5.1.0"
+        "drizzle-orm": "^0.44.6",
+        "express": "^5.1.0",
+        "express-api-router": "git@github.com:Kensaa/express-api-router.git"
     },
     "devDependencies": {
         "@types/archiver": "^6.0.3",
@@ -21,6 +24,7 @@
         "@types/express": "^5.0.3",
         "@types/node": "^22.15.21",
         "dotenv-cli": "^10.0.0",
+        "drizzle-kit": "^0.31.5",
         "typescript": "^5.8.3"
     },
     "packageManager": "yarn@4.10.3"

@@ -1,2 +1,3 @@
 data
 .yarn
+.env
