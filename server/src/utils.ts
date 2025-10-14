@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { filesTable, profilesTable } from './db/schema'
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { pbkdf2Sync } from 'crypto'
 
 export type Database = BetterSQLite3Database<Record<string, never>>
 export async function getProfile(
@@ -36,4 +37,8 @@ export function buildFileTree(files: (typeof filesTable.$inferSelect)[]): Tree {
         curr[filename] = file.hash
     }
     return tree
+}
+
+export function hashPassword(password: Buffer, salt: Buffer): Buffer {
+    return pbkdf2Sync(password, salt, 10000, 64, 'sha256')
 }

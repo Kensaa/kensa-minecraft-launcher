@@ -1,13 +1,13 @@
-import crypto from 'crypto'
+import crypto, { randomBytes } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import express from 'express'
 import cors from 'cors'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { filesTable, profilesTable } from './db/schema'
+import { accountsTable, filesTable, profilesTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import { buildFileTree, getProfile, Tree } from './utils'
+import { buildFileTree, getProfile, hashPassword, Tree } from './utils'
 import * as webApi from './web-api/web-api'
 
 const PORT = parseInt(process.env.PORT || '40069')
@@ -41,6 +41,48 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     const db = drizzle(path.join(DATA_DIRECTORY, 'database.db'))
     migrate(db, { migrationsFolder: 'drizzle' })
 
+    // check temp account
+    const tempAccountCount = (
+        await db
+            .select({ count: count() })
+            .from(accountsTable)
+            .where(eq(accountsTable.temp_account, true))
+    )[0].count
+    const normalAccountCount = (
+        await db
+            .select({ count: count() })
+            .from(accountsTable)
+            .where(eq(accountsTable.temp_account, false))
+    )[0].count
+
+    if (normalAccountCount === 0) {
+        if (tempAccountCount === 0) {
+            // create a temp account
+            const randomPassword = crypto.randomBytes(16).toString('hex')
+            const salt = crypto.randomBytes(32)
+            const hash = hashPassword(
+                Buffer.from(randomPassword, 'utf-8'),
+                salt
+            )
+            console.log('created temp account :')
+            console.log(`username: admin`)
+            console.log(`password: ${randomPassword}`)
+            await db.insert(accountsTable).values({
+                hash: hash,
+                salt: salt,
+                username: 'admin',
+                temp_account: true,
+                is_admin: true
+            })
+        }
+    } else {
+        if (tempAccountCount !== 0) {
+            // delete all temp account
+            await db
+                .delete(accountsTable)
+                .where(eq(accountsTable.temp_account, true))
+        }
+    }
     const app = express()
     app.use(express.json())
     app.use(
@@ -54,7 +96,10 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     })
     app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
 
-    const webApiRouter = webApi.createRouter({ database: db })
+    const webApiRouter = webApi.createRouter({
+        database: db,
+        authSecret: randomBytes(64).toString('hex')
+    })
     app.use('/web-api', webApiRouter.getRouter())
     app.get('/', (req, res) => res.sendStatus(200))
     app.get('/version', (req, res) => res.status(200).send(serverVersion))

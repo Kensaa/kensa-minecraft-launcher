@@ -1,4 +1,10 @@
-import { int, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import {
+    blob,
+    int,
+    primaryKey,
+    sqliteTable,
+    text
+} from 'drizzle-orm/sqlite-core'
 
 export const profilesTable = sqliteTable('profiles', {
     id: int().primaryKey({ autoIncrement: true }),
@@ -15,7 +21,7 @@ export const filesTable = sqliteTable(
             .notNull()
             .references(() => profilesTable.id),
         filepath: text().notNull(),
-        last_modified: int().notNull(),
+        last_modified: int({ mode: 'timestamp' }).notNull(),
         hash: text().notNull()
     },
     table => [
@@ -24,3 +30,13 @@ export const filesTable = sqliteTable(
         })
     ]
 )
+
+export const accountsTable = sqliteTable('accounts', {
+    id: int().primaryKey({ autoIncrement: true }),
+    username: text().notNull().unique(),
+    hash: blob({ mode: 'buffer' }).notNull(),
+    salt: blob({ mode: 'buffer' }).notNull(),
+
+    temp_account: int({ mode: 'boolean' }).notNull(),
+    is_admin: int({ mode: 'boolean' }).notNull().default(false)
+})
