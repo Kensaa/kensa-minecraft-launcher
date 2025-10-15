@@ -8,7 +8,7 @@ import {
 
 export const profilesTable = sqliteTable('profiles', {
     id: int().primaryKey({ autoIncrement: true }),
-    name: text().notNull(),
+    name: text().notNull().unique(),
     mc_version: text().notNull(),
     forge_version: text(),
     game_directory: text()

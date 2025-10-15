@@ -98,6 +98,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
 
     const webApiRouter = webApi.createRouter({
         database: db,
+        staticDirectory: STATIC_DIRECTORY,
         authSecret: randomBytes(64).toString('hex')
     })
     app.use('/web-api', webApiRouter.getRouter())
@@ -123,7 +124,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
 
     // Returns the entire hash tree (for backward compat)
     app.get('/hashes', async (req, res) => {
-        const profilesTree: Tree = {}
+        const profilesTree: Tree<string> = {}
         const profiles = await db.select().from(profilesTable)
         for (const profile of profiles) {
             if (!profile.game_directory) continue
@@ -132,7 +133,10 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
                 .from(filesTable)
                 .where(eq(filesTable.profile_id, profile.id))
 
-            profilesTree[profile.game_directory] = buildFileTree(profileFiles)
+            profilesTree[profile.game_directory] = buildFileTree(
+                profileFiles,
+                file => file.hash
+            )
         }
 
         const result = {
@@ -156,7 +160,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
             .from(filesTable)
             .where(eq(filesTable.profile_id, profile.id))
 
-        const fileTree = buildFileTree(files)
+        const fileTree = buildFileTree(files, file => file.hash)
         res.status(200).json(fileTree)
     })
 

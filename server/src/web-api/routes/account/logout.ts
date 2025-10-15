@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
 
-export const logoutHandler = (router: APIRouter) => {
+export function logoutHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: true,
         bodySchema: z.undefined(),

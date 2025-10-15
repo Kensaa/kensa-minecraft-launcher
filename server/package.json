@@ -16,7 +16,7 @@
         "cors": "^2.8.5",
         "drizzle-orm": "^0.44.6",
         "express": "^5.1.0",
-        "express-api-router": "git@github.com:Kensaa/express-api-router.git#8f8c51548a94f887553c4319cc46fd8561b35c93",
+        "express-api-router": "git@github.com:Kensaa/express-api-router.git#7fcfa5677616b06578c16cddc9d4ed7f22af38d5",
         "jsonwebtoken": "^9.0.2",
         "zod": "^4.1.12"
     },
