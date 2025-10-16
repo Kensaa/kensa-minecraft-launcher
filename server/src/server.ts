@@ -16,6 +16,7 @@ const SERVER_NAME =
     process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
 const MASTER_SERVER = process.env.MASTER_SERVER // TODO: clone server at start
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN // TODO: download java version at start
+const IS_DEV = process.env.NODE_ENV !== 'production'
 
 const serverVersion = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
@@ -85,11 +86,19 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     }
     const app = express()
     app.use(express.json())
-    app.use(
-        cors({
-            allowedHeaders: ['X-Server-Name']
-        })
-    )
+    if (IS_DEV) {
+        app.use(
+            cors({
+                allowedHeaders: [
+                    'X-Server-Name',
+                    'Content-Type',
+                    'Authorization'
+                ],
+                credentials: true,
+                origin: 'http://localhost:5173'
+            })
+        )
+    }
     app.use((_, res, next) => {
         res.setHeader('X-Server-Name', SERVER_NAME)
         next()

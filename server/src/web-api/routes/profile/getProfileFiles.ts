@@ -13,7 +13,6 @@ type Leaf = z.output<typeof treeLeafSchema>
 const treeSchema: z.ZodType<Tree<Leaf>> = z.lazy(() =>
     z.record(z.string(), z.union([treeSchema, treeLeafSchema]))
 )
-type test = z.output<typeof treeSchema>
 export function getProfileFilesHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: true,

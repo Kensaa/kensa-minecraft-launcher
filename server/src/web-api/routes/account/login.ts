@@ -55,6 +55,7 @@ export function loginHandler(router: APIRouter) {
 
             res.cookie('auth-token', token, {
                 httpOnly: true,
+                sameSite: 'none',
                 secure: true,
                 maxAge: 1000 * 60 * 60 * 6 // 6h
                 // add domain
