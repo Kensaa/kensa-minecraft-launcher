@@ -8,7 +8,8 @@
     "scripts": {
         "drizzle-kit": "dotenv -- drizzle-kit",
         "build": "tsc",
-        "start": "yarn build && dotenv -- node --enable-source-maps ."
+        "start": "yarn build && dotenv -- node --enable-source-maps .",
+        "dev": "yarn start"
     },
     "dependencies": {
         "archiver": "^7.0.1",

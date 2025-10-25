@@ -11,7 +11,7 @@
         "url": "git+https://github.com/kensaa/kensa-minecraft-launcher.git"
     },
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --clearScreen false",
         "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
         "release": "tsc && vite build && electron-builder --x64 -wl --publish always"
     },
