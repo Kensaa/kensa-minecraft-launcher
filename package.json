@@ -1,0 +1,15 @@
+{
+    "name": "kml",
+    "private": true,
+    "workspaces": [
+        "launcher",
+        "server",
+        "server-ui"
+    ],
+    "scripts": {
+        "launcher": "yarn workspace launcher --",
+        "server": "yarn workspace server --",
+        "server-ui": "yarn workspace server-ui --"
+    },
+    "packageManager": "yarn@4.10.3"
+}

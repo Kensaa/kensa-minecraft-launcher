@@ -4,3 +4,6 @@ build/
 cache
 .vscode
 server(old)
+.yarn/*
+!.yarn/patches
+.act-secrets
