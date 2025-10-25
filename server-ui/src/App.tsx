@@ -3,6 +3,9 @@ import { createTheme, ThemeProvider } from '@mui/material'
 import { useAuth } from './stores/auth'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
 
 const theme = createTheme({
     palette: {
@@ -11,23 +14,25 @@ const theme = createTheme({
 })
 function App() {
     return (
-        <ThemeProvider theme={theme}>
-            <Switch>
-                <Route path='/'>
-                    <LoginWall>
-                        <HomePage />
-                    </LoginWall>
-                </Route>
-                <Route path='/login'>
-                    <LoginWall reversed redirect='/'>
-                        <LoginPage />
-                    </LoginWall>
-                </Route>
-                <Route>
-                    <Redirect to='/' />
-                </Route>
-            </Switch>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider theme={theme}>
+                <Switch>
+                    <Route path='/'>
+                        <LoginWall>
+                            <HomePage />
+                        </LoginWall>
+                    </Route>
+                    <Route path='/login'>
+                        <LoginWall reversed redirect='/'>
+                            <LoginPage />
+                        </LoginWall>
+                    </Route>
+                    <Route>
+                        <Redirect to='/' />
+                    </Route>
+                </Switch>
+            </ThemeProvider>
+        </QueryClientProvider>
     )
 }
 
