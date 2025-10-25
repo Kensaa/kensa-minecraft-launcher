@@ -15,6 +15,7 @@ import { getProfileFilesHandler } from './routes/profile/getProfileFiles'
 import { deleteProfileFileHandler } from './routes/profile/deleteProfileFile'
 import { uploadProfileFileHandler } from './routes/profile/uploadProfileFile'
 import { refreshProfileHandler } from './routes/profile/refreshProfile'
+import { getMinecraftVersionHandler } from './routes/getMinecraftVersions'
 
 export interface APIInstances {
     database: Database
@@ -71,6 +72,12 @@ export function createRouter(instances: APIInstances) {
         'post',
         '/profile/:profile_id/refresh',
         refreshProfileHandler(router)
+    )
+
+    router.registerRoute(
+        'get',
+        '/getMinecraftVersions',
+        getMinecraftVersionHandler(router)
     )
 
     return router

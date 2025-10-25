@@ -5,7 +5,8 @@ import { and, eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import path from 'path'
 import fs from 'fs'
-import { hashFile, sanitizeFilePath } from '../../../utils'
+import { sanitizeFilePath } from '../../../utils'
+import { hashFile } from 'utils'
 
 export function uploadProfileFileHandler(router: APIRouter) {
     return router.createRouteHandler({
