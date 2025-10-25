@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "CommonJS",
+        "incremental": true,
+        "declaration": true,
+        "strict": true,
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "composite": true,
+        "outDir": "./dist/",
+        "rootDir": "./src/",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    }
+}

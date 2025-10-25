@@ -20,7 +20,7 @@ const reversedCustomLevels = Object.fromEntries(
     Object.entries(customLevels).map(entry => [entry[1], entry[0]])
 ) as Record<number, string>
 
-const customColors = {
+const customColors: Record<string, string> = {
     trace: 'gray',
     debug: 'blue',
     warning: 'red',

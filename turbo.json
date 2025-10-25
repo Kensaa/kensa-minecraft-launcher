@@ -1,0 +1,30 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "globalPassThroughEnv": [
+        "WAYLAND_DISPLAY",
+        "DISPLAY",
+        "XAUTHORITY",
+        "DBUS_SESSION_BUS_ADDRESS",
+        "XDG_RUNTIME_DIR",
+        "XDG_SESSION_TYPE",
+        "XDG_CURRENT_DESKTOP",
+        "ORIGINAL_XDG_CURRENT_DESKTOP"
+    ],
+    "tasks": {
+        "release": {
+            "dependsOn": ["^build", "^build"],
+            "cache": false
+        },
+        "dev": {
+            "dependsOn": ["^build"],
+            "cache": false,
+            "persistent": true
+        },
+        "build": {
+            "dependsOn": ["^build"],
+            "inputs": ["src/**/*"],
+            "outputs": ["dist/**/*"],
+            "outputLogs": "new-only"
+        }
+    }
+}

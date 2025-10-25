@@ -6,7 +6,7 @@ import { Auth, Xbox } from 'msmc'
 import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
 import type { StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
-import { fetchMcVersions } from './mcversions'
+
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
@@ -18,21 +18,23 @@ import {
     download,
     folderTree,
     formatStartArgs,
-    getHash,
     setDifference
 } from './utils'
+import { fetchMcVersions, hashFile } from 'utils'
 import { totalmem } from 'os'
 import semver from 'semver'
+import fetch from 'electron-fetch'
+
 interface Task {
     title: string
     progress: number
 }
 
-const configFolders = {
+const configFolders: Record<string, string> = {
     win32: path.join('AppData', 'Roaming', 'kensa-minecraft-launcher'),
     linux: path.join('.config', 'kensa-minecraft-launcher')
 }
-const rootDirs = {
+const rootDirs: Record<string, string> = {
     win32: path.join('AppData', 'Roaming', '.kensa-launcher'),
     linux: path.join('.kensa-launcher')
 }
@@ -63,7 +65,7 @@ if (!fs.existsSync(configFolder)) fs.mkdirSync(configFolder)
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 const logger = createLogger(LOG_FILE)
 
-const defaultConfig = {
+const defaultConfig: Record<string, any> = {
     rootDir,
     ram: 4000,
     servers: [
@@ -157,7 +159,7 @@ async function createWindow() {
     if (app.isPackaged) {
         await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
     } else {
-        win.loadURL('http://localhost:5173/')
+        win.loadURL(process.env.VITE_DEV_SERVER_URL as string)
     }
 }
 
@@ -242,7 +244,7 @@ ipcMain.handle('start-update', async (event, arg) => {
         )
         const version = latestRelease.name
         const installer = latestRelease.assets.find(
-            asset =>
+            (asset: any) =>
                 asset.name == `Kensa-Minecraft-Launcher-Setup-${version}.exe`
         )
         if (!installer) {
@@ -375,7 +377,7 @@ ipcMain.handle('open-logs', async (event, args) => {
 
 ipcMain.handle('fetch-mcversions', async (event, args) => {
     logger.debug('fetch-mcversions (async)')
-    return fetchMcVersions()
+    return fetchMcVersions(fetch)
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
@@ -866,7 +868,7 @@ export async function downloadFolder(
                 //     // Used to skip certain folder (like config) from being updated because we don't really care about them being up to date
                 //     continue
                 // }
-                if ((await getHash(filepath)) !== remoteFolder[element]) {
+                if ((await hashFile(filepath)) !== remoteFolder[element]) {
                     logger.info('Updating file "%s"', localPath)
                     await download(fileUrl, filepath)
                     downloadStatus.count++

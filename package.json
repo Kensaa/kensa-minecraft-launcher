@@ -4,12 +4,17 @@
     "workspaces": [
         "launcher",
         "server",
-        "server-ui"
+        "server-ui",
+        "utils"
     ],
     "scripts": {
-        "launcher": "yarn workspace launcher --",
-        "server": "yarn workspace server --",
-        "server-ui": "yarn workspace server-ui --"
+        "dev": "turbo dev",
+        "build": "turbo build",
+        "release": "turbo release"
     },
-    "packageManager": "yarn@4.10.3"
+    "packageManager": "yarn@4.10.3",
+    "devDependencies": {
+        "turbo": "^2.5.8",
+        "typescript": "^5.9.3"
+    }
 }

@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron'
-import { Version } from './types'
+import { MinecraftVersion } from './types'
 
-export let mcversions: Version[] = []
+export let mcversions: MinecraftVersion[] = []
 
 ipcRenderer.invoke('fetch-mcversions').then(res => (mcversions = res))

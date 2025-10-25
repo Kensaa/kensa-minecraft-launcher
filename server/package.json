@@ -19,6 +19,7 @@
         "express": "^5.1.0",
         "express-api-router": "git@github.com:Kensaa/express-api-router.git#7fcfa5677616b06578c16cddc9d4ed7f22af38d5",
         "jsonwebtoken": "^9.0.2",
+        "utils": "workspace:*",
         "zod": "^4.1.12"
     },
     "devDependencies": {
@@ -30,7 +31,6 @@
         "@types/jsonwebtoken": "^9",
         "@types/node": "^22.15.21",
         "dotenv-cli": "^10.0.0",
-        "drizzle-kit": "^0.31.5",
-        "typescript": "^5.8.3"
+        "drizzle-kit": "^0.31.5"
     }
 }

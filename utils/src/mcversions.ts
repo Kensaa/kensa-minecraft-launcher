@@ -1,19 +1,29 @@
-import semver, { compare } from 'semver'
-import fetch from 'electron-fetch'
-import { ForgeVersion, Version } from '../src/types'
+import semver from 'semver'
+import electronFetch from 'electron-fetch'
 
-export async function fetchMcVersions() {
-    const mcversions: Version[] = []
-    const versionPromise = fetch(
+export type MinecraftVersion = {
+    version: string
+    forgeVersions: ForgeVersion[]
+}
+export type ForgeVersion = {
+    version: string
+    latest: boolean
+    recommended: boolean
+}
+export async function fetchMcVersions(
+    fetchFn: typeof fetch | typeof electronFetch
+) {
+    const mcversions: MinecraftVersion[] = []
+    const versionPromise = fetchFn(
         'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json'
     )
         .then(res => res.json())
         .then(res => res.versions as any[])
 
-    const forgePromise = fetch(
+    const forgePromise = fetchFn(
         'https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json'
     ).then(res => res.json() as Promise<Record<string, string[]>>)
-    const forgePromotionPromise = fetch(
+    const forgePromotionPromise = fetchFn(
         'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'
     )
         .then(res => res.json())
@@ -40,7 +50,7 @@ export async function fetchMcVersions() {
         for (const version of versions) {
             if (version.type !== 'release') continue
 
-            const versionObj: Version = {
+            const versionObj: MinecraftVersion = {
                 version: version.id,
                 forgeVersions: []
             }

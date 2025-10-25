@@ -1,11 +1,5 @@
-export interface Profile {
-    name: string
-    version: {
-        mc: string
-        forge?: string
-    }
-    gameFolder?: string
-}
+import type { Profile, MinecraftVersion, ForgeVersion } from 'utils'
+export { Profile, MinecraftVersion, ForgeVersion }
 
 export interface Task {
     title: string
@@ -15,14 +9,4 @@ export interface Task {
 export type StartArgs = {
     server: string
     profile: Profile
-}
-
-export type Version = {
-    version: string
-    forgeVersions: ForgeVersion[]
-}
-export type ForgeVersion = {
-    version: string
-    latest: boolean
-    recommended: boolean
 }

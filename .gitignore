@@ -7,3 +7,4 @@ server(old)
 .yarn/*
 !.yarn/patches
 .act-secrets
+.turbo

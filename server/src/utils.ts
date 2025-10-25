@@ -4,6 +4,7 @@ import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import { hashFile } from 'utils'
 
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
@@ -51,16 +52,6 @@ export function buildFileTree<D>(
 
 export function hashPassword(password: Buffer, salt: Buffer): Buffer {
     return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256')
-}
-
-export function hashFile(src: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const stream = fs.createReadStream(src)
-        const hash = crypto.createHash('md5')
-        stream.on('end', () => resolve(hash.digest('hex')))
-        stream.on('error', err => reject(err))
-        stream.pipe(hash)
-    })
 }
 
 export function sanitizeFilePath(inputPath: string, baseDir: string): string {
