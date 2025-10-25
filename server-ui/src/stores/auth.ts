@@ -23,7 +23,6 @@ type AuthStore = {
 
 export const useAuth = create<AuthStore>(set => {
     const fetchUserInfos = () => {
-        console.log('called')
         set({ fetching: true })
         fetch(`${address}/web-api/account/me`, {
             credentials: 'include'

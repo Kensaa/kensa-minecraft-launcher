@@ -29,13 +29,8 @@ const pages: Page[] = []
 
 export default function Navbar() {
     const [anchor, setAnchor] = useState<null | HTMLElement>(null)
-    // const isConnected = useIsConnected()
     const connected = useAuth(state => state.connected)
     const logout = useAuth(state => state.logout)
-    // const { connected, logout } = useAuth(state => ({
-    //     logout: state.logout,
-    //     connected: state.connected
-    // }))
     const [drawerOpened, setDrawerOpened] = useState(false)
 
     const toggleDrawer = () => setDrawerOpened(!drawerOpened)
