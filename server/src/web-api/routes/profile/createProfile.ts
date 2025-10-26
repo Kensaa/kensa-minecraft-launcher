@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
-import { gameDirectoriesTable, profilesTable } from '../../../db/schema'
+import { profilesTable } from '../../../db/schema'
 import { count, eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import { getGameDirectory } from '../../../utils'

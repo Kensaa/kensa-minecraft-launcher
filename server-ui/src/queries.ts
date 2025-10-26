@@ -1,5 +1,5 @@
+import type { GameDirectory, MinecraftVersion, Profile } from 'utils'
 import { address } from './config'
-import type { Profile } from './types'
 
 function queryBuilder<T>(address: string) {
     return async function () {
@@ -17,4 +17,12 @@ function queryBuilder<T>(address: string) {
 
 export const fetchProfiles = queryBuilder<Profile[]>(
     `${address}/web-api/profiles`
+)
+
+export const fetchMinecraftVersions = queryBuilder<MinecraftVersion[]>(
+    `${address}/web-api/getMinecraftVersions`
+)
+
+export const fetchGameDirectories = queryBuilder<GameDirectory[]>(
+    `${address}/web-api/gameDirectories`
 )

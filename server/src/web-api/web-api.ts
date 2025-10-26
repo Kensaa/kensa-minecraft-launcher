@@ -19,6 +19,7 @@ import { deleteGameDirectoryFileHandler } from './routes/gameDirectory/deleteGam
 import { getGameDirectoryFilesHandler } from './routes/gameDirectory/getGameDirectoryFiles'
 import { uploadGameDirectoryFileHandler } from './routes/gameDirectory/uploadGameDirectoryFile'
 import { refreshGameDirectoryHandler } from './routes/gameDirectory/refreshGameDirectory'
+import { updateProfileHandler } from './routes/profile/editProfile'
 
 export interface APIInstances {
     database: Database
@@ -49,7 +50,11 @@ export function createRouter(instances: APIInstances) {
     router.registerRoute('post', '/account/logout', logoutHandler(router))
 
     router.registerRoute('post', '/profile', createProfileHandler(router))
-    //TODO: add edit profile endpoint
+    router.registerRoute(
+        'patch',
+        '/profile/:profile_id',
+        updateProfileHandler(router)
+    )
     router.registerRoute(
         'delete',
         '/profile/:profile_id',

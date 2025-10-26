@@ -4,6 +4,7 @@ import { useAuth } from './stores/auth'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { SnackbarProvider } from 'notistack'
 
 const queryClient = new QueryClient()
 
@@ -16,21 +17,23 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <ThemeProvider theme={theme}>
-                <Switch>
-                    <Route path='/'>
-                        <LoginWall>
-                            <HomePage />
-                        </LoginWall>
-                    </Route>
-                    <Route path='/login'>
-                        <LoginWall reversed redirect='/'>
-                            <LoginPage />
-                        </LoginWall>
-                    </Route>
-                    <Route>
-                        <Redirect to='/' />
-                    </Route>
-                </Switch>
+                <SnackbarProvider maxSnack={4} autoHideDuration={3000}>
+                    <Switch>
+                        <Route path='/'>
+                            <LoginWall>
+                                <HomePage />
+                            </LoginWall>
+                        </Route>
+                        <Route path='/login'>
+                            <LoginWall reversed redirect='/'>
+                                <LoginPage />
+                            </LoginWall>
+                        </Route>
+                        <Route>
+                            <Redirect to='/' />
+                        </Route>
+                    </Switch>
+                </SnackbarProvider>
             </ThemeProvider>
         </QueryClientProvider>
     )

@@ -12,11 +12,20 @@ export function hashFile(src: string): Promise<string> {
     })
 }
 
-export interface Profile {
+export interface LegacyProfile {
     name: string
     version: {
         mc: string
         forge?: string
     }
     gameFolder?: string
+}
+
+export type Profile = LegacyProfile & {
+    id: number
+    gameDirectory: LegacyProfile['gameFolder']
+}
+
+export type GameDirectory = {
+    name: string
 }

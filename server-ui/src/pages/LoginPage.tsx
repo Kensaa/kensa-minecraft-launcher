@@ -5,17 +5,16 @@ import { useLocation } from 'wouter'
 import Navbar from '../components/Navbar'
 import { ValidatedTextField } from '../components/ValidatedTextField'
 import { address } from '../config'
-import Error from '../components/Error'
+import { useSnackbar } from 'notistack'
 
 export default function LoginPage() {
+    const { enqueueSnackbar } = useSnackbar()
     const login = useAuth(state => state.login)
 
     const [, setLocation] = useLocation()
 
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-
-    const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -40,7 +39,9 @@ export default function LoginPage() {
                     setLocation('/')
                 })
             } else {
-                res.text().then(text => setError(text))
+                res.text().then(text =>
+                    enqueueSnackbar(text, { variant: 'error' })
+                )
             }
         })
     }
@@ -48,7 +49,6 @@ export default function LoginPage() {
     return (
         <div>
             <Navbar />
-            <Error error={error} hide={() => setError(null)} />
             <Box className='f-col align-center' sx={{ m: 8 }}>
                 <Typography component='h1' variant='h5'>
                     Login
