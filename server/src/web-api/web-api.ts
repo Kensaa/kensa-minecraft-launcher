@@ -11,11 +11,14 @@ import { logoutHandler } from './routes/account/logout'
 import { createProfileHandler } from './routes/profile/createProfile'
 import { deleteProfileHandler } from './routes/profile/deleteProfile'
 import { getProfilesHandler } from './routes/profile/getProfiles'
-import { getProfileFilesHandler } from './routes/profile/getProfileFiles'
-import { deleteProfileFileHandler } from './routes/profile/deleteProfileFile'
-import { uploadProfileFileHandler } from './routes/profile/uploadProfileFile'
-import { refreshProfileHandler } from './routes/profile/refreshProfile'
 import { getMinecraftVersionHandler } from './routes/getMinecraftVersions'
+import { createGameDirectoryHandler } from './routes/gameDirectory/createGameDirectory'
+import { deleteGameDirectoryHandler } from './routes/gameDirectory/deleteGameDirectory'
+import { getGameDirectories } from './routes/gameDirectory/getGameDirectories'
+import { deleteGameDirectoryFileHandler } from './routes/gameDirectory/deleteGameDirectoryFile'
+import { getGameDirectoryFilesHandler } from './routes/gameDirectory/getGameDirectoryFiles'
+import { uploadGameDirectoryFileHandler } from './routes/gameDirectory/uploadGameDirectoryFile'
+import { refreshGameDirectoryHandler } from './routes/gameDirectory/refreshGameDirectory'
 
 export interface APIInstances {
     database: Database
@@ -45,33 +48,45 @@ export function createRouter(instances: APIInstances) {
     router.registerRoute('get', '/account/me', meHandler(router))
     router.registerRoute('post', '/account/logout', logoutHandler(router))
 
-    router.registerRoute('put', '/profile', createProfileHandler(router))
+    router.registerRoute('post', '/profile', createProfileHandler(router))
+    //TODO: add edit profile endpoint
     router.registerRoute(
         'delete',
         '/profile/:profile_id',
         deleteProfileHandler(router)
     )
     router.registerRoute('get', '/profiles', getProfilesHandler(router))
+
+    router.registerRoute('get', '/gameDirectories', getGameDirectories(router))
     router.registerRoute(
-        'get',
-        '/profile/:profile_id/files',
-        getProfileFilesHandler(router)
+        'post',
+        '/gameDirectory',
+        createGameDirectoryHandler(router)
     )
     router.registerRoute(
         'delete',
-        '/profile/:profile_id/file',
-        deleteProfileFileHandler(router)
+        '/gameDirectory/:game_directory',
+        deleteGameDirectoryHandler(router)
+    )
+    router.registerRoute(
+        'get',
+        '/gameDirectory/:game_directory/files',
+        getGameDirectoryFilesHandler(router)
+    )
+    router.registerRoute(
+        'delete',
+        '/gameDirectory/:game_directory/file',
+        deleteGameDirectoryFileHandler(router)
     )
     router.registerRoute(
         'post',
-        '/profile/:profile_id/file',
-        uploadProfileFileHandler(router)
+        '/gameDirectory/:game_directory/file',
+        uploadGameDirectoryFileHandler(router)
     )
-
     router.registerRoute(
         'post',
-        '/profile/:profile_id/refresh',
-        refreshProfileHandler(router)
+        '/gameDirectory/:game_directory/refresh',
+        refreshGameDirectoryHandler(router)
     )
 
     router.registerRoute(

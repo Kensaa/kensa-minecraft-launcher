@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
-import { profilesTable } from '../../../db/schema'
+import { gameDirectoriesTable, profilesTable } from '../../../db/schema'
 import { count, eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
+import { getGameDirectory } from '../../../utils'
 
 export function createProfileHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -28,6 +29,15 @@ export function createProfileHandler(router: APIRouter) {
                 throw new HTTPError(409, 'profile already exists')
             }
 
+            if (req.body.gameDirectory) {
+                const gameDirectory = await getGameDirectory(
+                    instances.database,
+                    req.body.gameDirectory
+                )
+                if (!gameDirectory) {
+                    throw new HTTPError(404, 'game directory does not exist')
+                }
+            }
             await instances.database.insert(profilesTable).values({
                 name: req.body.name,
                 mc_version: req.body.mcVersion,

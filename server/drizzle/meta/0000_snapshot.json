@@ -1,15 +1,76 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f6639eff-9bd4-4f52-9582-353a073ac53f",
+  "id": "dfee91db-cafc-42d0-a566-43acd3950e68",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "accounts": {
+      "name": "accounts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "salt": {
+          "name": "salt",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "temp_account": {
+          "name": "temp_account",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_admin": {
+          "name": "is_admin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "accounts_username_unique": {
+          "name": "accounts_username_unique",
+          "columns": [
+            "username"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "files": {
       "name": "files",
       "columns": {
-        "profile_id": {
-          "name": "profile_id",
-          "type": "integer",
+        "game_directory": {
+          "name": "game_directory",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -38,29 +99,46 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "files_profile_id_profiles_id_fk": {
-          "name": "files_profile_id_profiles_id_fk",
+        "files_game_directory_gameDirectories_name_fk": {
+          "name": "files_game_directory_gameDirectories_name_fk",
           "tableFrom": "files",
-          "tableTo": "profiles",
+          "tableTo": "gameDirectories",
           "columnsFrom": [
-            "profile_id"
+            "game_directory"
           ],
           "columnsTo": [
-            "id"
+            "name"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "files_profile_id_filepath_pk": {
+        "files_game_directory_filepath_pk": {
           "columns": [
-            "profile_id",
+            "game_directory",
             "filepath"
           ],
-          "name": "files_profile_id_filepath_pk"
+          "name": "files_game_directory_filepath_pk"
         }
       },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "gameDirectories": {
+      "name": "gameDirectories",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -103,8 +181,30 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
+      "indexes": {
+        "profiles_name_unique": {
+          "name": "profiles_name_unique",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "profiles_game_directory_gameDirectories_name_fk": {
+          "name": "profiles_game_directory_gameDirectories_name_fk",
+          "tableFrom": "profiles",
+          "tableTo": "gameDirectories",
+          "columnsFrom": [
+            "game_directory"
+          ],
+          "columnsTo": [
+            "name"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

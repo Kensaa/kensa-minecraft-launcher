@@ -7,7 +7,13 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { accountsTable, filesTable, profilesTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import { buildFileTree, getProfile, hashPassword, Tree } from './utils'
+import {
+    buildFileTree,
+    getGameDirectory,
+    getProfile,
+    hashPassword,
+    Tree
+} from './utils'
 import * as webApi from './web-api/web-api'
 
 const PORT = parseInt(process.env.PORT || '40069')
@@ -140,7 +146,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
             const profileFiles = await db
                 .select()
                 .from(filesTable)
-                .where(eq(filesTable.profile_id, profile.id))
+                .where(eq(filesTable.game_directory, profile.game_directory))
 
             profilesTree[profile.game_directory] = buildFileTree(
                 profileFiles,
@@ -155,54 +161,33 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
         res.status(200).json(result)
     })
 
-    // New endpoint : only get the tree of the specified profile
-    app.get('/hashes/:profile_id', async (req, res) => {
-        const profile_id = parseInt(req.params.profile_id)
-        if (Number.isNaN(profile_id))
-            return res.status(500).send('invalid profile ID')
-
-        const profile = await getProfile(db, profile_id)
-        if (!profile) return res.sendStatus(404)
+    // New endpoint : only get the tree of the specified game directory
+    app.get('/hashes/:game_directory', async (req, res) => {
+        const gameDirectory = await getGameDirectory(
+            db,
+            req.params.game_directory
+        )
+        if (!gameDirectory) return res.sendStatus(404)
 
         const files = await db
             .select()
             .from(filesTable)
-            .where(eq(filesTable.profile_id, profile.id))
+            .where(eq(filesTable.game_directory, gameDirectory.name))
 
         const fileTree = buildFileTree(files, file => file.hash)
         res.status(200).json(fileTree)
     })
 
-    app.get('/fileCount/:profile_id', async (req, res) => {
-        // the param for this request is supposed to be the id of the profile, but older version of the launcher pass the name of the gameDirectory as arg
-        const profile_id = parseInt(req.params.profile_id)
-        if (!Number.isNaN(profile_id)) {
-            // arg is a number => check if it is an id
-            const profile = await getProfile(db, profile_id)
-            if (profile) {
-                // arg is a profile id
-                const files = await db
-                    .select({ count: count() })
-                    .from(filesTable)
-                    .where(eq(filesTable.profile_id, profile.id))
-                return res.status(200).json(files)
-            }
-        }
-        // arg is not a profile id
-
-        const profiles = await db
-            .select()
-            .from(profilesTable)
-            .where(eq(profilesTable.game_directory, req.params.profile_id))
-        if (profiles.length === 0) {
-            return res.status(404).json({ count: 0 })
-        } else {
-            const profile = profiles[0]
-            const files = await db
-                .select({ count: count() })
-                .from(filesTable)
-                .where(eq(filesTable.profile_id, profile.id))
-            return res.status(200).json(files)
-        }
+    app.get('/fileCount/:game_directory', async (req, res) => {
+        const game_directory = await getGameDirectory(
+            db,
+            req.params.game_directory
+        )
+        if (!game_directory) return res.status(404).json({ count: 0 })
+        const files = await db
+            .select({ count: count() })
+            .from(filesTable)
+            .where(eq(filesTable.game_directory, game_directory.name))
+        return res.status(200).json(files[0])
     })
 })()

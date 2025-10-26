@@ -11,22 +11,26 @@ export const profilesTable = sqliteTable('profiles', {
     name: text().notNull().unique(),
     mc_version: text().notNull(),
     forge_version: text(),
-    game_directory: text()
+    game_directory: text().references(() => gameDirectoriesTable.name)
+})
+
+export const gameDirectoriesTable = sqliteTable('gameDirectories', {
+    name: text().notNull().primaryKey()
 })
 
 export const filesTable = sqliteTable(
     'files',
     {
-        profile_id: int()
+        game_directory: text()
             .notNull()
-            .references(() => profilesTable.id),
+            .references(() => gameDirectoriesTable.name),
         filepath: text().notNull(),
-        last_modified: int({ mode: 'timestamp' }).notNull(),
+        last_modified: int({ mode: 'timestamp_ms' }).notNull(),
         hash: text().notNull()
     },
     table => [
         primaryKey({
-            columns: [table.profile_id, table.filepath]
+            columns: [table.game_directory, table.filepath]
         })
     ]
 )

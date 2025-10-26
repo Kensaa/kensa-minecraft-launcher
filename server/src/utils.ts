@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm'
-import { filesTable, profilesTable } from './db/schema'
+import { filesTable, gameDirectoriesTable, profilesTable } from './db/schema'
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import crypto from 'crypto'
 import fs from 'fs'
@@ -9,6 +9,7 @@ import { hashFile } from 'utils'
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
 type DatabaseProfile = typeof profilesTable.$inferSelect
+type DatabaseGameDirectory = typeof gameDirectoriesTable.$inferSelect
 
 export async function getProfile(
     db: Database,
@@ -21,6 +22,19 @@ export async function getProfile(
     if (profiles.length == 0) return undefined
     return profiles[0]
 }
+
+export async function getGameDirectory(
+    db: Database,
+    name: DatabaseGameDirectory['name']
+) {
+    const gameDirectories = await db
+        .select()
+        .from(gameDirectoriesTable)
+        .where(eq(gameDirectoriesTable.name, name))
+    if (gameDirectories.length == 0) return undefined
+    return gameDirectories[0]
+}
+
 export interface Tree<D> {
     [key: string]: Tree<D> | D
 }
@@ -79,24 +93,34 @@ export function sanitizeFilePath(inputPath: string, baseDir: string): string {
     return safeFullPath
 }
 
-export async function refreshProfile(
+export function getGameDirectoryPath(
     staticDirectory: string,
-    database: Database,
-    profile: DatabaseProfile
+    gameDirectory: DatabaseGameDirectory
 ) {
-    if (!profile.game_directory) return
-
     const gameDirectoryPath = path.join(
         staticDirectory,
         'gameDirectories',
-        profile.game_directory
+        gameDirectory.name
+    )
+    return gameDirectoryPath
+}
+
+export async function refreshGameDirectory(
+    staticDirectory: string,
+    database: Database,
+    gameDirectory: DatabaseGameDirectory
+) {
+    const gameDirectoryPath = getGameDirectoryPath(
+        staticDirectory,
+        gameDirectory
     )
     if (!fs.existsSync(gameDirectoryPath)) fs.mkdirSync(gameDirectoryPath)
 
     const currentFiles = await database
         .select()
         .from(filesTable)
-        .where(eq(filesTable.profile_id, profile.id))
+        .where(eq(filesTable.game_directory, gameDirectory.name))
+
     const seenFiles = new Array(currentFiles.length).fill(false) // array containing bools indicating if the curresponding file in the currentFiles array has been seen
 
     async function exploreDir(current: string) {
@@ -113,7 +137,7 @@ export async function refreshProfile(
                     // file does not exist in the db
                     await database.insert(filesTable).values({
                         filepath,
-                        profile_id: profile.id,
+                        game_directory: gameDirectory.name,
                         last_modified: stat.mtime,
                         hash: await hashFile(absFilepath)
                     })
@@ -121,7 +145,10 @@ export async function refreshProfile(
                     // file exists, check last modified to see if a rehash is useful
                     const currentFile = currentFiles[i]
                     seenFiles[i] = true
-                    if (stat.mtime !== currentFile.last_modified) {
+                    if (
+                        stat.mtime.getTime() !==
+                        currentFile.last_modified.getTime()
+                    ) {
                         await database
                             .update(filesTable)
                             .set({
@@ -130,15 +157,18 @@ export async function refreshProfile(
                             })
                             .where(
                                 and(
-                                    eq(filesTable.profile_id, profile.id),
+                                    eq(
+                                        filesTable.game_directory,
+                                        gameDirectory.name
+                                    ),
                                     eq(filesTable.filepath, filepath)
                                 )
                             )
                     }
                 }
             } else {
-                // is folder, recusively call
-                exploreDir(filepath)
+                // is directory, recusively call
+                await exploreDir(filepath)
             }
         }
     }
@@ -147,14 +177,14 @@ export async function refreshProfile(
 
     // if some files that were is the database have not been seen, delete them from the database
     const toDelete = currentFiles
-        .filter((v, i) => !seenFiles[i])
+        .filter((_, i) => !seenFiles[i])
         .map(f => f.filepath)
 
     await database
         .delete(filesTable)
         .where(
             and(
-                eq(filesTable.profile_id, profile.id),
+                eq(filesTable.game_directory, gameDirectory.name),
                 inArray(filesTable.filepath, toDelete)
             )
         )
