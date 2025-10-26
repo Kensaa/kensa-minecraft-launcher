@@ -112,6 +112,7 @@ export default function ProfileEditModal({
     }
     if (mcVersionError || gameDirectoriesError) {
         enqueueSnackbar('failed to fetch data', { variant: 'error' })
+        props.onClose()
         return
     }
 
@@ -199,7 +200,9 @@ export default function ProfileEditModal({
                                 {dir.name}
                             </MenuItem>
                         ))}
-                        <MenuItem value='__create_new__'>Create new</MenuItem>
+                        <MenuItem value='__create_new__'>
+                            <b>Create new</b>
+                        </MenuItem>
                     </TextField>
                     <Button
                         type='submit'
