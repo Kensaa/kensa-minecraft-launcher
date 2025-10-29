@@ -7,14 +7,9 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { accountsTable, filesTable, profilesTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import {
-    buildFileTree,
-    getGameDirectory,
-    getProfile,
-    hashPassword,
-    Tree
-} from './utils'
+import { buildFileTree, getGameDirectory, hashPassword } from './utils'
 import * as webApi from './web-api/web-api'
+import { Tree } from 'utils'
 
 const PORT = parseInt(process.env.PORT || '40069')
 const DATA_DIRECTORY = process.env.DATA_FOLDER || './data'
@@ -101,7 +96,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
                     'Authorization'
                 ],
                 credentials: true,
-                origin: 'http://localhost:5173'
+                origin: ['http://localhost:5173', 'http://localhost:5174'] // server-ui and launcher vite dev servers
             })
         )
     }
