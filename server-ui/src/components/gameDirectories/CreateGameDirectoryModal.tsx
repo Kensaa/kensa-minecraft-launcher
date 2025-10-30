@@ -1,9 +1,9 @@
 import { Box, Button, Typography } from '@mui/material'
-import type { ModalProps } from './Modal'
-import Modal from './Modal'
+import type { ModalProps } from '../Modal'
+import Modal from '../Modal'
 import { useState } from 'react'
-import { ValidatedTextField } from './ValidatedTextField'
-import { address } from '../config'
+import { ValidatedTextField } from '../ValidatedTextField'
+import { address } from '../../config'
 import { useSnackbar } from 'notistack'
 
 type CreateGameDirectoryModal = Omit<ModalProps, 'children'> & {

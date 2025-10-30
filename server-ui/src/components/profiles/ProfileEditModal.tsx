@@ -12,7 +12,7 @@ import {
 } from '@mui/material'
 import { ValidatedTextField } from '../ValidatedTextField'
 import type { Profile } from 'utils'
-import CreateGameDirectoryModal from '../CreateGameDirectoryModal'
+import CreateGameDirectoryModal from '../gameDirectories/CreateGameDirectoryModal'
 import { useSnackbar } from 'notistack'
 import { address } from '../../config'
 
@@ -151,7 +151,6 @@ export default function ProfileEditModal({
                         select
                         onChange={e => setVersion(e.target.value)}
                     >
-                        {/* <MenuItem value=''>Select a version</MenuItem> */}
                         {mcversions.map((v, i) => (
                             <MenuItem value={v.version} key={i}>
                                 {v.version}
