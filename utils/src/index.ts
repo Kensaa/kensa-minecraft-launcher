@@ -29,3 +29,12 @@ export type Profile = LegacyProfile & {
 export type GameDirectory = {
     name: string
 }
+
+export interface Tree<D> {
+    [key: string]: Tree<D> | D
+}
+
+export interface FileTreeElement {
+    hash: string
+    lastModified: string
+}

@@ -3,7 +3,8 @@ import { APIRouter } from '../../web-api'
 import { filesTable } from '../../../db/schema'
 import { HTTPError } from 'express-api-router'
 import { eq } from 'drizzle-orm'
-import { buildFileTree, getGameDirectory, Tree } from '../../../utils'
+import { buildFileTree, getGameDirectory } from '../../../utils'
+import { Tree } from 'utils'
 
 const treeLeafSchema = z.object({
     lastModified: z.date(),

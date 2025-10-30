@@ -5,6 +5,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { hashFile } from 'utils'
+import type { Tree } from 'utils'
 
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
@@ -35,9 +36,6 @@ export async function getGameDirectory(
     return gameDirectories[0]
 }
 
-export interface Tree<D> {
-    [key: string]: Tree<D> | D
-}
 /**
  * Creates a recursive object representing the gameDirectory of a profile as a tree
  * @param files the files of the profile (from the database)
