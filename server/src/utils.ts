@@ -136,10 +136,10 @@ export async function refreshGameDirectory(
             const existsInDB = arrayIndex !== -1
 
             if (existsInDB) {
+                const currentFile = currentFiles[arrayIndex]
+                seenFiles[arrayIndex] = true
                 if (isFile) {
                     // file exists, check last modified to see if a rehash is useful
-                    const currentFile = currentFiles[arrayIndex]
-                    seenFiles[arrayIndex] = true
                     if (
                         stat.mtime.getTime() !==
                         currentFile.last_modified.getTime()
