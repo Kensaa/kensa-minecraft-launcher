@@ -33,8 +33,6 @@ export default function ProfileEditModal({
     )
     const [createGameDirectory, setCreateGameDirectory] = useState(false)
 
-    console.log(name, version, forge, gameDirectory)
-
     const {
         data: mcversions,
         isPending: mcVersionPending,
