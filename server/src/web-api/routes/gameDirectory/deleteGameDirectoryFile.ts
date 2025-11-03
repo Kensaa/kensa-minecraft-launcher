@@ -71,7 +71,16 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
                     .where(
                         and(
                             eq(filesTable.game_directory, file.game_directory),
-                            like(filesTable.filepath, file.filepath + '%')
+                            eq(filesTable.filepath, file.filepath)
+                        )
+                    )
+                // Delete subfiles
+                await instances.database
+                    .delete(filesTable)
+                    .where(
+                        and(
+                            eq(filesTable.game_directory, file.game_directory),
+                            like(filesTable.filepath, file.filepath + '/%')
                         )
                     )
             }
