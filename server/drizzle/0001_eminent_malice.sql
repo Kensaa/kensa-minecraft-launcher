@@ -1,0 +1,1 @@
+ALTER TABLE `files` ADD `is_directory` integer DEFAULT false NOT NULL;

@@ -56,8 +56,7 @@ export function buildFileTree<D>(
             if (curr[part] === undefined) curr[part] = {}
             curr = curr[part] as Tree<D>
         }
-        curr[filename] = selectFn(file)
-        // curr[filename] = file.hash
+        curr[filename] = file.is_directory ? {} : selectFn(file)
     }
     return tree
 }
@@ -129,20 +128,18 @@ export async function refreshGameDirectory(
             // path of the file relative to the static directory
             const absFilepath = path.join(gameDirectoryPath, filepath)
             const stat = fs.statSync(absFilepath)
-            if (stat.isFile()) {
-                let i = currentFiles.findIndex(f => f.filepath === filepath)
-                if (i === -1) {
-                    // file does not exist in the db
-                    await database.insert(filesTable).values({
-                        filepath,
-                        game_directory: gameDirectory.name,
-                        last_modified: stat.mtime,
-                        hash: await hashFile(absFilepath)
-                    })
-                } else {
+            const isFile = stat.isFile()
+
+            const arrayIndex = currentFiles.findIndex(
+                f => f.filepath === filepath
+            )
+            const existsInDB = arrayIndex !== -1
+
+            if (existsInDB) {
+                if (isFile) {
                     // file exists, check last modified to see if a rehash is useful
-                    const currentFile = currentFiles[i]
-                    seenFiles[i] = true
+                    const currentFile = currentFiles[arrayIndex]
+                    seenFiles[arrayIndex] = true
                     if (
                         stat.mtime.getTime() !==
                         currentFile.last_modified.getTime()
@@ -165,6 +162,17 @@ export async function refreshGameDirectory(
                     }
                 }
             } else {
+                // file does not exist in the db
+                await database.insert(filesTable).values({
+                    filepath,
+                    game_directory: gameDirectory.name,
+                    last_modified: stat.mtime,
+                    hash: isFile ? await hashFile(absFilepath) : '',
+                    is_directory: !isFile
+                })
+            }
+
+            if (!isFile) {
                 // is directory, recusively call
                 await exploreDir(filepath)
             }

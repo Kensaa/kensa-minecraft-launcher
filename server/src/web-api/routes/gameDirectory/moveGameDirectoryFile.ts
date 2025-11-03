@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
 import { filesTable } from '../../../db/schema'
-import { and, count, eq } from 'drizzle-orm'
+import { and, eq, like } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
 import {
@@ -9,7 +9,6 @@ import {
     getGameDirectoryPath,
     sanitizeFilePath
 } from '../../../utils'
-import { hashFile } from 'utils'
 
 export function moveGameDirectoryFileHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -31,13 +30,16 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
+            const oldFilepath = normalizePath(req.body.old_filepath)
+            const newFilepath = normalizePath(req.body.new_filepath)
+
             const oldFiles = await instances.database
                 .select()
                 .from(filesTable)
                 .where(
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
-                        eq(filesTable.filepath, req.body.old_filepath)
+                        eq(filesTable.filepath, oldFilepath)
                     )
                 )
             if (oldFiles.length === 0)
@@ -50,7 +52,7 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                 .where(
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
-                        eq(filesTable.filepath, req.body.new_filepath)
+                        eq(filesTable.filepath, newFilepath)
                     )
                 )
             if (newFiles.length > 0)
@@ -64,29 +66,77 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectory
             )
             const oldDiskFilepath = sanitizeFilePath(
-                req.body.old_filepath,
+                oldFilepath,
                 gameDirectoryPath
             )
             const newDiskFilepath = sanitizeFilePath(
-                req.body.new_filepath,
+                newFilepath,
                 gameDirectoryPath
             )
             fs.renameSync(oldDiskFilepath, newDiskFilepath)
             const stat = fs.statSync(newDiskFilepath)
 
-            await instances.database
-                .update(filesTable)
-                .set({
-                    filepath: req.body.new_filepath,
-                    hash: await hashFile(newDiskFilepath),
-                    last_modified: stat.mtime
-                })
-                .where(
-                    and(
-                        eq(filesTable.game_directory, oldFile.game_directory),
-                        eq(filesTable.filepath, oldFile.filepath)
+            if (!oldFile.is_directory) {
+                await instances.database
+                    .update(filesTable)
+                    .set({
+                        filepath: newFilepath,
+                        last_modified: stat.mtime
+                    })
+                    .where(
+                        and(
+                            eq(
+                                filesTable.game_directory,
+                                oldFile.game_directory
+                            ),
+                            eq(filesTable.filepath, oldFile.filepath)
+                        )
                     )
-                )
+            } else {
+                const files = await instances.database
+                    .select()
+                    .from(filesTable)
+                    .where(
+                        and(
+                            eq(
+                                filesTable.game_directory,
+                                oldFile.game_directory
+                            ),
+                            like(filesTable.filepath, oldFile.filepath + '%')
+                        )
+                    )
+                for (const file of files) {
+                    const newPath = `${newFilepath}${file.filepath.substring(
+                        oldFile.filepath.length
+                    )}`
+
+                    await instances.database
+                        .update(filesTable)
+                        .set({
+                            filepath: newPath
+                        })
+                        .where(
+                            and(
+                                eq(
+                                    filesTable.game_directory,
+                                    gameDirectory.name
+                                ),
+                                eq(filesTable.filepath, file.filepath)
+                            )
+                        )
+                }
+            }
         }
     })
+}
+
+/**
+ * Removes any / at the end of a path
+ * @param filepath the path
+ */
+function normalizePath(filepath: string): string {
+    if (filepath.endsWith('/')) {
+        return filepath.substring(0, filepath.indexOf('/'))
+    }
+    return filepath
 }
