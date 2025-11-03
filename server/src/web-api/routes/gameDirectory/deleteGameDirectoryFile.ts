@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
 import { filesTable } from '../../../db/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, like } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
 import {
@@ -29,17 +29,17 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
-            const deleteResult = await instances.database
-                .delete(filesTable)
+            const files = await instances.database
+                .select()
+                .from(filesTable)
                 .where(
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
                         eq(filesTable.filepath, req.body.filepath)
                     )
                 )
-
-            if (deleteResult.changes === 0)
-                throw new HTTPError(404, 'file not found')
+            if (files.length === 0) throw new HTTPError(404, 'file not found')
+            const file = files[0]
 
             const gameDirectoryPath = getGameDirectoryPath(
                 instances.staticDirectory,
@@ -49,7 +49,32 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
                 req.body.filepath,
                 gameDirectoryPath
             )
-            fs.rmSync(diskFilepath)
+
+            if (!file.is_directory) {
+                // The file we're deleting is a file
+                fs.rmSync(diskFilepath)
+                await instances.database
+                    .delete(filesTable)
+                    .where(
+                        and(
+                            eq(filesTable.game_directory, file.game_directory),
+                            eq(filesTable.filepath, file.filepath),
+                            eq(filesTable.is_directory, file.is_directory)
+                        )
+                    )
+            } else {
+                // The file we're deleting is a directory
+                // So we delete the directory from the database, and every file that are contained into it
+                fs.rmSync(diskFilepath, { recursive: true })
+                await instances.database
+                    .delete(filesTable)
+                    .where(
+                        and(
+                            eq(filesTable.game_directory, file.game_directory),
+                            like(filesTable.filepath, file.filepath + '%')
+                        )
+                    )
+            }
         }
     })
 }
