@@ -1,18 +1,26 @@
-import type { GameDirectory, MinecraftVersion, Profile } from 'utils'
+import type {
+    FileTreeElement,
+    GameDirectory,
+    MinecraftVersion,
+    Profile,
+    Tree
+} from 'utils'
 import { address } from './config'
 
-function queryBuilder<T>(address: string) {
-    return async function () {
-        const res = await fetch(address, {
-            method: 'GET',
-            credentials: 'include'
-        })
+async function queryFetch<T>(address: string) {
+    const res = await fetch(address, {
+        method: 'GET',
+        credentials: 'include'
+    })
 
-        if (!res.ok) {
-            throw new Error(await res.text())
-        }
-        return (await res.json()) as T
+    if (!res.ok) {
+        throw new Error(await res.text())
     }
+    return (await res.json()) as T
+}
+
+function queryBuilder<T>(address: string) {
+    return () => queryFetch<T>(address)
 }
 
 export const fetchProfiles = queryBuilder<Profile[]>(
@@ -26,3 +34,8 @@ export const fetchMinecraftVersions = queryBuilder<MinecraftVersion[]>(
 export const fetchGameDirectories = queryBuilder<GameDirectory[]>(
     `${address}/web-api/gameDirectories`
 )
+
+export const fetchGameDirectoriesFile = (gameDirectory: GameDirectory) =>
+    queryFetch<Tree<FileTreeElement>>(
+        `${address}/web-api/gameDirectory/${gameDirectory.name}/files`
+    )
