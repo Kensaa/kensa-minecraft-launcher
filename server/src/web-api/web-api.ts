@@ -21,6 +21,7 @@ import { uploadGameDirectoryFileHandler } from './routes/gameDirectory/uploadGam
 import { refreshGameDirectoryHandler } from './routes/gameDirectory/refreshGameDirectory'
 import { updateProfileHandler } from './routes/profile/editProfile'
 import { moveGameDirectoryFileHandler } from './routes/gameDirectory/moveGameDirectoryFile'
+import { mkdirGameDirectoryFileHandler } from './routes/gameDirectory/mkdirGameDirectoryFile'
 
 export interface APIInstances {
     database: Database
@@ -88,6 +89,11 @@ export function createRouter(instances: APIInstances) {
         'post',
         '/gameDirectory/:game_directory/file',
         uploadGameDirectoryFileHandler(router)
+    )
+    router.registerRoute(
+        'post',
+        '/gameDirectory/:game_directory/mkdir',
+        mkdirGameDirectoryFileHandler(router)
     )
     router.registerRoute(
         'post',
