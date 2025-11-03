@@ -61,6 +61,12 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                     'there is already a file with that path'
                 )
 
+            if (newFilepath.startsWith(oldFilepath))
+                throw new HTTPError(
+                    400,
+                    'Impossible to move a file within itself'
+                )
+
             const gameDirectoryPath = getGameDirectoryPath(
                 instances.staticDirectory,
                 gameDirectory
