@@ -29,13 +29,14 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
+            const filepath = req.body.filepath.trim()
             const files = await instances.database
                 .select()
                 .from(filesTable)
                 .where(
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
-                        eq(filesTable.filepath, req.body.filepath)
+                        eq(filesTable.filepath, filepath)
                     )
                 )
             if (files.length === 0) throw new HTTPError(404, 'file not found')
@@ -45,10 +46,7 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
                 instances.staticDirectory,
                 gameDirectory
             )
-            const diskFilepath = sanitizeFilePath(
-                req.body.filepath,
-                gameDirectoryPath
-            )
+            const diskFilepath = sanitizeFilePath(filepath, gameDirectoryPath)
 
             if (!file.is_directory) {
                 // The file we're deleting is a file

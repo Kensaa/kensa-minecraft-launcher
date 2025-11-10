@@ -65,6 +65,10 @@ export function hashPassword(password: Buffer, salt: Buffer): Buffer {
     return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256')
 }
 
+const validFileRegex = /[^a-zA-Z0-9 ()._-]/g
+export function sanitizeFileName(filename: string): string {
+    return filename.replace(validFileRegex, '_')
+}
 export function sanitizeFilePath(inputPath: string, baseDir: string): string {
     const cleanInput = inputPath.replace(/\0/g, '').trim()
     const normalized = path.normalize(cleanInput)
@@ -76,7 +80,7 @@ export function sanitizeFilePath(inputPath: string, baseDir: string): string {
 
     const safeSegments = normalized
         .split(path.sep)
-        .map(seg => seg.replace(/[^a-zA-Z0-9._-]/g, '_'))
+        .map(seg => seg.replace(validFileRegex, '_'))
         .filter(Boolean)
 
     const safeRelative = safeSegments.join(path.sep)

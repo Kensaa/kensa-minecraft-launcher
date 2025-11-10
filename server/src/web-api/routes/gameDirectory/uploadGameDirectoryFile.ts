@@ -26,7 +26,9 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
             game_directory: z.string()
         }),
         querySchema: z.object(),
-        responseSchema: z.void(),
+        responseSchema: z.object({
+            filepath: z.string()
+        }),
         async handler(req, res, instances, userTokenData) {
             const gameDirectory = await getGameDirectory(
                 instances.database,
@@ -40,10 +42,8 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectory
             )
 
-            const diskFilepath = sanitizeFilePath(
-                req.body.filepath,
-                gameDirectoryPath
-            )
+            const filepath = req.body.filepath.trim()
+            const diskFilepath = sanitizeFilePath(filepath, gameDirectoryPath)
 
             // Delete file from the database if it already exists
             await instances.database
@@ -51,7 +51,7 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
                 .where(
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
-                        eq(filesTable.filepath, req.body.filepath)
+                        eq(filesTable.filepath, filepath)
                     )
                 )
 
@@ -60,12 +60,23 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
             fs.writeFileSync(diskFilepath, req.file.buffer)
             const stat = fs.statSync(diskFilepath)
 
-            await instances.database.insert(filesTable).values({
-                filepath: req.body.filepath,
-                game_directory: gameDirectory.name,
-                last_modified: stat.mtime,
-                hash: await hashFile(diskFilepath)
-            })
+            const insertedFile = await instances.database
+                .insert(filesTable)
+                .values({
+                    filepath: filepath,
+                    game_directory: gameDirectory.name,
+                    last_modified: stat.mtime,
+                    hash: await hashFile(diskFilepath)
+                })
+                .returning({ filepath: filesTable.filepath })
+
+            if (insertedFile.length === 0)
+                throw new HTTPError(
+                    500,
+                    'an error occured while inserting file into the database'
+                )
+
+            return insertedFile[0]
         }
     })
 }

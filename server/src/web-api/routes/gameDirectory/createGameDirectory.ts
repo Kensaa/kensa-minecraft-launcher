@@ -26,7 +26,7 @@ export function createGameDirectoryHandler(router: APIRouter) {
             }
 
             await instances.database.insert(gameDirectoriesTable).values({
-                name: req.body.name
+                name: req.body.name.trim()
             })
         }
     })

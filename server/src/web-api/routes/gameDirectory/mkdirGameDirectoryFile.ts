@@ -20,7 +20,9 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
             game_directory: z.string()
         }),
         querySchema: z.object(),
-        responseSchema: z.void(),
+        responseSchema: z.object({
+            filepath: z.string()
+        }),
         async handler(req, res, instances, userTokenData) {
             const gameDirectory = await getGameDirectory(
                 instances.database,
@@ -34,10 +36,8 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectory
             )
 
-            const diskFilepath = sanitizeFilePath(
-                req.body.dirpath,
-                gameDirectoryPath
-            )
+            const dirpath = req.body.dirpath.trim()
+            const diskFilepath = sanitizeFilePath(dirpath, gameDirectoryPath)
 
             const existingDir = await instances.database
                 .select({
@@ -48,7 +48,7 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
                     and(
                         eq(filesTable.game_directory, gameDirectory.name),
                         eq(filesTable.is_directory, true),
-                        eq(filesTable.filepath, req.body.dirpath)
+                        eq(filesTable.filepath, dirpath)
                     )
                 )
             if (existingDir[0].count > 0)
@@ -56,13 +56,24 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
 
             fs.mkdirSync(diskFilepath, { recursive: true })
             const stat = fs.statSync(diskFilepath)
-            await instances.database.insert(filesTable).values({
-                filepath: req.body.dirpath,
-                game_directory: gameDirectory.name,
-                hash: '',
-                is_directory: true,
-                last_modified: stat.mtime
-            })
+
+            const insertedDir = await instances.database
+                .insert(filesTable)
+                .values({
+                    filepath: dirpath,
+                    game_directory: gameDirectory.name,
+                    hash: '',
+                    is_directory: true,
+                    last_modified: stat.mtime
+                })
+                .returning({ filepath: filesTable.filepath })
+
+            if (insertedDir.length === 0)
+                throw new HTTPError(
+                    500,
+                    'an error occured while inserting directory into the database'
+                )
+            return insertedDir[0]
         }
     })
 }
