@@ -42,10 +42,10 @@ interface ExtendedFileExplorerItemProps {
 }
 
 export interface GameDirectoryViewerProps {
-    gameDirectory: GameDirectory
+    gameDirectoryName: GameDirectory['name']
 }
 export default function GameDirectoryViewer({
-    gameDirectory
+    gameDirectoryName
 }: GameDirectoryViewerProps) {
     const { enqueueSnackbar } = useSnackbar()
     const queryClient = useQueryClient()
@@ -57,8 +57,8 @@ export default function GameDirectoryViewer({
         data: files,
         error: filesError
     } = useQuery({
-        queryKey: ['game-directory-file', gameDirectory.name],
-        queryFn: () => fetchGameDirectoriesFile(gameDirectory)
+        queryKey: ['game-directory-files', gameDirectoryName],
+        queryFn: () => fetchGameDirectoriesFile(gameDirectoryName)
     })
 
     const rearrangedFiles: TreeViewBaseItem<ExtendedFileExplorerItemProps>[] =
@@ -83,7 +83,7 @@ export default function GameDirectoryViewer({
                             path: nextPath,
                             label: key,
                             type: 'File',
-                            gameDirectoryName: gameDirectory.name
+                            gameDirectoryName
                         })
                     } else {
                         // is dir
@@ -96,7 +96,7 @@ export default function GameDirectoryViewer({
                                 value as Tree<FileTreeElement>,
                                 nextPath
                             ),
-                            gameDirectoryName: gameDirectory.name
+                            gameDirectoryName
                         })
                     }
                 }
@@ -107,13 +107,13 @@ export default function GameDirectoryViewer({
                 {
                     id: '',
                     path: [],
-                    label: gameDirectory.name,
+                    label: gameDirectoryName,
                     type: 'Dir',
-                    gameDirectoryName: gameDirectory.name,
+                    gameDirectoryName,
                     children: explore(files)
                 }
             ]
-        }, [files, filesError, filesPending, gameDirectory])
+        }, [files, filesError, filesPending, gameDirectoryName])
 
     if (filesPending) {
         return <CircularProgress />
@@ -145,7 +145,7 @@ export default function GameDirectoryViewer({
             if (res.ok) {
                 queryClient.invalidateQueries({
                     queryKey: [
-                        'game-directory-file',
+                        'game-directory-files',
                         changedFile.gameDirectoryName
                     ]
                 })
@@ -333,7 +333,7 @@ const FileExplorerItem = React.forwardRef(function (
                 if (res.ok) {
                     queryClient.invalidateQueries({
                         queryKey: [
-                            'game-directory-file',
+                            'game-directory-files',
                             item.gameDirectoryName
                         ]
                     })
@@ -383,7 +383,7 @@ const FileExplorerItem = React.forwardRef(function (
             }
             await Promise.all(uploadPormises)
             queryClient.invalidateQueries({
-                queryKey: ['game-directory-file', item.gameDirectoryName]
+                queryKey: ['game-directory-files', item.gameDirectoryName]
             })
         }
     }
@@ -430,7 +430,7 @@ const FileExplorerItem = React.forwardRef(function (
                     variant: 'success'
                 })
                 queryClient.invalidateQueries({
-                    queryKey: ['game-directory-file', item.gameDirectoryName]
+                    queryKey: ['game-directory-files', item.gameDirectoryName]
                 })
             } else {
                 res.text().then(err => {
@@ -551,7 +551,7 @@ const FileExplorerItem = React.forwardRef(function (
                                     queryClient
                                         .refetchQueries({
                                             queryKey: [
-                                                'game-directory-file',
+                                                'game-directory-files',
                                                 item.gameDirectoryName
                                             ]
                                         })
