@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
 import { filesTable } from '../../../db/schema'
-import { and, eq, like } from 'drizzle-orm'
+import { and, eq, like, or } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
 import {
@@ -30,8 +30,8 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
-            const oldFilepath = normalizePath(req.body.old_filepath)
-            const newFilepath = normalizePath(req.body.new_filepath)
+            const oldFilepath = normalizePath(req.body.old_filepath.trim())
+            const newFilepath = normalizePath(req.body.new_filepath.trim())
 
             const oldFiles = await instances.database
                 .select()
@@ -61,7 +61,7 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                     'there is already a file with that path'
                 )
 
-            if (newFilepath.startsWith(oldFilepath))
+            if ((newFilepath + '/').startsWith(oldFilepath + '/'))
                 throw new HTTPError(
                     400,
                     'Impossible to move a file within itself'
@@ -108,7 +108,13 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                                 filesTable.game_directory,
                                 oldFile.game_directory
                             ),
-                            like(filesTable.filepath, oldFile.filepath + '%')
+                            or(
+                                eq(filesTable.filepath, oldFile.filepath), // Is the file (the directory itself)
+                                like(
+                                    filesTable.filepath,
+                                    oldFile.filepath + '/%'
+                                ) // is a file contained inside the directory
+                            )
                         )
                     )
                 for (const file of files) {
