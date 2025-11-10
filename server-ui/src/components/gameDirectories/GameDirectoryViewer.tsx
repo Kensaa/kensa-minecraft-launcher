@@ -124,7 +124,7 @@ export default function GameDirectoryViewer({
     }
 
     const handleRename = (id: string, newName: string) => {
-        const changedFile = rearrangedFiles.find(i => i.id === id)
+        const changedFile = apiRef.current?.getItem(id)
         if (!changedFile) return
         const newPath = [...changedFile.path]
         const oldName = newPath.pop()
@@ -149,6 +149,7 @@ export default function GameDirectoryViewer({
                         changedFile.gameDirectoryName
                     ]
                 })
+                enqueueSnackbar('Renamed file', { variant: 'success' })
             } else {
                 res.text().then(err => {
                     enqueueSnackbar(
@@ -445,7 +446,9 @@ const FileExplorerItem = React.forwardRef(function (
 
     const handleInputBlur: UseTreeItemLabelInputSlotOwnProps['onBlur'] =
         event => {
-            interactions.handleCancelItemLabelEditing(event)
+            setTimeout(() => {
+                interactions.handleCancelItemLabelEditing(event)
+            }, 0)
         }
 
     const handleClick = (event: React.MouseEvent) => {
