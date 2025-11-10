@@ -39,3 +39,7 @@ export const fetchGameDirectoriesFile = (gameDirectory: GameDirectory) =>
     queryFetch<Tree<FileTreeElement>>(
         `${address}/web-api/gameDirectory/${gameDirectory.name}/files`
     )
+
+export const jsonHeaders = {
+    headers: { 'Content-Type': 'application/json' }
+}

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { ValidatedTextField } from '../ValidatedTextField'
 import { address } from '../../config'
 import { useSnackbar } from 'notistack'
+import { jsonHeaders } from '../../queries'
 
 type CreateGameDirectoryModal = Omit<ModalProps, 'children'> & {
     onResult: (gameDirectory: string) => void
@@ -28,9 +29,7 @@ export default function CreateGameDirectoryModal({
         fetch(`${address}/web-api/gameDirectory`, {
             method: 'POST',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            ...jsonHeaders,
             body: JSON.stringify(body)
         }).then(res => {
             if (res.ok) {
@@ -45,37 +44,50 @@ export default function CreateGameDirectoryModal({
     }
 
     return (
-        <Modal {...props}>
-            <Typography variant='h4' textAlign='center' color='text.primary'>
-                Create a new game directory
-            </Typography>
-            <Box
-                component='form'
-                onSubmit={handleSubmit}
-                noValidate
-                sx={{ mt: 1, width: { xs: '100%', sm: '75%' } }}
-            >
-                <ValidatedTextField
-                    margin='normal'
-                    autoFocus
-                    required
-                    fullWidth
-                    label='Name'
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    errorMessage='A name is required'
-                />
-
-                <Button
-                    type='submit'
-                    fullWidth
-                    variant='contained'
-                    sx={{ mt: 3, mb: 2 }}
-                    disabled={name === ''}
+        <Modal
+            onKeyDown={e => {
+                if (e.key === 'Enter') {
+                    e.stopPropagation()
+                }
+            }}
+            {...props}
+        >
+            <>
+                <Typography
+                    variant='h4'
+                    textAlign='center'
+                    color='text.primary'
                 >
-                    Create
-                </Button>
-            </Box>
+                    Create a new game directory
+                </Typography>
+                <Box
+                    component='form'
+                    onSubmit={handleSubmit}
+                    noValidate
+                    sx={{ mt: 1, width: { xs: '100%', sm: '75%' } }}
+                >
+                    <ValidatedTextField
+                        margin='normal'
+                        autoFocus
+                        required
+                        fullWidth
+                        label='Name'
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        errorMessage='A name is required'
+                    />
+
+                    <Button
+                        type='submit'
+                        fullWidth
+                        variant='contained'
+                        sx={{ mt: 3, mb: 2 }}
+                        disabled={name === ''}
+                    >
+                        Create
+                    </Button>
+                </Box>
+            </>
         </Modal>
     )
 }

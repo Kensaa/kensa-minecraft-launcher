@@ -16,7 +16,7 @@ export function createProfileHandler(router: APIRouter) {
         }),
         paramsSchema: z.object(),
         querySchema: z.object(),
-        responseSchema: z.void(),
+        responseSchema: z.number(),
         async handler(req, res, instances, userTokenData) {
             if (
                 (
@@ -38,12 +38,19 @@ export function createProfileHandler(router: APIRouter) {
                     throw new HTTPError(404, 'game directory does not exist')
                 }
             }
-            await instances.database.insert(profilesTable).values({
-                name: req.body.name,
-                mc_version: req.body.mcVersion,
-                forge_version: req.body.forgeVersion,
-                game_directory: req.body.gameDirectory
-            })
+            const profile = await instances.database
+                .insert(profilesTable)
+                .values({
+                    name: req.body.name,
+                    mc_version: req.body.mcVersion,
+                    forge_version: req.body.forgeVersion,
+                    game_directory: req.body.gameDirectory
+                })
+                .returning({ id: profilesTable.id })
+
+            if (profile.length === 0)
+                throw new HTTPError(500, 'failed to create profile')
+            return profile[0].id
         }
     })
 }

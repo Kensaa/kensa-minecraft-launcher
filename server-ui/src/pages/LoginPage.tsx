@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar'
 import { ValidatedTextField } from '../components/ValidatedTextField'
 import { address } from '../config'
 import { useSnackbar } from 'notistack'
+import { jsonHeaders } from '../queries'
 
 export default function LoginPage() {
     const { enqueueSnackbar } = useSnackbar()
@@ -28,9 +29,7 @@ export default function LoginPage() {
         fetch(`${address}/web-api/account/login`, {
             method: 'POST',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            ...jsonHeaders,
             body: JSON.stringify(body)
         }).then(res => {
             if (res.ok) {

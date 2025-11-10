@@ -1,11 +1,12 @@
+import { Box } from '@mui/material'
 import Navbar from '../components/Navbar'
-import ProfileList from '../components/profiles/ProfileList'
+import ProfileTable from '../components/profiles/ProfileTable'
 
 export default function HomePage() {
     return (
-        <div>
+        <Box>
             <Navbar />
-            <ProfileList />
-        </div>
+            <ProfileTable />
+        </Box>
     )
 }

@@ -8,7 +8,7 @@ import {
 } from '@mui/material'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FileTreeElement, GameDirectory, Tree } from 'utils'
-import { fetchGameDirectoriesFile } from '../../queries'
+import { fetchGameDirectoriesFile, jsonHeaders } from '../../queries'
 import { useSnackbar } from 'notistack'
 import {
     RichTreeView,
@@ -135,9 +135,7 @@ export default function GameDirectoryViewer({
             {
                 method: 'POST',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                ...jsonHeaders,
                 body: JSON.stringify({
                     old_filepath: changedFile.path.join('/'),
                     new_filepath: newPath.join('/')
@@ -325,9 +323,7 @@ const FileExplorerItem = React.forwardRef(function (
                 {
                     method: 'POST',
                     credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    ...jsonHeaders,
                     body: JSON.stringify({
                         old_filepath: oldFilepath,
                         new_filepath: newFilepath
@@ -423,9 +419,7 @@ const FileExplorerItem = React.forwardRef(function (
             {
                 method: 'DELETE',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                ...jsonHeaders,
                 body: JSON.stringify({
                     filepath: item.path.join('/')
                 })
@@ -530,9 +524,7 @@ const FileExplorerItem = React.forwardRef(function (
                                     {
                                         method: 'POST',
                                         credentials: 'include',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
+                                        ...jsonHeaders,
                                         body: JSON.stringify({
                                             dirpath: dirpath.join('/')
                                         })

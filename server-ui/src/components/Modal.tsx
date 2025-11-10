@@ -1,11 +1,11 @@
-import React from 'react'
 import MUIModal from '@mui/material/Modal'
+import type { ModalProps as MUIModalProps } from '@mui/material/Modal'
 import { Box } from '@mui/material'
 
-export type ModalProps = React.PropsWithChildren<{
+export type ModalProps = {
     open: boolean
     onClose: () => void
-}>
+} & MUIModalProps
 
 const style = {
     position: 'absolute',
