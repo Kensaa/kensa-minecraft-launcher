@@ -23,8 +23,15 @@ import {
 } from '../../queries'
 import { CircularProgress, Tooltip, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
-import { useEffect, useMemo, useState } from 'react'
-import { Add, Cancel, Delete, Edit, Save } from '@mui/icons-material'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+    Add,
+    Cancel,
+    Delete,
+    Edit,
+    FileUpload,
+    Save
+} from '@mui/icons-material'
 import type { MinecraftVersion } from 'utils'
 import CreateGameDirectoryModal from '../gameDirectories/CreateGameDirectoryModal'
 import { address } from '../../config'
@@ -89,8 +96,11 @@ declare module '@mui/x-data-grid' {
 }
 function EditToolbar(props: GridSlotProps['toolbar']) {
     const { setRows, setRowModesModel } = props
+    const fileInputRef = useRef<null | HTMLInputElement>(null)
+    const queryClient = useQueryClient()
+    const { enqueueSnackbar } = useSnackbar()
 
-    const handleClick = () => {
+    const handleAddProfile = () => {
         const id = ''
         setRows(oldRows => [
             ...oldRows,
@@ -109,16 +119,76 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
         }))
     }
 
+    const handleImportProfiles = () => {
+        if (fileInputRef.current) fileInputRef.current.click()
+    }
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files) return
+        if (event.target.files.length === 0) return
+        const file = event.target.files[0]
+
+        const reader = new FileReader()
+        reader.addEventListener('load', event => {
+            if (!event.target) return
+            const result = event.target.result as string
+            try {
+                JSON.parse(result)
+            } catch {
+                enqueueSnackbar('Selected file is not valid JSON', {
+                    variant: 'error'
+                })
+            }
+            return fetch(`${address}/web-api/profile/import`, {
+                method: 'POST',
+                credentials: 'include',
+                ...jsonHeaders,
+                body: result
+            }).then(res => {
+                if (res.ok) {
+                    queryClient
+                        .refetchQueries({
+                            queryKey: ['profiles', 'game-directories']
+                        })
+                        .then(() => {
+                            enqueueSnackbar('Profiles imported', {
+                                variant: 'success'
+                            })
+                        })
+                } else {
+                    res.text().then(err => {
+                        enqueueSnackbar(
+                            `An error occured while importing profiles : ${err} (${res.status})`,
+                            { variant: 'error' }
+                        )
+                    })
+                }
+            })
+        })
+        reader.readAsText(file)
+    }
+
     return (
         <Toolbar>
             <Typography fontWeight='medium' sx={{ flex: 1, mx: 0.5 }}>
                 Profiles
             </Typography>
             <Tooltip title='Add profile'>
-                <ToolbarButton onClick={handleClick}>
+                <ToolbarButton onClick={handleAddProfile}>
                     <Add fontSize='small' />
                 </ToolbarButton>
             </Tooltip>
+            <Tooltip title='Import profiles from file'>
+                <ToolbarButton onClick={handleImportProfiles}>
+                    <FileUpload fontSize='small' />
+                </ToolbarButton>
+            </Tooltip>
+            <input
+                type='file'
+                ref={fileInputRef}
+                accept='.json'
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+            />
         </Toolbar>
     )
 }
@@ -261,10 +331,8 @@ export default function ProfileTable() {
             {
                 field: 'gameDirectory',
                 headerName: 'Game Directory',
-                valueGetter: val => {
-                    return val
-                },
                 valueFormatter: val => {
+                    if (val === '') return 'None'
                     return val
                 },
                 getOptionLabel: (opt: { value: string; label: string }) => (
@@ -282,14 +350,16 @@ export default function ProfileTable() {
 
                 renderEditCell: params => <GameDirectoryEditCell {...params} />,
                 type: 'singleSelect',
-                valueOptions: [
-                    { value: '', label: 'None' },
-                    ...(gameDirectories ?? []).map(v => ({
-                        value: v.name,
-                        label: v.name
-                    })),
-                    { value: '__new__', label: 'Create New' }
-                ],
+                valueOptions: () => {
+                    return [
+                        { value: '', label: 'None' },
+                        ...(gameDirectories ?? []).map(v => ({
+                            value: v.name,
+                            label: v.name
+                        })),
+                        { value: '__new__', label: 'Create New' }
+                    ]
+                },
                 editable: true,
                 flex: 1
             },

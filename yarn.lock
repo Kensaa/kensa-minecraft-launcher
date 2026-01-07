@@ -5161,9 +5161,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-api-router@git@github.com:Kensaa/express-api-router.git#7fcfa5677616b06578c16cddc9d4ed7f22af38d5":
+"express-api-router@git@github.com:Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca":
   version: 1.0.12
-  resolution: "express-api-router@git@github.com:Kensaa/express-api-router.git#commit=7fcfa5677616b06578c16cddc9d4ed7f22af38d5"
+  resolution: "express-api-router@git@github.com:Kensaa/express-api-router.git#commit=eecf2bd40c7dde360aeb7391cee23e692eb571ca"
   dependencies:
     cookie-parser: "npm:^1.4.7"
     express: "npm:^5.1.0"
@@ -5177,7 +5177,7 @@ __metadata:
       optional: true
     multer:
       optional: true
-  checksum: 10c0/50347e87fecb26b3baa44d45567d110ffb210b58646ca5be1cbb5f356d86b7b471c73b6c65b11f716448bfd9aaf7173f903c3dbe95e59b52bebfd175b85d5a55
+  checksum: 10c0/fcdeb1fafab0a3a1971b44a3374dde7de31f55a80fa12d266b30db462120f87bf59126084f6f9e9ec53878084f33927449a1c544bc1e71638cc856f0d5186515
   languageName: node
   linkType: hard
 
@@ -8732,7 +8732,7 @@ __metadata:
     drizzle-kit: "npm:^0.31.5"
     drizzle-orm: "npm:^0.44.6"
     express: "npm:^5.1.0"
-    express-api-router: "git@github.com:Kensaa/express-api-router.git#7fcfa5677616b06578c16cddc9d4ed7f22af38d5"
+    express-api-router: "git@github.com:Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca"
     jsonwebtoken: "npm:^9.0.2"
     utils: "workspace:*"
     zod: "npm:^4.1.12"

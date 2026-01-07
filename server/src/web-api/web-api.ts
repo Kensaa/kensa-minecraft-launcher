@@ -22,6 +22,7 @@ import { refreshGameDirectoryHandler } from './routes/gameDirectory/refreshGameD
 import { updateProfileHandler } from './routes/profile/editProfile'
 import { moveGameDirectoryFileHandler } from './routes/gameDirectory/moveGameDirectoryFile'
 import { mkdirGameDirectoryFileHandler } from './routes/gameDirectory/mkdirGameDirectoryFile'
+import { importProfilesHandler } from './routes/profile/importProfiles'
 
 export interface APIInstances {
     database: Database
@@ -61,6 +62,11 @@ export function createRouter(instances: APIInstances) {
         'delete',
         '/profile/:profile_id',
         deleteProfileHandler(router)
+    )
+    router.registerRoute(
+        'post',
+        '/profile/import',
+        importProfilesHandler(router)
     )
     router.registerRoute('get', '/profiles', getProfilesHandler(router))
 
