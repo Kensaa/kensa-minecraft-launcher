@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
-import { filesTable } from '../../../db/schema'
+import { filesTable, gameDirectoriesTable } from '../../../db/schema'
 import { and, eq, like, or } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
@@ -138,6 +138,13 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                         )
                 }
             }
+
+            await instances.database
+                .update(gameDirectoriesTable)
+                .set({
+                    last_modified: new Date()
+                })
+                .where(eq(gameDirectoriesTable.name, req.params.game_directory))
         }
     })
 }

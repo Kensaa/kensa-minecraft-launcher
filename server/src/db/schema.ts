@@ -15,7 +15,9 @@ export const profilesTable = sqliteTable('profiles', {
 })
 
 export const gameDirectoriesTable = sqliteTable('gameDirectories', {
-    name: text().notNull().primaryKey()
+    name: text().notNull().primaryKey(),
+    last_modified: int({ mode: 'timestamp_ms' }).notNull().default(new Date(0)),
+    tarball_created_at: int({ mode: 'timestamp_ms' })
 })
 
 export const filesTable = sqliteTable(

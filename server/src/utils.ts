@@ -6,11 +6,12 @@ import fs from 'fs'
 import path from 'path'
 import { hashFile } from 'utils'
 import type { Tree } from 'utils'
+import archiver from 'archiver'
 
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
 type DatabaseProfile = typeof profilesTable.$inferSelect
-type DatabaseGameDirectory = typeof gameDirectoriesTable.$inferSelect
+export type DatabaseGameDirectory = typeof gameDirectoriesTable.$inferSelect
 
 export async function getProfile(
     db: Database,
@@ -198,4 +199,45 @@ export async function refreshGameDirectory(
                 inArray(filesTable.filepath, toDelete)
             )
         )
+
+    await database
+        .update(gameDirectoriesTable)
+        .set({
+            last_modified: new Date()
+        })
+        .where(eq(gameDirectoriesTable.name, gameDirectory.name))
+}
+
+/**
+ * Creates an archive from a directory
+ * @param format zip or tar
+ * @param directoryPath the path of the dir to add to the archive
+ * @param outputFile the path to the archive
+ * @param strip whether of not to strip the top layer of the input directory
+ * @returns a promise that resolves when the archive is created
+ */
+export async function createArchive(
+    format: 'zip' | 'tar',
+    directoryPath: string,
+    outputFile: string,
+    strip: boolean
+): Promise<void> {
+    // return new Promise((res, rej) => {
+    const writeStream = fs.createWriteStream(outputFile, { flags: 'w' })
+    const archive = archiver(format, {
+        zlib: {
+            level: 9
+        },
+        gzip: true,
+        gzipOptions: {
+            level: 9
+        }
+    })
+    archive.pipe(writeStream)
+
+    archive.directory(
+        directoryPath,
+        strip ? false : path.basename(directoryPath)
+    )
+    await archive.finalize()
 }

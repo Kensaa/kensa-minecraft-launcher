@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../web-api'
-import { filesTable } from '../../../db/schema'
+import { filesTable, gameDirectoriesTable } from '../../../db/schema'
 import { and, eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import path from 'path'
@@ -76,6 +76,12 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
                     'an error occured while inserting file into the database'
                 )
 
+            await instances.database
+                .update(gameDirectoriesTable)
+                .set({
+                    last_modified: new Date()
+                })
+                .where(eq(gameDirectoriesTable.name, gameDirectory.name))
             return insertedFile[0]
         }
     })

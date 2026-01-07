@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { APIRouter } from '../../web-api'
 import { HTTPError } from 'express-api-router'
 import { getGameDirectory, refreshGameDirectory } from '../../../utils'
+import { gameDirectoriesTable } from '../../../db/schema'
+import { eq } from 'drizzle-orm'
 
 export function refreshGameDirectoryHandler(router: APIRouter) {
     return router.createRouteHandler({

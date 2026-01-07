@@ -23,6 +23,7 @@ import { updateProfileHandler } from './routes/profile/editProfile'
 import { moveGameDirectoryFileHandler } from './routes/gameDirectory/moveGameDirectoryFile'
 import { mkdirGameDirectoryFileHandler } from './routes/gameDirectory/mkdirGameDirectoryFile'
 import { importProfilesHandler } from './routes/profile/importProfiles'
+import { getGameDirectoryTarballHandler } from './routes/gameDirectory/getGameDirectoryTarball'
 
 export interface APIInstances {
     database: Database
@@ -110,6 +111,11 @@ export function createRouter(instances: APIInstances) {
         'post',
         '/gameDirectory/:game_directory/refresh',
         refreshGameDirectoryHandler(router)
+    )
+    router.registerRoute(
+        'get',
+        '/gameDirectory/:game_directory/tarball',
+        getGameDirectoryTarballHandler(router)
     )
 
     router.registerRoute(

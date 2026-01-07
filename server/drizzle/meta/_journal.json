@@ -15,6 +15,13 @@
       "when": 1762039594615,
       "tag": "0001_eminent_malice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767823046347,
+      "tag": "0002_milky_sersi",
+      "breakpoints": true
     }
   ]
 }
