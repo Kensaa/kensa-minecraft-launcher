@@ -7,6 +7,7 @@ import path from 'path'
 import { hashFile } from 'utils'
 import type { Tree } from 'utils'
 import archiver from 'archiver'
+import { Response } from 'express-api-router'
 
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
@@ -240,4 +241,22 @@ export async function createArchive(
         strip ? false : path.basename(directoryPath)
     )
     await archive.finalize()
+}
+
+/**
+ * Sends a file as a response to a request
+ * @param res the response object
+ * @param filepath the file to send
+ * @returns a promise that resolve when the file is sent
+ */
+export async function sendFile(res: Response, filepath: string) {
+    return new Promise<void>((resolve, reject) => {
+        res.status(200).sendFile(filepath, err => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve()
+            }
+        })
+    })
 }

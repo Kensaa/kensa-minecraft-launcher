@@ -6,7 +6,8 @@ import {
     DatabaseGameDirectory,
     getGameDirectory,
     getGameDirectoryPath,
-    sanitizeFilePath
+    sanitizeFilePath,
+    sendFile
 } from '../../../utils'
 import path from 'path'
 import fs from 'fs'
@@ -53,7 +54,7 @@ export function getGameDirectoryTarballHandler(router: APIRouter) {
                 tarballDirectory
             )
 
-            res.sendFile(tarballPath)
+            await sendFile(res, tarballPath)
         }
     })
 }
