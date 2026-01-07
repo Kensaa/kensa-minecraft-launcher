@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SnackbarProvider } from 'notistack'
+import GameDirectoryPage from './pages/GameDirectoryPage'
 
 const queryClient = new QueryClient()
 
@@ -22,6 +23,11 @@ function App() {
                         <Route path='/'>
                             <LoginWall>
                                 <HomePage />
+                            </LoginWall>
+                        </Route>
+                        <Route path='/gameDirectory/:gameDirectoryName'>
+                            <LoginWall>
+                                <GameDirectoryPage />
                             </LoginWall>
                         </Route>
                         <Route path='/login'>

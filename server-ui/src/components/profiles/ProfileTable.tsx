@@ -30,12 +30,14 @@ import {
     Delete,
     Edit,
     FileUpload,
+    Folder,
     Save
 } from '@mui/icons-material'
 import type { MinecraftVersion } from 'utils'
 import CreateGameDirectoryModal from '../gameDirectories/CreateGameDirectoryModal'
 import { address } from '../../config'
 import { Toolbar } from '@mui/x-data-grid'
+import { useLocation } from 'wouter'
 // See https://mui.com/x/react-data-grid/editing/
 
 function GameDirectoryEditCell(props: GridRenderEditCellParams) {
@@ -194,6 +196,7 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
 }
 export default function ProfileTable() {
     const { enqueueSnackbar } = useSnackbar()
+    const [, setLocation] = useLocation()
 
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
 
@@ -287,6 +290,15 @@ export default function ProfileTable() {
                 }
             })
         }
+
+        const handleEditGameDirectory = (id: GridRowId) => () => {
+            const row = gridRows.find(row => row.id === id)
+            if (!row) return
+            if (row.gameDirectory === '') return
+
+            setLocation(`/gameDirectory/${row.gameDirectory}`)
+        }
+
         return [
             {
                 field: 'name',
@@ -414,13 +426,34 @@ export default function ProfileTable() {
                                     onClick={handleDeleteClick(id)}
                                     color='inherit'
                                 />
+                            </Tooltip>,
+
+                            <Tooltip title='Edit game directory'>
+                                <GridActionsCellItem
+                                    icon={<Folder />}
+                                    label='Edit game directory'
+                                    className='textPrimary'
+                                    onClick={handleEditGameDirectory(id)}
+                                    color='inherit'
+                                    disabled={
+                                        gridRows.find(grid => grid.id === id)!
+                                            .gameDirectory === ''
+                                    }
+                                />
                             </Tooltip>
                         ]
                     }
                 }
             }
         ]
-    }, [gridRows, mcversions, gameDirectories, rowModesModel, enqueueSnackbar])
+    }, [
+        gridRows,
+        mcversions,
+        gameDirectories,
+        rowModesModel,
+        enqueueSnackbar,
+        setLocation
+    ])
 
     const processRowUpdate = async (newRow: GridRowModel) => {
         const { name, mcVersion, forgeVersion, gameDirectory } = newRow
@@ -477,6 +510,11 @@ export default function ProfileTable() {
                         enqueueSnackbar('Profile updated', {
                             variant: 'success'
                         })
+                        setGridRows(
+                            gridRows.map(row =>
+                                row.id === newRow.id ? newRow : row
+                            )
+                        )
                         return newRow
                     } else {
                         throw `An error occured while updating profile : ${resText} (${res.status})`
