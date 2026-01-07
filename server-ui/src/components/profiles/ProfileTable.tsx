@@ -147,15 +147,18 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
                 body: result
             }).then(res => {
                 if (res.ok) {
-                    queryClient
-                        .refetchQueries({
-                            queryKey: ['profiles', 'game-directories']
+                    Promise.all([
+                        queryClient.refetchQueries({
+                            queryKey: ['profiles']
+                        }),
+                        queryClient.refetchQueries({
+                            queryKey: ['game-directories']
                         })
-                        .then(() => {
-                            enqueueSnackbar('Profiles imported', {
-                                variant: 'success'
-                            })
+                    ]).then(() => {
+                        enqueueSnackbar('Profiles imported', {
+                            variant: 'success'
                         })
+                    })
                 } else {
                     res.text().then(err => {
                         enqueueSnackbar(
