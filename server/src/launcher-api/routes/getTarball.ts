@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { APIRouter } from '../../web-api'
-import { HTTPError } from 'express-api-router'
+import { APIRouter } from '../launcher-api'
 import {
     APIInstances,
     createArchive,
@@ -9,25 +8,34 @@ import {
     getGameDirectoryPath,
     sanitizeFilePath,
     sendFile
-} from '../../../utils'
-import path from 'path'
-import fs from 'fs'
-import { gameDirectoriesTable } from '../../../db/schema'
+} from '../../utils'
 import { eq } from 'drizzle-orm'
+import { HTTPError } from 'express-api-router'
+import fs from 'fs'
+import path from 'path'
+import { gameDirectoriesTable } from '../../db/schema'
 
-export function getGameDirectoryTarballHandler(router: APIRouter) {
+export function getTarball(router: APIRouter) {
     return router.createRouteHandler({
-        authed: true,
+        authed: false,
         bodySchema: z.undefined(),
         paramsSchema: z.object({
             game_directory: z.string()
         }),
         querySchema: z.object(),
         responseSchema: z.void(),
-        async handler(req, res, instances, userTokenData) {
+        async handler(req, res, instances) {
+            // For legacy reasons, game_directory can sometimes be the entire name of the tarball (with its extension), in that case we remove it to get only the name of the game directory
+            let gameDirectoryName = req.params.game_directory.trim()
+            if (gameDirectoryName.endsWith('.tar.gz'))
+                gameDirectoryName = gameDirectoryName.substring(
+                    0,
+                    gameDirectoryName.length - '.tar.gz'.length
+                )
+
             const gameDirectory = await getGameDirectory(
                 instances.database,
-                req.params.game_directory
+                gameDirectoryName
             )
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')

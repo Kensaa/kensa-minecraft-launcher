@@ -4,6 +4,7 @@ import { getProfilesHandler } from './routes/getProfiles'
 import { getHashesLegacy } from './routes/getHashesLegacy'
 import { getHashes } from './routes/getHashes'
 import { getFileCount } from './routes/getFileCount'
+import { getTarball } from './routes/getTarball'
 
 export function createRouter(instances: APIInstances) {
     const router = new BaseApiRouter(instances)
@@ -15,6 +16,12 @@ export function createRouter(instances: APIInstances) {
         'get',
         '/fileCount/:game_directory',
         getFileCount(router)
+    )
+    router.registerRoute('get', '/tarball/:game_directory', getTarball(router))
+    router.registerRoute(
+        'get',
+        '/static/tarballs/:game_directory',
+        getTarball(router)
     )
 
     return router
