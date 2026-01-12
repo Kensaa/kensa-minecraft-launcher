@@ -8,6 +8,7 @@ import { hashFile } from 'utils'
 import type { Tree } from 'utils'
 import archiver from 'archiver'
 import { Response } from 'express-api-router'
+import { z } from 'zod'
 
 export interface APIInstances {
     database: Database
@@ -265,4 +266,18 @@ export async function sendFile(res: Response, filepath: string) {
             }
         })
     })
+}
+
+/**
+ * Returns a zod schema describing a tree
+ * @param treeLeafSchema the schema describing the leaf of the tree
+ * @returns the schema describing the tree
+ */
+export function getTreeSchema<Leaf>(
+    treeLeafSchema: z.ZodType<Leaf>
+): z.ZodType<Tree<Leaf>> {
+    const treeSchema: z.ZodType<Tree<Leaf>> = z.lazy(() =>
+        z.record(z.string(), z.union([treeSchema, treeLeafSchema]))
+    )
+    return treeSchema
 }

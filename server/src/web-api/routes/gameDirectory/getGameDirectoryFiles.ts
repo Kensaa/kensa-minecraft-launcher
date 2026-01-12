@@ -3,17 +3,13 @@ import { APIRouter } from '../../web-api'
 import { filesTable } from '../../../db/schema'
 import { HTTPError } from 'express-api-router'
 import { eq } from 'drizzle-orm'
-import { buildFileTree, getGameDirectory } from '../../../utils'
-import { Tree } from 'utils'
+import { buildFileTree, getGameDirectory, getTreeSchema } from '../../../utils'
 
 const treeLeafSchema = z.object({
     lastModified: z.date(),
     hash: z.string()
 })
-type Leaf = z.output<typeof treeLeafSchema>
-const treeSchema: z.ZodType<Tree<Leaf>> = z.lazy(() =>
-    z.record(z.string(), z.union([treeSchema, treeLeafSchema]))
-)
+
 export function getGameDirectoryFilesHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: true,
@@ -22,7 +18,7 @@ export function getGameDirectoryFilesHandler(router: APIRouter) {
             game_directory: z.string()
         }),
         querySchema: z.object(),
-        responseSchema: treeSchema,
+        responseSchema: getTreeSchema(treeLeafSchema),
         async handler(req, res, instances, userTokenData) {
             const gameDirectory = await getGameDirectory(
                 instances.database,
