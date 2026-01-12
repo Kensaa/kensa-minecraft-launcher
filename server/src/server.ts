@@ -7,8 +7,14 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { accountsTable, filesTable, profilesTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import { buildFileTree, getGameDirectory, hashPassword } from './utils'
+import {
+    APIInstances,
+    buildFileTree,
+    getGameDirectory,
+    hashPassword
+} from './utils'
 import * as webApi from './web-api/web-api'
+import * as launcherApi from './launcher-api/launcher-api'
 import { Tree } from 'utils'
 
 const PORT = parseInt(process.env.PORT || '40069')
@@ -106,31 +112,35 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     })
     app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
 
-    const webApiRouter = webApi.createRouter({
+    const apiInstances: APIInstances = {
         database: db,
         staticDirectory: STATIC_DIRECTORY,
         authSecret: randomBytes(64).toString('hex')
-    })
+    }
+    const webApiRouter = webApi.createRouter(apiInstances)
     app.use('/web-api', webApiRouter.getRouter())
+    const launcherApiRouter = launcherApi.createRouter(apiInstances)
+    app.use('/', launcherApiRouter.getRouter())
+
     app.get('/', (req, res) => res.sendStatus(200))
     app.get('/version', (req, res) => res.status(200).send(serverVersion))
     app.use('/static/', express.static(STATIC_DIRECTORY))
 
-    app.get('/profiles', async (req, res) => {
-        const profiles = await db.select().from(profilesTable)
-        const reformattedProfiles = profiles.map(profile => ({
-            id: profile.id,
-            name: profile.name,
-            version: {
-                mc: profile.mc_version,
-                forge: profile.forge_version ?? undefined
-            },
-            gameFolder: profile.game_directory ?? undefined, // for backward compat
-            gameDirectory: profile.game_directory ?? undefined
-        }))
+    // app.get('/profiles', async (req, res) => {
+    //     const profiles = await db.select().from(profilesTable)
+    //     const reformattedProfiles = profiles.map(profile => ({
+    //         id: profile.id,
+    //         name: profile.name,
+    //         version: {
+    //             mc: profile.mc_version,
+    //             forge: profile.forge_version ?? undefined
+    //         },
+    //         gameFolder: profile.game_directory ?? undefined, // for backward compat
+    //         gameDirectory: profile.game_directory ?? undefined
+    //     }))
 
-        res.status(200).json(reformattedProfiles)
-    })
+    //     res.status(200).json(reformattedProfiles)
+    // })
 
     // Returns the entire hash tree (for backward compat)
     app.get('/hashes', async (req, res) => {

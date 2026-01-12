@@ -2,7 +2,7 @@ import {
     APIRouter as BaseApiRouter,
     createJWTAuthHandler
 } from 'express-api-router'
-import { Database } from '../utils'
+import { APIInstances } from '../utils'
 import cookieParser from 'cookie-parser'
 import { loginHandler } from './routes/account/login'
 import { registerHandler } from './routes/account/register'
@@ -25,11 +25,6 @@ import { mkdirGameDirectoryFileHandler } from './routes/gameDirectory/mkdirGameD
 import { importProfilesHandler } from './routes/profile/importProfiles'
 import { getGameDirectoryTarballHandler } from './routes/gameDirectory/getGameDirectoryTarball'
 
-export interface APIInstances {
-    database: Database
-    staticDirectory: string
-    authSecret: string
-}
 export type AuthedUserData = {
     id: number
     username: string

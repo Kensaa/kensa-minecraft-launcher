@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import { APIInstances, APIRouter } from '../../web-api'
+import { APIRouter } from '../../web-api'
 import { HTTPError } from 'express-api-router'
 import {
+    APIInstances,
     createArchive,
     DatabaseGameDirectory,
     getGameDirectory,

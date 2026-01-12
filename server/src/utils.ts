@@ -9,6 +9,12 @@ import type { Tree } from 'utils'
 import archiver from 'archiver'
 import { Response } from 'express-api-router'
 
+export interface APIInstances {
+    database: Database
+    staticDirectory: string
+    authSecret: string
+}
+
 export type Database = BetterSQLite3Database<Record<string, never>>
 type DatabaseFile = typeof filesTable.$inferSelect
 type DatabaseProfile = typeof profilesTable.$inferSelect
