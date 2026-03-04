@@ -28,7 +28,9 @@ export function download(
                 if (res.ok) {
                     return res.body as Readable
                 } else {
-                    throw new Error('failed to download: status ' + res.status)
+                    throw new Error(
+                        `failed to download "${address}" (${res.status})`
+                    )
                 }
             })
             .then(data => {

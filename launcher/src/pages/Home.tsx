@@ -33,7 +33,6 @@ export default function Home({
         if (!(import.meta.env.MODE == 'production')) return
         ipcRenderer.invoke('get-update-status').then(res => {
             const { autoUpdate, manualUpdate } = res
-            console.log(res)
             if (autoUpdate) {
                 setInfo(
                     <>

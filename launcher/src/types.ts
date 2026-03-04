@@ -10,3 +10,11 @@ export type StartArgs = {
     server: string
     profile: Profile
 }
+
+export interface Config {
+    rootDir: string
+    ram: number
+    servers: string[]
+    closeLauncher: boolean
+    openLogs: boolean
+}

@@ -5,24 +5,16 @@ import express from 'express'
 import cors from 'cors'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { accountsTable, filesTable, profilesTable } from './db/schema'
+import { accountsTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import {
-    APIInstances,
-    buildFileTree,
-    downloadJavaRuntime,
-    getGameDirectory,
-    hashPassword
-} from './utils'
+import { APIInstances, downloadJavaRuntime, hashPassword } from './utils'
 import * as webApi from './web-api/web-api'
 import * as launcherApi from './launcher-api/launcher-api'
-import { Tree } from 'utils'
 
 const PORT = parseInt(process.env.PORT || '40069')
 const DATA_DIRECTORY = process.env.DATA_FOLDER || './data'
 const SERVER_NAME =
     process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
-const MASTER_SERVER = process.env.MASTER_SERVER // TODO: clone server at start
 const IS_DEV = process.env.NODE_ENV !== 'production'
 
 const expectedJavaRuntimesVersion = [8, 17, 22]
