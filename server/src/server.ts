@@ -10,6 +10,7 @@ import { count, eq } from 'drizzle-orm'
 import {
     APIInstances,
     buildFileTree,
+    downloadJavaRuntime,
     getGameDirectory,
     hashPassword
 } from './utils'
@@ -22,8 +23,10 @@ const DATA_DIRECTORY = process.env.DATA_FOLDER || './data'
 const SERVER_NAME =
     process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
 const MASTER_SERVER = process.env.MASTER_SERVER // TODO: clone server at start
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN // TODO: download java version at start
 const IS_DEV = process.env.NODE_ENV !== 'production'
+
+const expectedJavaRuntimesVersion = [8, 17, 22]
+const expectedJavaRuntimesPlatform = ['linux', 'win32']
 
 const serverVersion = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
@@ -91,6 +94,25 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
                 .where(eq(accountsTable.temp_account, true))
         }
     }
+
+    const runtimeFiles = fs.readdirSync(path.join(STATIC_DIRECTORY, 'java'))
+    for (const runtimeVersion of expectedJavaRuntimesVersion) {
+        for (const runtimePlatform of expectedJavaRuntimesPlatform) {
+            const runtimeFile = `${runtimePlatform}-${runtimeVersion}.tar.gz`
+            if (!runtimeFiles.includes(runtimeFile)) {
+                console.log(
+                    `missing runtime version ${runtimeVersion} for ${runtimePlatform}, downloading ...`
+                )
+                await downloadJavaRuntime(
+                    runtimeVersion,
+                    runtimePlatform,
+                    path.join(STATIC_DIRECTORY, 'java', runtimeFile)
+                )
+                console.log(`downloaded runtime`)
+            }
+        }
+    }
+
     const app = express()
     app.use(express.json())
     if (IS_DEV) {
