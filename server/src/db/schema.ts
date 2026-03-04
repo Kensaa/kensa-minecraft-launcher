@@ -11,7 +11,9 @@ export const profilesTable = sqliteTable('profiles', {
     name: text().notNull().unique(),
     mc_version: text().notNull(),
     forge_version: text(),
-    game_directory: text().references(() => gameDirectoriesTable.name)
+    game_directory: text().references(() => gameDirectoriesTable.name),
+    last_modified: int({ mode: 'timestamp_ms' }).notNull().default(new Date(0)),
+    curseforge_profile_created_at: int({ mode: 'timestamp_ms' })
 })
 
 export const gameDirectoriesTable = sqliteTable('gameDirectories', {

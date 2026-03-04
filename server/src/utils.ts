@@ -17,8 +17,8 @@ export interface APIInstances {
 }
 
 export type Database = BetterSQLite3Database<Record<string, never>>
-type DatabaseFile = typeof filesTable.$inferSelect
-type DatabaseProfile = typeof profilesTable.$inferSelect
+export type DatabaseFile = typeof filesTable.$inferSelect
+export type DatabaseProfile = typeof profilesTable.$inferSelect
 export type DatabaseGameDirectory = typeof gameDirectoriesTable.$inferSelect
 
 export async function getProfile(
@@ -280,4 +280,17 @@ export function getTreeSchema<Leaf>(
         z.record(z.string(), z.union([treeSchema, treeLeafSchema]))
     )
     return treeSchema
+}
+
+/**
+ * Tries to remove an extension from a filename, returning it unchanged if it is not present
+ * @param filename the Filename to remove the extension from
+ * @param ext The extension to remove
+ * @returns the filename without the extension
+ */
+export function removeExtension(filename: string, ext: string): string {
+    if (filename.endsWith(ext)) {
+        return filename.substring(0, filename.length - ext.length)
+    }
+    return filename
 }

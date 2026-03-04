@@ -6,6 +6,7 @@ import {
     DatabaseGameDirectory,
     getGameDirectory,
     getGameDirectoryPath,
+    removeExtension,
     sanitizeFilePath,
     sendFile
 } from '../../utils'
@@ -26,12 +27,10 @@ export function getTarball(router: APIRouter) {
         responseSchema: z.void(),
         async handler(req, res, instances) {
             // For legacy reasons, game_directory can sometimes be the entire name of the tarball (with its extension), in that case we remove it to get only the name of the game directory
-            let gameDirectoryName = req.params.game_directory.trim()
-            if (gameDirectoryName.endsWith('.tar.gz'))
-                gameDirectoryName = gameDirectoryName.substring(
-                    0,
-                    gameDirectoryName.length - '.tar.gz'.length
-                )
+            const gameDirectoryName = removeExtension(
+                req.params.game_directory.trim(),
+                '.tar.gz'
+            )
 
             const gameDirectory = await getGameDirectory(
                 instances.database,

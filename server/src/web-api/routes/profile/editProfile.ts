@@ -45,7 +45,8 @@ export function updateProfileHandler(router: APIRouter) {
                     name: req.body.name,
                     mc_version: req.body.mcVersion,
                     forge_version: req.body.forgeVersion ?? null,
-                    game_directory: req.body.gameDirectory ?? null
+                    game_directory: req.body.gameDirectory ?? null,
+                    last_modified: new Date()
                 })
                 .where(eq(profilesTable.id, profile.id))
 

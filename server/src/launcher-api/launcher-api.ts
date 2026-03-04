@@ -5,6 +5,7 @@ import { getHashesLegacy } from './routes/getHashesLegacy'
 import { getHashes } from './routes/getHashes'
 import { getFileCount } from './routes/getFileCount'
 import { getTarball } from './routes/getTarball'
+import { getCurseforgeProfile } from './routes/getCurseforgeProfile'
 
 export function createRouter(instances: APIInstances) {
     const router = new BaseApiRouter(instances)
@@ -22,7 +23,18 @@ export function createRouter(instances: APIInstances) {
         'get',
         '/static/tarballs/:game_directory',
         getTarball(router)
+    ) // Legacy route
+
+    router.registerRoute(
+        'get',
+        '/curseforge/:profile',
+        getCurseforgeProfile(router)
     )
+    router.registerRoute(
+        'get',
+        '/static/curseforgeProfiles/:profile',
+        getCurseforgeProfile(router)
+    ) // Legacy route
 
     return router
 }
