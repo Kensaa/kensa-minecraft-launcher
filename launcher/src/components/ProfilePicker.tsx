@@ -9,53 +9,22 @@ import {
     useSelectedProfile
 } from '../stores/profiles'
 import LoadingSpinner from './LoadingSpinner'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { ServerCrash } from 'lucide-react'
 
 export default function ProfilePicker() {
     const profiles = useProfiles()
     const fetching = useIsFetching()
-    const { selectedProfile, setSelectedProfile } = useSelectedProfile()
-    const [profile, setProfile] = useState<Profile | undefined>(undefined)
+    const { setSelectedProfile } = useSelectedProfile()
 
-    useEffect(() => {
-        if (fetching) return
-        if (Object.keys(profiles).length === 0) return setProfile(undefined)
-        //this means that there is no server available, so no profile
-        if (selectedProfile[0] === '') return setProfile(undefined)
-
-        const currentServer = profiles[selectedProfile[0]]
-        //this could happen, because due to the way that useProfile() is implemented, fetching is set to false before the profiles are set (because it is set in the useEffect of useProfiles(), so it takes one more render to set the profiles)
-        if (!currentServer) return setProfile(undefined)
-
-        const profile = currentServer.profiles[selectedProfile[1]]
-        // this should never happen (because useSelectedProfile checks for invalid selected profile), but just in case
-        if (!profile) return setProfile(undefined)
-
-        setProfile(profile)
-    }, [profiles, fetching, selectedProfile])
-    const selectProfile = (profile: [string, number]) => {
-        setSelectedProfile(profile)
-        ipcRenderer.send('set-selected-profile', profile)
-    }
-
+    console.log(profiles)
     return (
         <div
             style={{ maxWidth: '400px' }}
             className='d-flex flex-column align-items-center'
         >
             <Dropdown className='w-100 h-100'>
-                <Dropdown.Toggle
-                    disabled={fetching || !profile}
-                    style={{ width: '350px' }}
-                    className='d-flex flex-column align-items-center'
-                    variant={!fetching && !profile ? 'danger' : 'transparent'}
-                >
-                    {fetching ? (
-                        <LoadingSpinner />
-                    ) : (
-                        <ProfileElement profile={profile} />
-                    )}
-                </Dropdown.Toggle>
+                <DropdownToggle />
                 <Dropdown.Menu className='w-100'>
                     {Object.entries(profiles).map(
                         ([server, { profiles, address }], serverIndex) => {
@@ -68,13 +37,11 @@ export default function ProfilePicker() {
                                     />
                                     {profiles.map((profile, profileIndex) => (
                                         <Dropdown.Item
-                                            key={
-                                                serverIndex + ',' + profileIndex
-                                            }
+                                            key={`${serverIndex},${profile.id ?? profileIndex}`}
                                             onClick={() =>
-                                                selectProfile([
+                                                setSelectedProfile([
                                                     server,
-                                                    profileIndex
+                                                    profile.id
                                                 ])
                                             }
                                         >
@@ -88,6 +55,40 @@ export default function ProfilePicker() {
                 </Dropdown.Menu>
             </Dropdown>
         </div>
+    )
+}
+
+function DropdownToggle() {
+    const profiles = useProfiles()
+    const fetching = useIsFetching()
+    const { selectedProfile } = useSelectedProfile()
+
+    // There is at least one profile
+    const someProfilesExist = useMemo(
+        () =>
+            Object.values(profiles).some(
+                profile => profile.profiles.length > 0
+            ),
+        [profiles]
+    )
+
+    return (
+        <Dropdown.Toggle
+            disabled={fetching || !someProfilesExist}
+            style={{ width: '350px' }}
+            className='d-flex flex-column align-items-center'
+            variant={!fetching && !someProfilesExist ? 'danger' : 'transparent'}
+        >
+            {fetching ? (
+                <LoadingSpinner />
+            ) : !someProfilesExist ? (
+                <h2 className='mb-0'>No profile</h2>
+            ) : !selectedProfile ? (
+                <h2>Select a profile</h2>
+            ) : (
+                <ProfileElement profile={selectedProfile.profile} />
+            )}
+        </Dropdown.Toggle>
     )
 }
 

@@ -5,19 +5,10 @@ import craftingtable from '../img/craftingtable.png'
 import furnace from '../img/furnace.png'
 
 interface ProfileElementProps {
-    profile?: Profile
+    profile: Profile
 }
 
 export default function ProfileElement({ profile }: ProfileElementProps) {
-    if (!profile) {
-        return (
-            <div>
-                <ServerCrash size={16} className='me-2' />
-                Error
-            </div>
-        )
-    }
-
     return (
         <div className='d-flex flex-row align-items-center'>
             <img

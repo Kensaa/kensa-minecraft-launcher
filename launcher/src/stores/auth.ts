@@ -9,10 +9,8 @@ interface authStore {
 }
 
 const store = create<authStore>(set => {
-    // const profile = loginInfo ? loginInfo.profile : undefined
     const fetchAuthInfo = () => {
         ipcRenderer.invoke('auth-info').then(info => {
-            console.log(info)
             if (info) {
                 set({ connected: true, profile: info.profile })
             } else {

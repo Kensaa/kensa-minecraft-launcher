@@ -22,19 +22,15 @@ export default function ProfileManager() {
     const [createProfile, setCreateProfile] = useState<boolean>(false)
 
     const { localProfiles, setLocalProfiles } = useLocalProfiles()
-    const profiles = useProfiles()
+    // const profiles = useProfiles()
     const { selectedProfile } = useSelectedProfile()
     const fetching = useIsFetching()
 
     if (fetching) return <LoadingSpinner />
 
     const cloneProfile = () => {
-        if (!profiles) return
-        const currentServer = profiles[selectedProfile[0]]
-        if (!currentServer) return
-        const profile = currentServer.profiles[selectedProfile[1]]
-        if (!profile) return
-        setEditProfile(profile)
+        if (!selectedProfile) return
+        setEditProfile(selectedProfile.profile)
     }
 
     return (
@@ -112,8 +108,8 @@ export default function ProfileManager() {
                         className='mx-1'
                         onClick={cloneProfile}
                         disabled={
-                            selectedProfile[0] == '' ||
-                            selectedProfile[0] == 'local'
+                            selectedProfile === undefined ||
+                            selectedProfile.serverName == 'local'
                         }
                     >
                         Convert remote profile to local
@@ -169,8 +165,8 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
     const [name, setName] = useState<string>(profile?.name ?? '')
     const [version, setVersion] = useState<string>(profile?.version.mc ?? '')
     const [forge, setForge] = useState<string>(profile?.version.forge ?? '')
-    const [gameFolder, setGameFolder] = useState<string>(
-        profile?.gameFolder ?? ''
+    const [gameDirectory, setGameDirectory] = useState<string>(
+        profile?.gameDirectory ?? profile?.gameFolder ?? ''
     )
 
     const forgeVersions = useMemo(() => {
@@ -184,13 +180,24 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
     const save = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
+        const effectiveGameDirectory =
+            gameDirectory && gameDirectory !== '' ? gameDirectory : undefined
+        const currentMaxId =
+            localProfiles.length > 0
+                ? localProfiles.reduce(
+                      (max, curr) => Math.max(max, curr.id),
+                      localProfiles[0].id
+                  )
+                : 0
         const newProfile: Profile = {
+            id: profile ? profile.id : currentMaxId + 1,
             name,
             version: {
                 mc: version,
                 forge: forge && forge !== '' ? forge : undefined
             },
-            gameFolder: gameFolder && gameFolder !== '' ? gameFolder : undefined
+            gameFolder: effectiveGameDirectory,
+            gameDirectory: effectiveGameDirectory
         }
 
         const newProfiles = localProfiles.filter(p => p !== profile)
@@ -241,11 +248,11 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
                 </Form.Select>
             </Form.Group>
             <Form.Group>
-                <Form.Label>Game Folder</Form.Label>
+                <Form.Label>Game Directory</Form.Label>
                 <Form.Control
-                    value={gameFolder}
-                    onChange={({ target }) => setGameFolder(target.value)}
-                    placeholder='game folder of the profile (optional)'
+                    value={gameDirectory}
+                    onChange={({ target }) => setGameDirectory(target.value)}
+                    placeholder='game diectory of the profile (optional)'
                 />
             </Form.Group>
             <Form.Group className='d-flex justify-content-center mt-2'>

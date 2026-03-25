@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as fs from 'fs'
 import { Auth, Xbox } from 'msmc'
 import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
-import type { Config, StartArgs } from '../src/types'
+import type { Config, Profile, StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
 
 import decompress from 'decompress'
@@ -303,7 +303,7 @@ ipcMain.on('prompt-file', (event, args) => {
 ipcMain.on('get-selected-profile', (event, args) => {
     logger.debug('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
-        event.returnValue = ['', 0]
+        event.returnValue = undefined
     } else {
         event.returnValue = JSON.parse(
             fs.readFileSync(
@@ -316,10 +316,14 @@ ipcMain.on('get-selected-profile', (event, args) => {
 
 ipcMain.on('set-selected-profile', (event, args) => {
     logger.debug('set-selected-profile')
-    fs.writeFileSync(
-        path.join(configFolder, 'selectedProfile.json'),
-        JSON.stringify({ profile: args }, null, 4)
-    )
+    const filepath = path.join(configFolder, 'selectedProfile.json')
+    if (args == undefined) {
+        if (fs.existsSync(filepath)) {
+            fs.rmSync(filepath)
+        }
+    } else {
+        fs.writeFileSync(filepath, JSON.stringify({ profile: args }, null, 4))
+    }
 })
 
 ipcMain.on('get-local-profiles', (event, args) => {
@@ -332,7 +336,7 @@ ipcMain.on('get-local-profiles', (event, args) => {
                 path.join(configFolder, 'localProfiles.json'),
                 'utf-8'
             )
-        )
+        ) as Profile[]
 
         // Migration from forge installer to forge version
         for (const profile of localProfiles) {
@@ -352,6 +356,18 @@ ipcMain.on('get-local-profiles', (event, args) => {
                 }
             }
         }
+        // Migration to new profile Object
+        localProfiles = localProfiles.map((profile, idx) => {
+            if (profile.id === undefined) {
+                profile.id = idx
+            }
+            if (profile.gameDirectory === undefined) {
+                if (profile.gameFolder !== undefined) {
+                    profile.gameDirectory = profile.gameFolder
+                }
+            }
+            return profile
+        })
 
         event.returnValue = localProfiles
     }
