@@ -325,11 +325,16 @@ const FileExplorerItem = React.forwardRef(function (
                 'application/x-local-file-move'
             )
             if (!data) return
+            console.log(item)
             // local file => file move
             const localMoveData = JSON.parse(data) as LocalMoveData
             const oldFilepath = localMoveData.path.join('/')
             const filename = localMoveData.path[localMoveData.path.length - 1]
-            const newFilepath = [...item.path, filename].join('/')
+
+            const newFilepathPart = [...item.path]
+            // if the target on which the file is dropped is another file (ie not a directory), the move destination should be the containing directory
+            if (item.type !== 'Dir') newFilepathPart.pop()
+            const newFilepath = [...newFilepathPart, filename].join('/')
 
             if (oldFilepath === newFilepath) return
 
