@@ -333,7 +333,7 @@ export async function downloadJavaRuntime(
     const urlPlatform = platform === 'win32' ? 'windows' : platform
     const expectedExt = platform === 'win32' ? '.zip' : '.tar.gz'
 
-    const apiURL = `https://api.github.com/repos/adoptium/temurin${version}-binaries/releases/latest`
+    const apiURL = `https://api.github.com/repos/adoptium/temurin${version}-binaries/releases?per_page=10`
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN
     const headers = GITHUB_TOKEN
         ? {
@@ -341,30 +341,35 @@ export async function downloadJavaRuntime(
           }
         : undefined
 
-    const repoData = await fetch(apiURL, { headers }).then(res => res.json())
-    const assets = repoData.assets as any[]
-    if (!assets) {
-        console.error(
-            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
-        )
-        process.exit(1)
-    }
+    const releases = await fetch(apiURL, { headers }).then(res => res.json())
+    for (const release of releases) {
+        const assets = release.assets as any[]
+        if (!assets) {
+            continue
+        }
 
-    const matchingAssets = assets.filter(
-        asset =>
-            asset.name.includes(`jre_x64_${urlPlatform}`) &&
-            asset.name.endsWith(expectedExt)
+        const matchingAssets = assets.filter(
+            asset =>
+                asset.name.includes(`jre_x64_${urlPlatform}`) &&
+                asset.name.endsWith(expectedExt)
+        )
+        if (matchingAssets.length !== 1) {
+            continue
+        }
+        const asset = matchingAssets[0]
+
+        try {
+            await download(asset.url, destination, {
+                Accept: 'application/octet-stream',
+                ...headers
+            })
+        } catch {
+            continue
+        }
+        return
+    }
+    console.error(
+        `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination} (failed to find a matching asset)`
     )
-    if (matchingAssets.length !== 1) {
-        console.error(
-            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
-        )
-        process.exit(1)
-    }
-    const asset = matchingAssets[0]
-
-    await download(asset.url, destination, {
-        Accept: 'application/octet-stream',
-        ...headers
-    })
+    process.exit(1)
 }
