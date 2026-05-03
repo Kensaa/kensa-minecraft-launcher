@@ -8,6 +8,8 @@ import fs from 'fs'
 import {
     getGameDirectory,
     getGameDirectoryPath,
+    localizePath,
+    normalizePath,
     sanitizeFilePath
 } from '../../../utils'
 import { hashFile } from 'utils'
@@ -42,7 +44,7 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectory
             )
 
-            const filepath = req.body.filepath.trim()
+            const filepath = localizePath(req.body.filepath)
             const diskFilepath = sanitizeFilePath(filepath, gameDirectoryPath)
 
             // Delete file from the database if it already exists
@@ -82,7 +84,7 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
                     last_modified: new Date()
                 })
                 .where(eq(gameDirectoriesTable.name, gameDirectory.name))
-            return insertedFile[0]
+            return { filepath: normalizePath(insertedFile[0].filepath) }
         }
     })
 }

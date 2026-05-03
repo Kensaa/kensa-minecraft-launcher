@@ -58,7 +58,7 @@ export function buildFileTree<D>(
     const tree: Tree<D> = {}
 
     for (const file of files) {
-        const parts = file.filepath.split('/')
+        const parts = file.filepath.split(path.sep)
         let curr = tree
         const filename = parts.pop()!
         for (const part of parts) {
@@ -372,4 +372,20 @@ export async function downloadJavaRuntime(
         `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination} (failed to find a matching asset)`
     )
     process.exit(1)
+}
+
+/**
+ * Replace the '/' separator with the system file separator
+ * @param path the input path (with / separator)
+ */
+export function localizePath(s: string): string {
+    return s.split('/').join(path.sep).trim()
+}
+
+/**
+ * Replace the system separator with '/' (inverse of localizePath)
+ * @param s the input path (with a system specific path)
+ */
+export function normalizePath(s: string): string {
+    return s.split(path.sep).join('/').trim()
 }

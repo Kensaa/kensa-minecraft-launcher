@@ -23,6 +23,7 @@ import { updateProfileHandler } from './routes/profile/editProfile'
 import { moveGameDirectoryFileHandler } from './routes/gameDirectory/moveGameDirectoryFile'
 import { mkdirGameDirectoryFileHandler } from './routes/gameDirectory/mkdirGameDirectoryFile'
 import { importProfilesHandler } from './routes/profile/importProfiles'
+import { uncompressGameDirectoryFileHandler } from './routes/gameDirectory/uncompressGameDirectoryFile'
 
 export type AuthedUserData = {
     id: number
@@ -105,6 +106,11 @@ export function createRouter(instances: APIInstances) {
         'post',
         '/gameDirectory/:game_directory/refresh',
         refreshGameDirectoryHandler(router)
+    )
+    router.registerRoute(
+        'post',
+        '/gameDirectory/:game_directory/uncompress',
+        uncompressGameDirectoryFileHandler(router)
     )
 
     router.registerRoute(

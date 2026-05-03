@@ -4,9 +4,11 @@ import { filesTable, gameDirectoriesTable } from '../../../db/schema'
 import { and, eq, like } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
+import path from 'path'
 import {
     getGameDirectory,
     getGameDirectoryPath,
+    localizePath,
     sanitizeFilePath
 } from '../../../utils'
 
@@ -29,7 +31,7 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
-            const filepath = req.body.filepath.trim()
+            const filepath = localizePath(req.body.filepath)
             const files = await instances.database
                 .select()
                 .from(filesTable)
@@ -78,7 +80,10 @@ export function deleteGameDirectoryFileHandler(router: APIRouter) {
                     .where(
                         and(
                             eq(filesTable.game_directory, file.game_directory),
-                            like(filesTable.filepath, file.filepath + '/%')
+                            like(
+                                filesTable.filepath,
+                                file.filepath + path.sep + '%'
+                            )
                         )
                     )
             }

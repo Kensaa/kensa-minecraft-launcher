@@ -7,8 +7,10 @@ import fs from 'fs'
 import {
     getGameDirectory,
     getGameDirectoryPath,
+    localizePath,
     sanitizeFilePath
 } from '../../../utils'
+import path from 'path'
 
 export function moveGameDirectoryFileHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -30,8 +32,12 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
             if (!gameDirectory)
                 throw new HTTPError(404, 'game directory not found')
 
-            const oldFilepath = normalizePath(req.body.old_filepath.trim())
-            const newFilepath = normalizePath(req.body.new_filepath.trim())
+            const oldFilepath = normalizePath(
+                localizePath(req.body.old_filepath)
+            )
+            const newFilepath = normalizePath(
+                localizePath(req.body.new_filepath)
+            )
 
             const oldFiles = await instances.database
                 .select()
@@ -61,7 +67,7 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                     'there is already a file with that path'
                 )
 
-            if ((newFilepath + '/').startsWith(oldFilepath + '/'))
+            if ((newFilepath + path.sep).startsWith(oldFilepath + path.sep))
                 throw new HTTPError(
                     400,
                     'Impossible to move a file within itself'
@@ -112,7 +118,7 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
                                 eq(filesTable.filepath, oldFile.filepath), // Is the file (the directory itself)
                                 like(
                                     filesTable.filepath,
-                                    oldFile.filepath + '/%'
+                                    oldFile.filepath + path.sep + '%'
                                 ) // is a file contained inside the directory
                             )
                         )
@@ -154,8 +160,8 @@ export function moveGameDirectoryFileHandler(router: APIRouter) {
  * @param filepath the path
  */
 function normalizePath(filepath: string): string {
-    if (filepath.endsWith('/')) {
-        return filepath.substring(0, filepath.indexOf('/'))
+    if (filepath.endsWith(path.sep)) {
+        return filepath.substring(0, filepath.indexOf(path.sep))
     }
     return filepath
 }

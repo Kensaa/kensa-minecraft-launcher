@@ -4,9 +4,12 @@ import { filesTable, gameDirectoriesTable } from '../../../db/schema'
 import { and, count, eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
+import path from 'path'
 import {
     getGameDirectory,
     getGameDirectoryPath,
+    localizePath,
+    normalizePath,
     sanitizeFilePath
 } from '../../../utils'
 
@@ -36,7 +39,7 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectory
             )
 
-            const dirpath = req.body.dirpath.trim()
+            const dirpath = localizePath(req.body.dirpath)
             const diskFilepath = sanitizeFilePath(dirpath, gameDirectoryPath)
 
             const existingDir = await instances.database
@@ -81,7 +84,7 @@ export function mkdirGameDirectoryFileHandler(router: APIRouter) {
                 })
                 .where(eq(gameDirectoriesTable.name, req.params.game_directory))
 
-            return insertedDir[0]
+            return { filepath: normalizePath(insertedDir[0].filepath) }
         }
     })
 }

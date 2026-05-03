@@ -27,12 +27,14 @@ import {
     ArticleRounded,
     CheckCircleOutline,
     CloseRounded,
-    FolderRounded
+    FolderRounded,
+    FolderZipRounded
 } from '@mui/icons-material'
 import { address } from '../../config'
 // See https://mui.com/x/react-tree-view/rich-tree-view/customization/
 
-type FileType = 'File' | 'Dir'
+const archiveExt = ['.zip', '.tgz', '.tar.gz']
+type FileType = 'File' | 'Dir' | 'Archive'
 interface ExtendedFileExplorerItemProps {
     id: string // unique id of the file explorer item
     type: FileType
@@ -78,11 +80,17 @@ export default function GameDirectoryViewer({
                         value.lastModified !== undefined
                     ) {
                         // is file
+                        const fileType = archiveExt.some(ext =>
+                            key.endsWith(ext)
+                        )
+                            ? 'Archive'
+                            : 'File'
+
                         curr.push({
                             id: nextPath.join('-'),
                             path: nextPath,
                             label: key,
-                            type: 'File',
+                            type: fileType,
                             gameDirectoryName
                         })
                     } else {
@@ -241,7 +249,8 @@ function CustomLabelInput(props: Omit<CustomLabelInputProps, 'ref'>) {
 }
 
 interface FileExplorerItemProps
-    extends Omit<UseTreeItemParameters, 'rootRef'>,
+    extends
+        Omit<UseTreeItemParameters, 'rootRef'>,
         Omit<React.HTMLAttributes<HTMLLIElement>, 'onFocus'> {}
 
 const FileExplorerItem = React.forwardRef(function (
@@ -259,7 +268,12 @@ const FileExplorerItem = React.forwardRef(function (
 
     const item = useTreeItemModel<ExtendedFileExplorerItemProps>(itemId)!
 
-    const icon = item.type === 'Dir' ? FolderRounded : ArticleRounded
+    const icon =
+        item.type === 'Dir'
+            ? FolderRounded
+            : item.type === 'Archive'
+              ? FolderZipRounded
+              : ArticleRounded
 
     const [isDragOver, setIsDragOver] = useState(false)
     const dragDepth = useRef(0)
@@ -444,6 +458,37 @@ const FileExplorerItem = React.forwardRef(function (
         })
     }
 
+    const handleUncompress = () => {
+        if (item.id === '') return
+        fetch(
+            `${address}/web-api/gameDirectory/${item.gameDirectoryName}/uncompress`,
+            {
+                method: 'POST',
+                credentials: 'include',
+                ...jsonHeaders,
+                body: JSON.stringify({
+                    filepath: item.path.join('/')
+                })
+            }
+        ).then(res => {
+            if (res.ok) {
+                enqueueSnackbar(`"${item.label}" uncompressed`, {
+                    variant: 'success'
+                })
+                queryClient.invalidateQueries({
+                    queryKey: ['game-directory-files', item.gameDirectoryName]
+                })
+            } else {
+                res.text().then(err => {
+                    enqueueSnackbar(
+                        `Failed to uncompress "${item.label}" : ${err} (${res.status})`,
+                        { variant: 'error' }
+                    )
+                })
+            }
+        })
+    }
+
     const handleInputBlur: UseTreeItemLabelInputSlotOwnProps['onBlur'] =
         event => {
             setTimeout(() => {
@@ -571,9 +616,19 @@ const FileExplorerItem = React.forwardRef(function (
                     >
                         New Directory
                     </MenuItem>
-                ) : (
-                    ''
-                )}
+                ) : undefined}
+                {item.type === 'Archive' ? (
+                    <MenuItem
+                        onClick={e => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setMenuPos(null)
+                            handleUncompress()
+                        }}
+                    >
+                        Uncompress
+                    </MenuItem>
+                ) : undefined}
                 <MenuItem
                     onClick={e => {
                         e.preventDefault()
