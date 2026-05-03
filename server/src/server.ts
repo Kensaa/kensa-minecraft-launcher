@@ -87,7 +87,9 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
         }
     }
 
-    const runtimeFiles = fs.readdirSync(path.join(STATIC_DIRECTORY, 'java'))
+    const runtimeDirectory = path.join(STATIC_DIRECTORY, 'java')
+    if (!fs.existsSync(runtimeDirectory)) fs.mkdirSync(runtimeDirectory)
+    const runtimeFiles = fs.readdirSync(runtimeDirectory)
     for (const runtimeVersion of expectedJavaRuntimesVersion) {
         for (const runtimePlatform of expectedJavaRuntimesPlatform) {
             const runtimeFile = `${runtimePlatform}-${runtimeVersion}.tar.gz`
