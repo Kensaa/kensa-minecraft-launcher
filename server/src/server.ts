@@ -223,7 +223,6 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     const launcherApiRouter = launcherApi.createRouter(apiInstances)
     app.use('/', launcherApiRouter.getRouter())
 
-    app.get('/', (req, res) => res.sendStatus(200))
     app.get('/version', (req, res) => res.status(200).send(serverVersion))
     app.use('/static/', express.static(STATIC_DIRECTORY))
     // for legacy file download
@@ -231,4 +230,17 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
         '/static/gameFolders',
         express.static(path.join(STATIC_DIRECTORY, 'gameDirectories'))
     )
+
+    const PUBLIC_PATH = path.resolve(
+        process.env.NODE_ENV === 'production'
+            ? './public/'
+            : path.join(__dirname, '..', 'public/')
+    )
+
+    if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
+    console.log('public folder :', PUBLIC_PATH)
+    app.use('/', express.static(PUBLIC_PATH))
+    app.use((req, res) => {
+        res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
+    })
 })()
