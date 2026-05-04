@@ -5,9 +5,15 @@ import express from 'express'
 import cors from 'cors'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { accountsTable } from './db/schema'
+import { accountsTable, gameDirectoriesTable, profilesTable } from './db/schema'
 import { count, eq } from 'drizzle-orm'
-import { APIInstances, downloadJavaRuntime, hashPassword } from './utils'
+import {
+    APIInstances,
+    downloadJavaRuntime,
+    getGameDirectory,
+    hashPassword,
+    refreshGameDirectory
+} from './utils'
 import * as webApi from './web-api/web-api'
 import * as launcherApi from './launcher-api/launcher-api'
 
@@ -105,6 +111,84 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
                 )
                 console.log(`downloaded runtime`)
             }
+        }
+    }
+
+    // old profiles file migration
+    const oldProfileFilePath = path.join(DATA_DIRECTORY, 'profiles.json')
+    if (fs.existsSync(oldProfileFilePath)) {
+        console.log('migrating old profile file to the database')
+        try {
+            fs.renameSync(
+                path.join(STATIC_DIRECTORY, 'gameFolders'),
+                path.join(STATIC_DIRECTORY, 'gameDirectories')
+            )
+        } catch (err) {
+            console.warn(
+                'failed to rename "gameFolders" to "gameDirectories"',
+                err
+            )
+        }
+        try {
+            const oldProfiles = JSON.parse(
+                fs.readFileSync(oldProfileFilePath, 'utf-8')
+            ) as {
+                name: string
+                version: {
+                    mc: string
+                    forge?: string
+                }
+                gameFolder?: string
+            }[]
+
+            for (const oldProfile of oldProfiles) {
+                const existingProfile = await db
+                    .select()
+                    .from(profilesTable)
+                    .where(eq(profilesTable.name, oldProfile.name))
+                if (existingProfile.length > 0) {
+                    console.warn(
+                        `skipping ${oldProfile.name} because there is already a profile with the same name in the database`
+                    )
+                    continue
+                }
+
+                if (oldProfile.gameFolder !== undefined) {
+                    const existingGameDirectory = await db
+                        .select()
+                        .from(gameDirectoriesTable)
+                        .where(
+                            eq(gameDirectoriesTable.name, oldProfile.gameFolder)
+                        )
+                    if (existingGameDirectory.length > 0) {
+                        console.warn(
+                            `skipping ${oldProfile.name} because there is already a game directory with the same name (${oldProfile.gameFolder}) in the database`
+                        )
+                        continue
+                    }
+                    const newGameDirectory = await db
+                        .insert(gameDirectoriesTable)
+                        .values({
+                            name: oldProfile.gameFolder
+                        })
+                        .returning()
+
+                    await refreshGameDirectory(
+                        STATIC_DIRECTORY,
+                        db,
+                        newGameDirectory[0]
+                    )
+                }
+                await db.insert(profilesTable).values({
+                    name: oldProfile.name,
+                    mc_version: oldProfile.version.mc,
+                    forge_version: oldProfile.version.forge ?? undefined,
+                    game_directory: oldProfile.gameFolder ?? undefined
+                })
+            }
+            fs.renameSync(oldProfileFilePath, oldProfileFilePath + '.migrated')
+        } catch (err) {
+            console.warn('failed to mirgrate old profiles', err)
         }
     }
 
