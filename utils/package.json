@@ -6,5 +6,12 @@
     "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsc"
+    },
+    "dependencies": {
+        "semver": "^7.7.4"
+    },
+    "devDependencies": {
+        "@types/semver": "^7",
+        "electron-fetch": "^1.9.1"
     }
 }
