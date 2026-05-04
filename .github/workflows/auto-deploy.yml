@@ -93,7 +93,9 @@ jobs:
 
             - name: install dependencies
               working-directory: out
-              run: yarn install --immutable=false
+              run: yarn install
+              env:
+                  YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
             - name: build
               working-directory: out
