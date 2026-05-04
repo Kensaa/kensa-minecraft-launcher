@@ -87,13 +87,17 @@ jobs:
               # working-directory: launcher
               run: corepack enable
 
+            - name: prune monorepo
+              run: |
+                  yarn dlx turbo prune launcher
+
             - name: install dependencies
-              # working-directory: launcher
+              working-directory: out
               run: yarn
 
             - name: build
-              # working-directory: launcher
-              run: yarn launcher release
+              working-directory: out
+              run: yarn release
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
