@@ -634,6 +634,15 @@ const FileExplorerItem = React.forwardRef(function (
                         Uncompress
                     </MenuItem>
                 ) : undefined}
+                {item.type === 'Archive' || item.type === 'File' ? (
+                    <MenuItem
+                        component={'a'}
+                        href={`${address}/static/gameDirectories/${item.gameDirectoryName}/${item.path.join('/')}`}
+                        download={item.path[item.path.length - 1]}
+                    >
+                        Download
+                    </MenuItem>
+                ) : undefined}
                 <MenuItem
                     onClick={e => {
                         e.preventDefault()

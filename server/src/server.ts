@@ -230,7 +230,18 @@ process.on('SIGINT', () => {
     app.use('/', launcherApiRouter.getRouter())
 
     app.get('/version', (req, res) => res.status(200).send(serverVersion))
-    app.use('/static/', express.static(STATIC_DIRECTORY))
+    app.use(
+        '/static/',
+        express.static(STATIC_DIRECTORY, {
+            setHeaders: (res, filePath) => {
+                const filename = path.basename(filePath)
+                res.setHeader(
+                    'Content-Disposition',
+                    `attachment; filename="${filename}"`
+                )
+            }
+        })
+    )
     // for legacy file download
     app.use(
         '/static/gameFolders',
