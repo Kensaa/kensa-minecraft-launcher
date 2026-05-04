@@ -33,7 +33,6 @@ export default function Home({
         if (!(import.meta.env.MODE == 'production')) return
         ipcRenderer.invoke('get-update-status').then(res => {
             const { autoUpdate, manualUpdate } = res
-            console.log(res)
             if (autoUpdate) {
                 setInfo(
                     <>
@@ -76,12 +75,10 @@ export default function Home({
     }, [])
 
     const startGame = () => {
-        const profile =
-            profiles[selectedProfile[0]].profiles[selectedProfile[1]]
-        const address = profiles[selectedProfile[0]].address
+        if (!selectedProfile) return
         const args: StartArgs = {
-            profile,
-            server: address
+            profile: selectedProfile.profile,
+            server: selectedProfile.address
         }
 
         ipcRenderer.invoke('start-game', args).catch(error => {

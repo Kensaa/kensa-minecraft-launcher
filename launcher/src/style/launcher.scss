@@ -29,8 +29,11 @@
 }
 
 .btn {
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-        border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out,
+    transition:
+        color 0.15s ease-in-out,
+        background-color 0.15s ease-in-out,
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out,
         backdrop-filter 0.15s ease-in-out;
 }
 
@@ -62,6 +65,8 @@
         z-index: 99999;
         overflow-y: auto;
         max-height: 50vh;
+
+        // scrollbar-color: transparent;
     }
 }
 
@@ -89,7 +94,6 @@ h6 {
 }
 
 *::-webkit-scrollbar {
-    background-color: transparent;
     width: 15px;
 }
 *::-webkit-scrollbar-track {

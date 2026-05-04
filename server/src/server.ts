@@ -1,28 +1,42 @@
+import crypto, { randomBytes } from 'crypto'
+import fs from 'fs'
+import path from 'path'
 import express from 'express'
 import cors from 'cors'
-import path from 'path'
-import fs from 'fs'
-import crypto from 'crypto'
-import 'source-map-support/register'
-import { checkExist, countFile, download } from './utils'
-import type { ServerState, ServerSyncFunction, Tree } from './types'
-import * as cloneServer from './servers/clone'
-import * as masterServer from './servers/master'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { accountsTable, gameDirectoriesTable, profilesTable } from './db/schema'
+import { count, eq } from 'drizzle-orm'
+import {
+    APIInstances,
+    downloadJavaRuntime,
+    hashPassword,
+    refreshGameDirectory
+} from './utils'
+import * as webApi from './web-api/web-api'
+import * as launcherApi from './launcher-api/launcher-api'
 
 const PORT = parseInt(process.env.PORT || '40069')
-const STATIC_FOLDER = process.env.STATIC_FOLDER || './static'
-const PROFILES_FILE = process.env.PROFILES_FILE || './profiles.json'
+const DATA_DIRECTORY = process.env.DATA_DIRECTORY || './data'
+const IS_DEV = process.env.NODE_ENV !== 'production'
 const SERVER_NAME =
-    process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
-const MASTER_SERVER = process.env.MASTER_SERVER
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN
-
-const version = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
-).version
+    process.env.SERVER_NAME ||
+    (IS_DEV ? 'dev' : crypto.randomBytes(4).toString('hex'))
 
 const expectedJavaRuntimesVersion = [8, 17, 22]
 const expectedJavaRuntimesPlatform = ['linux', 'win32']
+
+const serverVersion = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
+).version
+
+console.log('IS DEV : ', IS_DEV)
+
+if (!fs.existsSync(DATA_DIRECTORY)) {
+    console.log(`data directory ${DATA_DIRECTORY} does not exist, creating it`)
+    fs.mkdirSync(DATA_DIRECTORY)
+}
+console.log('data directory : ', DATA_DIRECTORY)
 
 if (process.env.SERVER_NAME === undefined) {
     console.log(
@@ -30,168 +44,216 @@ if (process.env.SERVER_NAME === undefined) {
     )
 }
 
-if (!fs.existsSync(STATIC_FOLDER)) {
-    console.log(`static folder ${STATIC_FOLDER} does not exist, creating it`)
-    fs.mkdirSync(STATIC_FOLDER)
+const STATIC_DIRECTORY = path.join(DATA_DIRECTORY, 'static')
+if (!fs.existsSync(STATIC_DIRECTORY)) {
+    fs.mkdirSync(STATIC_DIRECTORY)
 }
 
-checkExist(path.join(STATIC_FOLDER, 'forges'))
-checkExist(path.join(STATIC_FOLDER, 'gameFolders'))
-checkExist(path.join(STATIC_FOLDER, 'java'))
-checkExist(path.join(STATIC_FOLDER, 'tarballs'))
-checkExist(path.join(STATIC_FOLDER, 'curseforgeProfiles'))
-
-const app = express()
-
-const serverState: ServerState = {
-    app,
-    hashes: {},
-    profiles: [],
-    env: {
-        port: PORT,
-        staticFolder: STATIC_FOLDER,
-        profilesFile: PROFILES_FILE,
-        serverName: SERVER_NAME,
-        masterServer: MASTER_SERVER
-    }
-}
-app.use(
-    cors({
-        exposedHeaders: '*'
-    })
-)
-app.use(express.json())
-
-app.use((req, res, next) => {
-    res.setHeader('X-Server-Name', serverState.env.serverName)
-    next()
+process.on('SIGINT', () => {
+    console.log('Shutting down...')
+    process.exit(0)
 })
-
-// The following endpoints are common to both servers
-app.use('/static/', express.static(serverState.env.staticFolder))
-
-app.get('/', (req, res) => {
-    res.sendStatus(200)
-})
-
-app.get('/version', (req, res) => {
-    res.status(200).send(version)
-})
-
-app.get('/hashes', (req, res) => {
-    res.status(200).json(serverState.hashes)
-})
-
-app.get('/profiles', (req, res) => {
-    res.status(200).json(serverState.profiles)
-})
-
-app.get('/fileCount/:gameFolder', (req, res) => {
-    const gameFolder = req.params.gameFolder
-    const gameFolderHashes = serverState.hashes['gameFolders'] as Tree
-    if (!gameFolderHashes) {
-        res.status(500).send('missing gameFolder folder in static folder')
-        return
-    }
-    const tree = gameFolderHashes[gameFolder] as Tree
-    if (!tree) {
-        res.status(404).json({ count: 0 })
-        return
-    }
-    const count = countFile(tree)
-    res.status(200).json({ count })
-})
-
-app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
 ;(async () => {
-    let serverSyncFunction: ServerSyncFunction
-    if (MASTER_SERVER) {
-        // IS A CLONING SERVER
-        console.log('cloning server mode')
+    const db = drizzle(path.join(DATA_DIRECTORY, 'database.db'))
+    migrate(db, { migrationsFolder: path.join(__dirname, '..', 'drizzle') })
 
-        serverSyncFunction = cloneServer.sync
-        setInterval(cloneServer.sync, 1000 * 60 * 60)
+    // check temp account
+    const tempAccountCount = (
+        await db
+            .select({ count: count() })
+            .from(accountsTable)
+            .where(eq(accountsTable.temp_account, true))
+    )[0].count
+    const normalAccountCount = (
+        await db
+            .select({ count: count() })
+            .from(accountsTable)
+            .where(eq(accountsTable.temp_account, false))
+    )[0].count
+
+    if (normalAccountCount === 0) {
+        if (tempAccountCount === 0) {
+            // create a temp account
+            const randomPassword = crypto.randomBytes(16).toString('hex')
+            const salt = crypto.randomBytes(32)
+            const hash = hashPassword(
+                Buffer.from(randomPassword, 'utf-8'),
+                salt
+            )
+            console.log('created temp account :')
+            console.log(`username: admin`)
+            console.log(`password: ${randomPassword}`)
+            await db.insert(accountsTable).values({
+                hash: hash,
+                salt: salt,
+                username: 'admin',
+                temp_account: true,
+                is_admin: true
+            })
+        }
     } else {
-        // IS A MASTER SERVER
-        console.log('master server mode')
+        if (tempAccountCount !== 0) {
+            // delete all temp account
+            await db
+                .delete(accountsTable)
+                .where(eq(accountsTable.temp_account, true))
+        }
+    }
 
-        const runtimeFiles = fs.readdirSync(path.join(STATIC_FOLDER, 'java'))
-        for (const runtimeVersion of expectedJavaRuntimesVersion) {
-            for (const runtimePlatform of expectedJavaRuntimesPlatform) {
-                const runtimeFile = `${runtimePlatform}-${runtimeVersion}.tar.gz`
-                if (!runtimeFiles.includes(runtimeFile)) {
-                    console.log(
-                        `missing runtime version ${runtimeVersion} for ${runtimePlatform}, downloading ...`
-                    )
-                    await downloadJavaRuntime(
-                        runtimeVersion,
-                        runtimePlatform,
-                        path.join(STATIC_FOLDER, 'java', runtimeFile)
-                    )
-                    console.log(`downloaded runtime`)
-                }
+    const runtimeDirectory = path.join(STATIC_DIRECTORY, 'java')
+    if (!fs.existsSync(runtimeDirectory)) fs.mkdirSync(runtimeDirectory)
+    const runtimeFiles = fs.readdirSync(runtimeDirectory)
+    for (const runtimeVersion of expectedJavaRuntimesVersion) {
+        for (const runtimePlatform of expectedJavaRuntimesPlatform) {
+            const runtimeFile = `${runtimePlatform}-${runtimeVersion}.tar.gz`
+            if (!runtimeFiles.includes(runtimeFile)) {
+                console.log(
+                    `missing runtime version ${runtimeVersion} for ${runtimePlatform}, downloading ...`
+                )
+                await downloadJavaRuntime(
+                    runtimeVersion,
+                    runtimePlatform,
+                    path.join(STATIC_DIRECTORY, 'java', runtimeFile)
+                )
+                console.log(`downloaded runtime`)
             }
         }
-        if (!fs.existsSync(serverState.env.staticFolder)) {
-            console.error(
-                `profiles file ${serverState.env.staticFolder} does not exist`
-            )
-            process.exit(1)
-        }
-        serverSyncFunction = masterServer.sync
     }
 
-    await serverSyncFunction(serverState)
+    // old profiles file migration
+    const oldProfileFilePath = path.join(DATA_DIRECTORY, 'profiles.json')
+    if (fs.existsSync(oldProfileFilePath)) {
+        console.log('migrating old profile file to the database')
+        try {
+            fs.renameSync(
+                path.join(STATIC_DIRECTORY, 'gameFolders'),
+                path.join(STATIC_DIRECTORY, 'gameDirectories')
+            )
+        } catch (err) {
+            console.warn(
+                'failed to rename "gameFolders" to "gameDirectories"',
+                err
+            )
+        }
+        try {
+            const oldProfiles = JSON.parse(
+                fs.readFileSync(oldProfileFilePath, 'utf-8')
+            ) as {
+                name: string
+                version: {
+                    mc: string
+                    forge?: string
+                }
+                gameFolder?: string
+            }[]
 
-    app.post('/reload', async (req, res) => {
-        console.log('reloading...')
-        await serverSyncFunction(serverState)
-        console.log('reloaded')
-        res.status(200).send('reloaded')
+            for (const oldProfile of oldProfiles) {
+                const existingProfile = await db
+                    .select()
+                    .from(profilesTable)
+                    .where(eq(profilesTable.name, oldProfile.name))
+                if (existingProfile.length > 0) {
+                    console.warn(
+                        `skipping ${oldProfile.name} because there is already a profile with the same name in the database`
+                    )
+                    continue
+                }
+
+                if (oldProfile.gameFolder !== undefined) {
+                    const existingGameDirectory = await db
+                        .select()
+                        .from(gameDirectoriesTable)
+                        .where(
+                            eq(gameDirectoriesTable.name, oldProfile.gameFolder)
+                        )
+                    if (existingGameDirectory.length > 0) {
+                        console.warn(
+                            `skipping ${oldProfile.name} because there is already a game directory with the same name (${oldProfile.gameFolder}) in the database`
+                        )
+                        continue
+                    }
+                    const newGameDirectory = await db
+                        .insert(gameDirectoriesTable)
+                        .values({
+                            name: oldProfile.gameFolder
+                        })
+                        .returning()
+
+                    await refreshGameDirectory(
+                        STATIC_DIRECTORY,
+                        db,
+                        newGameDirectory[0]
+                    )
+                }
+                await db.insert(profilesTable).values({
+                    name: oldProfile.name,
+                    mc_version: oldProfile.version.mc,
+                    forge_version: oldProfile.version.forge ?? undefined,
+                    game_directory: oldProfile.gameFolder ?? undefined
+                })
+            }
+            fs.renameSync(oldProfileFilePath, oldProfileFilePath + '.migrated')
+        } catch (err) {
+            console.warn('failed to mirgrate old profiles', err)
+        }
+    }
+
+    const app = express()
+    app.use(express.json())
+    if (IS_DEV) {
+        app.use(
+            cors({
+                allowedHeaders: [
+                    'X-Server-Name',
+                    'Content-Type',
+                    'Authorization'
+                ],
+                credentials: true,
+                origin: ['http://localhost:5173', 'http://localhost:5174'] // server-ui and launcher vite dev servers
+            })
+        )
+    }
+    app.use((_, res, next) => {
+        res.setHeader('X-Server-Name', SERVER_NAME)
+        next()
+    })
+    app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
+
+    const apiInstances: APIInstances = {
+        database: db,
+        staticDirectory: STATIC_DIRECTORY,
+        authSecret: randomBytes(64).toString('hex')
+    }
+    const webApiRouter = webApi.createRouter(apiInstances)
+    app.use('/web-api', webApiRouter.getRouter())
+    const launcherApiRouter = launcherApi.createRouter(apiInstances)
+    app.use('/', launcherApiRouter.getRouter())
+
+    app.get('/version', (req, res) => res.status(200).send(serverVersion))
+    app.use(
+        '/static/',
+        express.static(STATIC_DIRECTORY, {
+            setHeaders: (res, filePath) => {
+                const filename = path.basename(filePath)
+                res.setHeader(
+                    'Content-Disposition',
+                    `attachment; filename="${filename}"`
+                )
+            }
+        })
+    )
+    // for legacy file download
+    app.use(
+        '/static/gameFolders',
+        express.static(path.join(STATIC_DIRECTORY, 'gameDirectories'))
+    )
+
+    const PUBLIC_PATH = path.resolve(__dirname, '..', 'public/')
+
+    if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
+    console.log('public folder :', PUBLIC_PATH)
+    app.use('/', express.static(PUBLIC_PATH))
+    app.use((req, res) => {
+        res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
     })
 })()
-
-async function downloadJavaRuntime(
-    version: number,
-    platform: string,
-    destination: string
-): Promise<void> {
-    const urlPlatform = platform === 'win32' ? 'windows' : platform
-    const expectedExt = platform === 'win32' ? '.zip' : '.tar.gz'
-
-    const apiURL = `https://api.github.com/repos/adoptium/temurin${version}-binaries/releases/latest`
-    const requestHeaders = GITHUB_TOKEN
-        ? {
-              Authorization: 'Bearer ' + GITHUB_TOKEN
-          }
-        : undefined
-
-    const repoData = await fetch(apiURL, { headers: requestHeaders }).then(
-        res => res.json()
-    )
-    const assets = repoData.assets as any[]
-    if (!assets) {
-        console.error(
-            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
-        )
-        process.exit(1)
-    }
-
-    const matchingAssets = assets.filter(
-        asset =>
-            asset.name.includes(`jre_x64_${urlPlatform}`) &&
-            asset.name.endsWith(expectedExt)
-    )
-    if (matchingAssets.length !== 1) {
-        console.error(
-            `unable to download runtime version ${version} for platform ${platform}, please download it manually at ${destination}`
-        )
-        process.exit(1)
-    }
-    const asset = matchingAssets[0]
-
-    await download(asset.url, destination, {
-        Accept: 'application/octet-stream',
-        ...requestHeaders
-    })
-}

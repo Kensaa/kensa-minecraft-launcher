@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { createHash } from 'crypto'
 import fetch from 'electron-fetch'
 import type { Readable } from 'stream'
 import { StartArgs } from '../src/types'
@@ -29,7 +28,9 @@ export function download(
                 if (res.ok) {
                     return res.body as Readable
                 } else {
-                    throw new Error('failed to download: status ' + res.status)
+                    throw new Error(
+                        `failed to download "${address}" (${res.status})`
+                    )
                 }
             })
             .then(data => {
@@ -40,16 +41,6 @@ export function download(
                 })
             })
             .catch(reject)
-    })
-}
-
-export function getHash(src: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const stream = fs.createReadStream(src)
-        const hash = createHash('md5')
-        stream.on('end', () => resolve(hash.digest('hex')))
-        stream.on('error', err => reject(err))
-        stream.pipe(hash)
     })
 }
 

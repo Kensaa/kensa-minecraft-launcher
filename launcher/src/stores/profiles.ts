@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 import { ipcRenderer } from 'electron'
-
+import type { Profile } from '../types'
+import { useMemo } from 'react'
 import { useConfig } from './config'
-import { Profile } from '../types'
-import { useEffect, useState } from 'react'
 
 const FETCH_TIMEOUT = 1500
 
@@ -12,124 +11,129 @@ interface ServerProfiles {
     profiles: Profile[]
 }
 
-interface profileStore {
+interface ProfileStore {
     remoteProfiles: Record<string, ServerProfiles>
     localProfiles: Profile[]
     fetching: boolean
     fetchRemoteProfiles: () => void
-    setLocalProfiles: (profiles: Profile[]) => void
+    setLocalProfiles: (profiles: ProfileStore['localProfiles']) => void
 
-    //[server name, profile index]
-    selectedProfile: [string, number]
-    setSelectedProfile: (profile: [string, number]) => void
+    //[server name, profile id]
+    selectedProfile?: [string, number]
+    setSelectedProfile: (profile: ProfileStore['selectedProfile']) => void
 }
 
-const useStore = create<profileStore>(set => {
+const useStore = create<ProfileStore>(set => {
+    // If the list of servers change, we refetch the profiles
     useConfig.subscribe((config, prev) => {
         if (config.servers !== prev.servers) {
             fetchRemoteProfiles()
         }
     })
 
-    const fetchRemoteProfiles = () => {
-        const servers = useConfig.getState().servers
-        const profiles: Record<string, ServerProfiles> = {}
+    const fetchRemoteProfiles = async () => {
         set({ fetching: true })
+        const servers = useConfig.getState().servers
 
-        const seenServers = new Set<string>()
+        const seenServers: Set<string> = new Set()
 
-        Promise.all(
-            servers.map(server => {
-                const controller = new AbortController()
-                const timeoutID = setTimeout(
-                    () => controller.abort(),
-                    FETCH_TIMEOUT
-                )
-                return fetch(server + '/profiles', {
+        const serverPromises = servers.map(async serverAddress => {
+            const controller = new AbortController()
+            const timeoutID = setTimeout(
+                () => controller.abort(),
+                FETCH_TIMEOUT
+            )
+            let res
+            try {
+                res = await fetch(serverAddress + '/profiles', {
                     signal: controller.signal
                 })
-                    .then(res => {
-                        clearTimeout(timeoutID)
-                        //get the server name from the headers
-                        const serverName = res.headers.get('X-Server-Name')
-                        if (serverName) {
-                            // if there is a server name, check if we already have seen it, if so, return nothing
-                            if (seenServers.has(serverName)) return undefined
-                            // if we haven't seen it, add it to the list of seen servers
-                            seenServers.add(serverName)
-                        }
-                        //then return the profiles
-                        // the name is either the server name or the server address
-                        return res.json().then(serverProfiles => {
-                            return {
-                                name: serverName ?? server,
-                                data: {
-                                    address: server,
-                                    profiles: serverProfiles as Profile[]
-                                }
-                            }
-                        })
-                    })
-                    .catch(err => {
-                        //console.log(err)
-                        console.log('unable to fetch profiles from ' + server)
-                        return {
-                            name: server,
-                            data: { address: server, profiles: [] as Profile[] }
-                        }
-                    })
-            })
-        ).then(responses => {
-            //console.log('resp', responses)
-            for (const response of responses) {
-                if (!response) continue
+                clearTimeout(timeoutID)
+                // Get the server name from the headers
+                const serverName =
+                    res.headers.get('X-Server-Name') ?? serverAddress
+                // Check if we already have seen this server
+                if (seenServers.has(serverName)) return undefined
+                // if we haven't seen it, add it to the list of seen servers
+                seenServers.add(serverName)
 
-                const { name, data } = response
-                profiles[name] = data
+                let profiles = (await res.json()) as Profile[]
+                // Check if the returned profiles have an id (ie: the server is out of date)
+                // In the case that it does not have one, set it as its index in the profile list
+                // Also check the "gameDirectory" key
+                profiles = profiles.map((profile, idx) => {
+                    if (profile.id === undefined) {
+                        profile.id = idx
+                    }
+                    if (profile.gameDirectory === undefined) {
+                        if (profile.gameFolder !== undefined) {
+                            profile.gameDirectory = profile.gameFolder
+                        }
+                    }
+                    return profile
+                })
+
+                return {
+                    name: serverName,
+                    data: {
+                        address: serverAddress,
+                        profiles
+                    }
+                }
+            } catch (err) {
+                console.log('unable to fetch profiles from ' + serverAddress)
+                return {
+                    name: serverAddress,
+                    data: { address: serverAddress, profiles: [] as Profile[] }
+                }
             }
-            set({ remoteProfiles: profiles, fetching: false })
         })
+
+        const responses = (await Promise.all(serverPromises)).filter(
+            r => r !== undefined
+        )
+        const profiles: Record<string, ServerProfiles> = {}
+        responses.forEach(res => (profiles[res.name] = res.data))
+
+        set({ fetching: false, remoteProfiles: profiles })
     }
-
     fetchRemoteProfiles()
-
     return {
         remoteProfiles: {},
         localProfiles: ipcRenderer.sendSync('get-local-profiles'),
-        fetchRemoteProfiles,
         fetching: true,
-        setLocalProfiles: (profiles: Profile[]) => {
+        setLocalProfiles(profiles: ProfileStore['localProfiles']) {
             set({ localProfiles: profiles })
             ipcRenderer.send('set-local-profiles', profiles)
         },
+        fetchRemoteProfiles,
 
         selectedProfile: ipcRenderer.sendSync('get-selected-profile'),
-        setSelectedProfile: (profile: [string, number]) => {
+        setSelectedProfile(profile: ProfileStore['selectedProfile']) {
+            console.log(profile)
             set({ selectedProfile: profile })
             ipcRenderer.send('set-selected-profile', profile)
         }
     }
 })
-export default useStore
 
+export const useIsFetching = () => useStore(state => state.fetching)
 export const useProfiles = () => {
     const { localProfiles, remoteProfiles } = useStore(state => ({
         localProfiles: state.localProfiles,
         remoteProfiles: state.remoteProfiles
     }))
 
-    const [profiles, setProfiles] = useState<Record<string, ServerProfiles>>({})
-
-    useEffect(() => {
-        setProfiles({
+    const profiles: Record<string, ServerProfiles> = useMemo(
+        () => ({
             ...remoteProfiles,
             local: { address: 'local', profiles: localProfiles }
-        })
-    }, [localProfiles, remoteProfiles])
+        }),
+        [localProfiles, remoteProfiles]
+    )
 
     return profiles
 }
-
 export const useLocalProfiles = () =>
     useStore(state => ({
         localProfiles: state.localProfiles,
@@ -144,30 +148,26 @@ export const useSelectedProfile = () => {
             fetching: state.fetching
         })
     )
-
     const profiles = useProfiles()
-    const servers = useConfig(state => state.servers)
+    const profileObject = useMemo(() => {
+        if (Object.keys(profiles).length === 0 || fetching) return undefined
+        if (selectedProfile === undefined) return undefined
 
-    useEffect(() => {
-        if (Object.keys(profiles).length === 0 || fetching) return
-
-        if (
-            !profiles[selectedProfile[0]] ||
-            selectedProfile[1] >= profiles[selectedProfile[0]].profiles.length
-        ) {
-            for (const server of Object.entries(profiles)) {
-                const [name, serverProfiles] = server
-                if (serverProfiles.profiles.length > 0) {
-                    setSelectedProfile([name, 0])
-                    return
-                }
-            }
-            // in case there are no server available
-            setSelectedProfile(['', 0])
+        const [serverName, profileID] = selectedProfile
+        const serverProfiles = profiles[serverName]
+        if (!serverProfiles) {
+            setSelectedProfile(undefined)
+            return undefined
         }
-    }, [profiles, servers])
-
-    return { selectedProfile, setSelectedProfile }
+        const profile = serverProfiles.profiles.find(
+            profile => profile.id === profileID
+        )
+        if (!profile) return undefined
+        return {
+            serverName,
+            address: serverProfiles.address,
+            profile
+        }
+    }, [profiles, selectedProfile])
+    return { selectedProfile: profileObject, setSelectedProfile }
 }
-
-export const useIsFetching = () => useStore(state => state.fetching)

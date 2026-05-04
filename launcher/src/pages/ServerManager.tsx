@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Button, Form, Table } from 'react-bootstrap'
 import { useServers } from '../stores/config'
 

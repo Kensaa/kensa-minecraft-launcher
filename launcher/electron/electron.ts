@@ -4,9 +4,9 @@ import * as os from 'os'
 import * as fs from 'fs'
 import { Auth, Xbox } from 'msmc'
 import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
-import type { StartArgs } from '../src/types'
+import type { Config, Profile, StartArgs } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
-import { fetchMcVersions } from './mcversions'
+
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
@@ -18,21 +18,23 @@ import {
     download,
     folderTree,
     formatStartArgs,
-    getHash,
     setDifference
 } from './utils'
+import { fetchMcVersions, hashFile } from 'utils'
 import { totalmem } from 'os'
 import semver from 'semver'
+import fetch from 'electron-fetch'
+
 interface Task {
     title: string
     progress: number
 }
 
-const configFolders = {
+const configFolders: Record<string, string> = {
     win32: path.join('AppData', 'Roaming', 'kensa-minecraft-launcher'),
     linux: path.join('.config', 'kensa-minecraft-launcher')
 }
-const rootDirs = {
+const rootDirs: Record<string, string> = {
     win32: path.join('AppData', 'Roaming', '.kensa-launcher'),
     linux: path.join('.kensa-launcher')
 }
@@ -42,7 +44,7 @@ let logWin: BrowserWindow | null = null
 const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
-const FOLDER_HASH_UPDATE_SKIP = ['config']
+const DIRECTORY_HASH_UPDATE_SKIP = ['config']
 
 let gameStarting = false
 
@@ -63,7 +65,7 @@ if (!fs.existsSync(configFolder)) fs.mkdirSync(configFolder)
 const LOG_FILE = path.join(configFolder, 'launcher.log')
 const logger = createLogger(LOG_FILE)
 
-const defaultConfig = {
+const defaultConfig: Config = {
     rootDir,
     ram: 4000,
     servers: [
@@ -77,7 +79,7 @@ const defaultConfig = {
 
 const authInstance = new Auth('select_account')
 let authInfo: Xbox | undefined
-let config: Record<string, any>
+let config: Config
 
 async function createWindow() {
     logger.info('Creating Launcher Window')
@@ -113,18 +115,18 @@ async function createWindow() {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         logger.info('Created config file using default config')
     } else {
-        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Config
         // checking if config is missing field
         const currentConfigKeys = new Set(Object.keys(config))
         const defaultConfigKeys = new Set(Object.keys(defaultConfig))
         const onlyCurrentConfigKeys = setDifference(
             currentConfigKeys,
             defaultConfigKeys
-        )
+        ) as Set<keyof typeof config>
         const onlyDefaultConfigKeys = setDifference(
             defaultConfigKeys,
             currentConfigKeys
-        )
+        ) as Set<keyof Config>
         if (onlyCurrentConfigKeys.size !== 0) {
             logger.warning(
                 'Config: The current config contains fields that are not in the default config, removing them'
@@ -137,7 +139,8 @@ async function createWindow() {
                 'Config: The current config is missing fields that are in the default config, adding them'
             )
             onlyDefaultConfigKeys.forEach(
-                key => (config[key] = defaultConfig[key])
+                key =>
+                    ((config as Record<string, any>)[key] = defaultConfig[key])
             )
             fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         }
@@ -157,7 +160,7 @@ async function createWindow() {
     if (app.isPackaged) {
         await win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
     } else {
-        win.loadURL('http://localhost:5173/')
+        win.loadURL(process.env.VITE_DEV_SERVER_URL as string)
     }
 }
 
@@ -242,7 +245,7 @@ ipcMain.handle('start-update', async (event, arg) => {
         )
         const version = latestRelease.name
         const installer = latestRelease.assets.find(
-            asset =>
+            (asset: any) =>
                 asset.name == `Kensa-Minecraft-Launcher-Setup-${version}.exe`
         )
         if (!installer) {
@@ -300,7 +303,7 @@ ipcMain.on('prompt-file', (event, args) => {
 ipcMain.on('get-selected-profile', (event, args) => {
     logger.debug('get-selected-profile')
     if (!fs.existsSync(path.join(configFolder, 'selectedProfile.json'))) {
-        event.returnValue = ['', 0]
+        event.returnValue = undefined
     } else {
         event.returnValue = JSON.parse(
             fs.readFileSync(
@@ -313,10 +316,14 @@ ipcMain.on('get-selected-profile', (event, args) => {
 
 ipcMain.on('set-selected-profile', (event, args) => {
     logger.debug('set-selected-profile')
-    fs.writeFileSync(
-        path.join(configFolder, 'selectedProfile.json'),
-        JSON.stringify({ profile: args }, null, 4)
-    )
+    const filepath = path.join(configFolder, 'selectedProfile.json')
+    if (args == undefined) {
+        if (fs.existsSync(filepath)) {
+            fs.rmSync(filepath)
+        }
+    } else {
+        fs.writeFileSync(filepath, JSON.stringify({ profile: args }, null, 4))
+    }
 })
 
 ipcMain.on('get-local-profiles', (event, args) => {
@@ -329,7 +336,7 @@ ipcMain.on('get-local-profiles', (event, args) => {
                 path.join(configFolder, 'localProfiles.json'),
                 'utf-8'
             )
-        )
+        ) as Profile[]
 
         // Migration from forge installer to forge version
         for (const profile of localProfiles) {
@@ -346,10 +353,21 @@ ipcMain.on('get-local-profiles', (event, args) => {
                         `forge migration: inferred forge version ${forgeVersion} from file ${profile.version.forge} for profile ${profile.name}`
                     )
                     profile.version.forge = forgeVersion
-                } else {
                 }
             }
         }
+        // Migration to new profile Object
+        localProfiles = localProfiles.map((profile, idx) => {
+            if (profile.id === undefined) {
+                profile.id = idx
+            }
+            if (profile.gameDirectory === undefined) {
+                if (profile.gameFolder !== undefined) {
+                    profile.gameDirectory = profile.gameFolder
+                }
+            }
+            return profile
+        })
 
         event.returnValue = localProfiles
     }
@@ -375,7 +393,7 @@ ipcMain.handle('open-logs', async (event, args) => {
 
 ipcMain.handle('fetch-mcversions', async (event, args) => {
     logger.debug('fetch-mcversions (async)')
-    return fetchMcVersions()
+    return fetchMcVersions(fetch)
 })
 
 ipcMain.handle('start-game', async (_, args: StartArgs) => {
@@ -518,6 +536,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
                         server
                     )
                     installed = true
+                    break
                 } catch {}
             }
 
@@ -527,38 +546,40 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         }
     }
 
-    // gamefolder handling
-    // if remote and specified=> download/update
+    // game directory handling
+    // if remote and specified => download/update
     // if remote and not specified => create
     // if local => create
-    if (server && profile.gameFolder) {
-        logger.info('A forced game folder is detected, checking for updates...')
-        const gameFolderPath = path.join(
+    if (server && profile.gameDirectory) {
+        logger.info(
+            'A forced game directory is detected, checking for updates...'
+        )
+        const gameDirectoryPath = path.join(
             config.rootDir,
             'profiles',
-            profile.gameFolder
+            profile.gameDirectory
         )
 
-        if (!fs.existsSync(gameFolderPath)) {
+        if (!fs.existsSync(gameDirectoryPath)) {
             logger.info(
-                "The gamefolder doesn't exist, downloading a compressed version"
+                "The game directory doesn't exist, downloading a compressed version"
             )
             updateTask({
                 title: 'Downloading Profile',
                 progress: 0
             })
-            fs.mkdirSync(gameFolderPath)
+            fs.mkdirSync(gameDirectoryPath)
             const tarballFilename = profile.gameFolder + '.tar.gz'
-            const tarballPath = path.join(gameFolderPath, tarballFilename)
+            const tarballPath = path.join(gameDirectoryPath, tarballFilename)
             await download(
-                urlJoin(server, 'static/tarballs', tarballFilename),
+                urlJoin(server, 'tarball', profile.gameDirectory),
                 tarballPath
             )
             updateTask({
                 title: 'Downloading Profile',
                 progress: 50
             })
-            await decompress(tarballPath, gameFolderPath, {
+            await decompress(tarballPath, gameDirectoryPath, {
                 strip: 1
             })
             fs.rmSync(tarballPath)
@@ -571,13 +592,16 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
                 title: 'Checking for update',
                 progress: 0
             })
-            const hashTree = await JSONFetch(urlJoin(server, 'hashes'))
-            const remoteTree = hashTree['gameFolders'][
-                profile.gameFolder
-            ] as Tree
+            // const hashTree = await JSONFetch(urlJoin(server, 'hashes'))
+            // const remoteTree = hashTree['gameFolders'][
+            //     profile.gameFolder
+            // ] as Tree
+            const remoteTree = await JSONFetch(
+                urlJoin(server, 'hashes', profile.gameDirectory)
+            )
             const fileCount: number = (
                 await JSONFetch(
-                    urlJoin(server, 'fileCount', profile.gameFolder)
+                    urlJoin(server, 'fileCount', profile.gameDirectory)
                 )
             ).count
 
@@ -586,76 +610,78 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
                 title: 'Checking for update',
                 progress: 50
             })
-            const localTree = (await folderTree(gameFolderPath)) as Tree
+            const localTree = (await folderTree(gameDirectoryPath)) as Tree
             logger.info('Local tree created')
-            function getFolders(tree: any) {
+            function getDirectories(tree: any) {
                 return Object.keys(tree).filter(
                     key => typeof tree[key] !== 'string'
                 )
             }
-            const remoteFolders = getFolders(remoteTree)
-            const localFolders = getFolders(localTree)
+            const remoteDirectories = getDirectories(remoteTree)
+            const localDirectories = getDirectories(localTree)
             updateTask({
                 title: 'Checking for update',
                 progress: 100
             })
 
             logger.info('Starting update procedure')
-            // creates all the folder at the root that does not exists
-            for (const folder of remoteFolders) {
-                if (!localFolders.includes(folder)) {
-                    fs.mkdirSync(path.join(gameFolderPath, folder))
-                    localTree[folder] = {}
+            // creates all the directory at the root that does not exists
+            for (const directory of remoteDirectories) {
+                if (!localDirectories.includes(directory)) {
+                    fs.mkdirSync(path.join(gameDirectoryPath, directory))
+                    localTree[directory] = {}
                 }
             }
 
-            for (const folder of remoteFolders) {
-                //start recursive function which will download all files for all the folders
-                await downloadFolder(
+            for (const directory of remoteDirectories) {
+                //start recursive function which will download all files for all the directories
+                await downloadDirectory(
                     server,
-                    remoteTree[folder] as Tree,
-                    localTree[folder] as Tree,
-                    profile.gameFolder,
-                    gameFolderPath,
-                    [folder],
+                    remoteTree[directory] as Tree,
+                    localTree[directory] as Tree,
+                    profile.gameDirectory,
+                    gameDirectoryPath,
+                    [directory],
                     fileCount
                 )
             }
             logger.info('Update finished')
         }
     } else {
-        if (!profile.gameFolder) {
+        if (!profile.gameDirectory) {
             logger.info(
-                'No forced game folder detected, creating an empty one...'
+                'No forced game directory detected, creating an empty one...'
             )
-            profile.gameFolder = profile.name
+            profile.gameDirectory = profile.name
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .toLowerCase()
         } else {
             logger.info(
-                'A forced game folder is detected, but profile is local, skipping update'
+                'A forced game directory is detected, but profile is local, skipping update'
             )
         }
     }
 
-    const gameFolderPath = path.join(
+    const gameDirectoryPath = path.join(
         config.rootDir,
         'profiles',
-        profile.gameFolder
+        profile.gameDirectory
     )
 
     // handle additional files
     logger.info('Copying additional files')
-    const additionalFileFolder = path.join(
+    const additionalFileDirectory = path.join(
         config.rootDir,
         'additionalFiles',
-        profile.gameFolder
+        profile.gameDirectory
     )
-    checkExist(additionalFileFolder)
-    const additionalFiles = fs.readdirSync(additionalFileFolder)
+    checkExist(additionalFileDirectory)
+    const additionalFiles = fs.readdirSync(additionalFileDirectory)
     if (additionalFiles.length > 0) {
-        checkExist(gameFolderPath)
-        fs.cpSync(additionalFileFolder, gameFolderPath, { recursive: true })
+        checkExist(gameDirectoryPath)
+        fs.cpSync(additionalFileDirectory, gameDirectoryPath, {
+            recursive: true
+        })
     }
 
     await refreshAuth()
@@ -664,7 +690,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
     return {
         clientPackage: undefined,
         authorization: auth.mclc(true) as IUser,
-        root: gameFolderPath,
+        root: gameDirectoryPath,
         version: {
             number: profile.version.mc,
             type: 'release'
@@ -778,7 +804,7 @@ async function downloadForge(
 ): Promise<string> {
     // Check for old forge format (directly the forge installer)
     if (forgeVersion.endsWith('.jar')) {
-        // LEGACY WAY OF DOWNLOADING FOR (FROM THE SERVER)
+        // LEGACY WAY OF DOWNLOADING FORGE (FROM THE SERVER)
         logger.info('Forge legacy mode (downloading from launcher server)')
         const forgePath = path.join(
             config.rootDir,
@@ -828,45 +854,45 @@ async function downloadForge(
 /**
  *
  * @param server the server url
- * @param remoteFolder object representing the remote folder to download (must not be the root of gameFolder, it should be the folder to download)
- * @param localFolder object representing the same folder but locally (I.E current state of the folder)
- * @param folderName name of the remote folder on the server
- * @param folderPath path to the local folder
- * @param pathA path to sub-folder to download (ex: ['folder1','test'] will download "gameFolder/folder1/test") (used the recreate path on disk)
+ * @param remoteDirectory object representing the remote directory to download (must not be the root of gameDirectory, it should be the folder to download)
+ * @param localDirectory object representing the same directory but locally (I.E current state of the directory)
+ * @param directoryName name of the remote directory on the server
+ * @param directoryPath path to the local directory
+ * @param pathA path to sub-directory to download (ex: ['directory1','test'] will download "gameDirectories/directory1/test") (used the recreate path on disk)
  * @param totalFileCount the total number of file, used to update the current task
  * @param downloadStatus object used to count the file updated through the callstack to update the current task
  */
-export async function downloadFolder(
+export async function downloadDirectory(
     server: string,
-    remoteFolder: Tree,
-    localFolder: Tree,
-    folderName: string,
-    folderPath: string,
+    remoteDirectory: Tree,
+    localDirectory: Tree,
+    directoryName: string,
+    directoryPath: string,
     pathA: string[] = [],
     totalFileCount: number,
     downloadStatus: { count: number } = { count: 0 }
 ) {
-    for (const element of Object.keys(remoteFolder)) {
+    for (const element of Object.keys(remoteDirectory)) {
         const localPath = path.join(...pathA, element)
-        const filepath = path.join(folderPath, localPath) // = absolute path to file
+        const filepath = path.join(directoryPath, localPath) // = absolute path to file
         const fileUrl = urlJoin(
             server,
-            '/static/gameFolders',
-            folderName,
+            '/static/gameDirectories',
+            directoryName,
             ...pathA,
             element
         )
-        if (typeof remoteFolder[element] === 'string') {
+        if (typeof remoteDirectory[element] === 'string') {
             // Element is a file
-            if (localFolder[element] !== undefined) {
+            if (localDirectory[element] !== undefined) {
                 // if (
                 //     pathA[0] !== undefined &&
                 //     FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
                 // ) {
-                //     // Used to skip certain folder (like config) from being updated because we don't really care about them being up to date
+                //     // Used to skip certain directories (like config) from being updated because we don't really care about them being up to date
                 //     continue
                 // }
-                if ((await getHash(filepath)) !== remoteFolder[element]) {
+                if ((await hashFile(filepath)) !== remoteDirectory[element]) {
                     logger.info('Updating file "%s"', localPath)
                     await download(fileUrl, filepath)
                     downloadStatus.count++
@@ -885,35 +911,35 @@ export async function downloadFolder(
                 })
             }
         } else {
-            // Element is a folder
-            if (!localFolder[element]) {
+            // Element is a directory
+            if (!localDirectory[element]) {
                 fs.mkdirSync(filepath)
-                localFolder[element] = {}
+                localDirectory[element] = {}
             }
-            await downloadFolder(
+            await downloadDirectory(
                 server,
-                remoteFolder[element],
-                localFolder[element] as Tree,
-                folderName,
-                folderPath,
+                remoteDirectory[element],
+                localDirectory[element] as Tree,
+                directoryName,
+                directoryPath,
                 pathA.concat(element),
                 totalFileCount,
                 downloadStatus
             )
         }
     }
-    const onlyLocalFile = Object.keys(localFolder)
-        .filter(key => typeof localFolder[key] === 'string')
-        .filter(key => !Object.keys(remoteFolder).includes(key))
+    const onlyLocalFile = Object.keys(localDirectory)
+        .filter(key => typeof localDirectory[key] === 'string')
+        .filter(key => !Object.keys(remoteDirectory).includes(key))
     for (const file of onlyLocalFile) {
         if (
             pathA[0] !== undefined &&
-            FOLDER_HASH_UPDATE_SKIP.includes(pathA[0])
+            DIRECTORY_HASH_UPDATE_SKIP.includes(pathA[0])
         ) {
             // Used to skip certain forlders (like config) from being deleted because we don't really care about them being up to date
             continue
         }
-        const filepath = path.join(folderPath, ...pathA, file)
+        const filepath = path.join(directoryPath, ...pathA, file)
         logger.info('Deleting file "%s"', filepath)
         fs.rmSync(filepath, {
             recursive: true

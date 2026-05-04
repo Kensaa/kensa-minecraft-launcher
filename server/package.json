@@ -1,26 +1,39 @@
 {
-    "name": "kensa-minecraft-launcher-server",
-    "version": "4.3.0",
+    "name": "server",
+    "private": true,
+    "version": "5.0.0",
     "main": "dist/server.js",
     "author": "Kensa",
     "license": "MIT",
     "scripts": {
+        "drizzle-kit": "dotenv -- drizzle-kit",
         "build": "tsc",
-        "start": "yarn build && dotenv -- node ."
+        "start": "yarn build && dotenv -- node --enable-source-maps .",
+        "dev": "yarn start"
     },
     "dependencies": {
         "archiver": "^7.0.1",
+        "better-sqlite3": "^12.4.1",
+        "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
-        "express": "^4.18.2",
-        "source-map-support": "^0.5.21"
+        "decompress": "^4.2.1",
+        "drizzle-orm": "^0.44.6",
+        "express": "^5.1.0",
+        "express-api-router": "https://github.com/Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca",
+        "jsonwebtoken": "^9.0.2",
+        "utils": "workspace:*",
+        "zod": "^4.1.12"
     },
     "devDependencies": {
         "@types/archiver": "^6.0.3",
-        "@types/cors": "^2.8.18",
-        "@types/express": "^5.0.2",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/cookie-parser": "^1",
+        "@types/cors": "^2.8.19",
+        "@types/decompress": "^4.2.7",
+        "@types/express": "^5.0.3",
+        "@types/jsonwebtoken": "^9",
         "@types/node": "^22.15.21",
         "dotenv-cli": "^10.0.0",
-        "typescript": "^5.8.3"
-    },
-    "packageManager": "yarn@4.9.1"
+        "drizzle-kit": "^0.31.5"
+    }
 }

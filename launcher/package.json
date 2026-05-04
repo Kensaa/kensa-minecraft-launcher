@@ -1,9 +1,9 @@
 {
-    "name": "kensa-minecraft-launcher",
+    "name": "launcher",
     "description": "A Minecraft launcher with auto-update feature to facilitate playing modded minecraft",
     "author": "Kensa",
     "private": true,
-    "version": "3.12.2",
+    "version": "4.0.0",
     "license": "MIT",
     "main": "dist-electron/electron.js",
     "repository": {
@@ -11,7 +11,7 @@
         "url": "git+https://github.com/kensaa/kensa-minecraft-launcher.git"
     },
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --clearScreen false",
         "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
         "release": "tsc && vite build && electron-builder --x64 -wl --publish always"
     },
@@ -30,6 +30,7 @@
         "sass": "^1.56.1",
         "semver": "^7.7.2",
         "source-map-support": "^0.5.21",
+        "utils": "workspace:*",
         "zustand": "^4.1.4"
     },
     "devDependencies": {
@@ -39,10 +40,9 @@
         "@types/react-dom": "^18.0.8",
         "@types/semver": "^7",
         "@vitejs/plugin-react": "^2.2.0",
-        "electron": "^21.3.0",
+        "electron": "21.3.0",
         "electron-builder": "^23.6.0",
         "tsx": "^3.12.8",
-        "typescript": "^4.6.4",
         "vite": "^3.2.3",
         "vite-electron-plugin": "^0.5.2",
         "vite-plugin-electron-renderer": "^0.11.3"
@@ -66,7 +66,9 @@
                 "target": "zip",
                 "arch": "x64"
             },
-            "category": "Game"
+            "category": "Game",
+            "artifactName": "${productName} ${version}.${ext}",
+            "executableName": "kensa-minecraft-launcher"
         },
         "win": {
             "target": [
@@ -85,6 +87,5 @@
             "provider": "github",
             "releaseType": "draft"
         }
-    },
-    "packageManager": "yarn@4.4.1"
+    }
 }

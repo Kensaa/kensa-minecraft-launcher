@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+cache
+.vscode
+server(old)
+.yarn/*
+!.yarn/patches
+.act-secrets
+.turbo
+.git
+out

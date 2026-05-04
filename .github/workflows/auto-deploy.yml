@@ -84,16 +84,16 @@ jobs:
                   mkdir -p /github/home/.xdg-runtime
 
             - name: enable corepack
-              working-directory: launcher
+              # working-directory: launcher
               run: corepack enable
 
             - name: install dependencies
-              working-directory: launcher
+              # working-directory: launcher
               run: yarn
 
             - name: build
-              working-directory: launcher
-              run: yarn release
+              # working-directory: launcher
+              run: yarn launcher release
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
