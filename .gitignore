@@ -8,3 +8,4 @@ server(old)
 !.yarn/patches
 .act-secrets
 .turbo
+out
