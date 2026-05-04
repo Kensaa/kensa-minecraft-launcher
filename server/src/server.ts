@@ -13,9 +13,10 @@ import * as launcherApi from './launcher-api/launcher-api'
 
 const PORT = parseInt(process.env.PORT || '40069')
 const DATA_DIRECTORY = process.env.DATA_FOLDER || './data'
-const SERVER_NAME =
-    process.env.SERVER_NAME || crypto.randomBytes(4).toString('hex')
 const IS_DEV = process.env.NODE_ENV !== 'production'
+const SERVER_NAME =
+    process.env.SERVER_NAME ||
+    (IS_DEV ? 'dev' : crypto.randomBytes(4).toString('hex'))
 
 const expectedJavaRuntimesVersion = [8, 17, 22]
 const expectedJavaRuntimesPlatform = ['linux', 'win32']
