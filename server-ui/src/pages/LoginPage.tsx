@@ -38,7 +38,6 @@ export default function LoginPage() {
         }).then(res => {
             if (res.ok) {
                 res.json().then(data => {
-                    console.log(data)
                     if (data.is_admin && data.temp_account) {
                         setDialog(
                             <CreateAccountAskDialog

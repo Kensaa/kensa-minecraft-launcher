@@ -65,9 +65,6 @@ export function uncompressGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectoryPath
             )
 
-            console.log(diskFilePath)
-            console.log(containingDirectoryPath)
-
             await decompress(diskFilePath, containingDirectoryPath)
             await refreshGameDirectory(
                 instances.staticDirectory,

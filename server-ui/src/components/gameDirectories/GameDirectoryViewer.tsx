@@ -325,7 +325,6 @@ const FileExplorerItem = React.forwardRef(function (
                 'application/x-local-file-move'
             )
             if (!data) return
-            console.log(item)
             // local file => file move
             const localMoveData = JSON.parse(data) as LocalMoveData
             const oldFilepath = localMoveData.path.join('/')

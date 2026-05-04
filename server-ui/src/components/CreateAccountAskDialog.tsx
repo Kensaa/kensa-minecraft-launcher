@@ -19,16 +19,13 @@ export default function CreateAccountAskDialog({
 }: CreateAccountAskDialogProps) {
     const [, setLocation] = useLocation()
 
-    console.log('test', open)
     const handleYes = () => {
         close()
-        console.log('redirect to creation')
         setLocation('/admin/createAccount')
     }
 
     const handleNo = () => {
         close()
-        console.log('redirect to home')
         setLocation('/')
     }
     return (
