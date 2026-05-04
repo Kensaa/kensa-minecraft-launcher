@@ -1,6 +1,7 @@
 import {
     DataGrid,
     GridActionsCellItem,
+    GridDownloadIcon,
     GridEditSingleSelectCell,
     GridRowEditStopReasons,
     GridRowModes,
@@ -21,7 +22,7 @@ import {
     fetchProfiles,
     jsonHeaders
 } from '../../queries'
-import { CircularProgress, Tooltip, Typography } from '@mui/material'
+import { CircularProgress, MenuItem, Tooltip, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -38,6 +39,7 @@ import CreateGameDirectoryModal from '../gameDirectories/CreateGameDirectoryModa
 import { address } from '../../config'
 import { Toolbar } from '@mui/x-data-grid'
 import { useLocation } from 'wouter'
+import DropdownMenu from '../DropdownMenu'
 // See https://mui.com/x/react-data-grid/editing/
 
 function GameDirectoryEditCell(props: GridRenderEditCellParams) {
@@ -202,6 +204,9 @@ export default function ProfileTable() {
     const [, setLocation] = useLocation()
 
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
+    const [downloadMenu, setDownloadMenu] = useState<
+        null | [HTMLElement, GridRowId]
+    >(null)
 
     const {
         data: profiles,
@@ -443,6 +448,18 @@ export default function ProfileTable() {
                                             .gameDirectory === ''
                                     }
                                 />
+                            </Tooltip>,
+
+                            <Tooltip title='Download menu'>
+                                <GridActionsCellItem
+                                    icon={<GridDownloadIcon />}
+                                    label='Download menu'
+                                    className='textPrimary'
+                                    onClick={e => {
+                                        setDownloadMenu([e.currentTarget, id])
+                                    }}
+                                    color='inherit'
+                                />
                             </Tooltip>
                         ]
                     }
@@ -545,24 +562,70 @@ export default function ProfileTable() {
         return
     }
 
+    const copyTarball = (id: GridRowId) => {
+        const row = gridRows.find(grid => grid.id === id)!
+        const gameDirectory = row.gameDirectory
+        if (!gameDirectory) return
+        navigator.clipboard
+            .writeText(`${address}/tarball/${gameDirectory}`)
+            .then(() =>
+                enqueueSnackbar(
+                    'Successfully copied tarball link to clipboard',
+                    { variant: 'success' }
+                )
+            )
+    }
+    const copyCurseProfile = (id: GridRowId) => {
+        const row = gridRows.find(grid => grid.id === id)!
+        navigator.clipboard
+            .writeText(`${address}/curseforge/${row.name}`)
+            .then(() =>
+                enqueueSnackbar(
+                    'Successfully copied curseforge profile link to clipboard',
+                    { variant: 'success' }
+                )
+            )
+    }
+
     return (
-        <DataGrid
-            columns={columns}
-            rows={gridRows}
-            editMode='row'
-            rowModesModel={rowModesModel}
-            onRowModesModelChange={newModes => setRowModesModel(newModes)}
-            processRowUpdate={processRowUpdate}
-            onProcessRowUpdateError={err =>
-                enqueueSnackbar(err, { variant: 'error' })
-            }
-            onRowEditStop={handleRowEditStop}
-            slots={{ toolbar: EditToolbar }}
-            slotProps={{
-                toolbar: { setRows: setGridRows, setRowModesModel }
-            }}
-            showToolbar
-        />
+        <>
+            <DataGrid
+                columns={columns}
+                rows={gridRows}
+                editMode='row'
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={newModes => setRowModesModel(newModes)}
+                processRowUpdate={processRowUpdate}
+                onProcessRowUpdateError={err =>
+                    enqueueSnackbar(err, { variant: 'error' })
+                }
+                onRowEditStop={handleRowEditStop}
+                slots={{ toolbar: EditToolbar }}
+                slotProps={{
+                    toolbar: { setRows: setGridRows, setRowModesModel }
+                }}
+                showToolbar
+            />
+            {downloadMenu ? (
+                <DropdownMenu
+                    anchor={downloadMenu[0]}
+                    hide={() => setDownloadMenu(null)}
+                >
+                    <MenuItem
+                        disabled={
+                            gridRows.find(grid => grid.id === downloadMenu[1])!
+                                .gameDirectory === ''
+                        }
+                        onClick={() => copyTarball(downloadMenu[1])}
+                    >
+                        Copy Tarball link
+                    </MenuItem>
+                    <MenuItem onClick={() => copyCurseProfile(downloadMenu[1])}>
+                        Copy Curseforge profile link
+                    </MenuItem>
+                </DropdownMenu>
+            ) : undefined}
+        </>
     )
 }
 

@@ -4,15 +4,14 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Menu,
     MenuItem,
     IconButton,
     Box
 } from '@mui/material'
 import AccountCircle from '@mui/icons-material/AccountCircle'
-import MenuIcon from '@mui/icons-material/Menu'
 import { Link, useLocation } from 'wouter'
 import { useAuth } from '../stores/auth'
+import DropdownMenu from './DropdownMenu'
 
 type Page = {
     name: string
@@ -27,22 +26,11 @@ export default function Navbar() {
     const connected = useAuth(state => state.connected)
     const userInfos = useAuth(state => state.userInfos)
     const logout = useAuth(state => state.logout)
-    const [drawerOpened, setDrawerOpened] = useState(false)
 
-    const toggleDrawer = () => setDrawerOpened(!drawerOpened)
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar component='nav' position='static'>
                 <Toolbar>
-                    <IconButton
-                        color='inherit'
-                        aria-label='open drawer'
-                        edge='start'
-                        onClick={toggleDrawer}
-                        sx={{ mr: 2, display: { sm: 'none' } }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
                     <Box
                         sx={{
                             flexGrow: 1,
@@ -93,7 +81,7 @@ export default function Navbar() {
                         )}
                     </Box>
                 </Toolbar>
-                <NavbarMenu anchor={anchor} hide={() => setAnchor(null)}>
+                <DropdownMenu anchor={anchor} hide={() => setAnchor(null)}>
                     <MenuItem component={Link} to='/account'>
                         My Account
                     </MenuItem>
@@ -105,7 +93,7 @@ export default function Navbar() {
                         </MenuItem>
                     ) : undefined}
                     <MenuItem onClick={logout}>Logout</MenuItem>
-                </NavbarMenu>
+                </DropdownMenu>
             </AppBar>
         </Box>
     )
@@ -128,58 +116,6 @@ function UserIcon({ onClick }: UserIconProps) {
             <IconButton onClick={onClick}>
                 <AccountCircle />
             </IconButton>
-        </>
-    )
-}
-
-interface NavbarMenuProps {
-    anchor: HTMLElement | null
-    hide: () => void
-    children: React.ReactNode
-}
-
-function NavbarMenu({ anchor, hide, children }: NavbarMenuProps) {
-    return (
-        <>
-            <Menu
-                anchorEl={anchor}
-                id='account-menu'
-                open={!!anchor}
-                onClose={hide}
-                onClick={hide}
-                slotProps={{
-                    paper: {
-                        elevation: 0,
-                        sx: {
-                            overflow: 'visible',
-                            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                            mt: 1.5,
-                            '& .MuiAvatar-root': {
-                                width: 32,
-                                height: 32,
-                                ml: -0.5,
-                                mr: 1
-                            },
-                            '&:before': {
-                                content: '""',
-                                display: 'block',
-                                position: 'absolute',
-                                top: 0,
-                                right: 15,
-                                width: 10,
-                                height: 10,
-                                bgcolor: 'background.paper',
-                                transform: 'translateY(-50%) rotate(45deg)',
-                                zIndex: 0
-                            }
-                        }
-                    }
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                {children}
-            </Menu>
         </>
     )
 }

@@ -258,6 +258,10 @@ export async function createArchive(
  */
 export async function sendFile(res: Response, filepath: string) {
     return new Promise<void>((resolve, reject) => {
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${path.basename(filepath)}"`
+        )
         res.status(200).sendFile(filepath, err => {
             if (err) {
                 reject(err)
