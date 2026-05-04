@@ -49,7 +49,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
 
 ;(async () => {
     const db = drizzle(path.join(DATA_DIRECTORY, 'database.db'))
-    migrate(db, { migrationsFolder: 'drizzle' })
+    migrate(db, { migrationsFolder: path.join(__dirname, '..', 'drizzle') })
 
     // check temp account
     const tempAccountCount = (
