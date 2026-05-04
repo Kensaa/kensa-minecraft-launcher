@@ -19,7 +19,7 @@
         "decompress": "^4.2.1",
         "drizzle-orm": "^0.44.6",
         "express": "^5.1.0",
-        "express-api-router": "git@github.com:Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca",
+        "express-api-router": "https://github.com/Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca",
         "jsonwebtoken": "^9.0.2",
         "utils": "workspace:*",
         "zod": "^4.1.12"
