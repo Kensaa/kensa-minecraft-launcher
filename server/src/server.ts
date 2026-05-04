@@ -141,4 +141,9 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     app.get('/', (req, res) => res.sendStatus(200))
     app.get('/version', (req, res) => res.status(200).send(serverVersion))
     app.use('/static/', express.static(STATIC_DIRECTORY))
+    // for legacy file download
+    app.use(
+        '/static/gameFolders',
+        express.static(path.join(STATIC_DIRECTORY, 'gameDirectories'))
+    )
 })()
