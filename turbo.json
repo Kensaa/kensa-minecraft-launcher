@@ -23,7 +23,7 @@
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["src/**/*"],
-            "outputs": ["dist/**/*"],
+            "outputs": ["dist/**/*", "drizzle/**/*"],
             "outputLogs": "new-only"
         }
     }
