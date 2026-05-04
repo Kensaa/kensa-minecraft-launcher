@@ -66,6 +66,8 @@ jobs:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
         env:
+            HOME: /tmp/home
+            XDG_CACHE_HOME: /tmp/.cache
             WINEPREFIX: /tmp/wineprefix
             XDG_RUNTIME_DIR: /tmp/xdg-runtime
             WINEDLLOVERRIDES: vulkan,d3d11,d3d9=n
@@ -78,9 +80,12 @@ jobs:
               run: |
                   pkill -f wine || true
                   pkill -f wineserver || true
-                  rm -rf /tmp/wineprefix 
-                  rm -rf /tmp/xdg-runtime 
-                  mkdir -p /tmp/wineprefix 
+
+                  rm -rf /tmp/home /tmp/.cache /tmp/wineprefix /tmp/xdg-runtime
+
+                  mkdir -p /tmp/home
+                  mkdir -p /tmp/.cache
+                  mkdir -p /tmp/wineprefix
                   mkdir -p /tmp/xdg-runtime
 
             - name: enable corepack
