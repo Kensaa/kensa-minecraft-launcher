@@ -49,6 +49,10 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
     fs.mkdirSync(STATIC_DIRECTORY)
 }
 
+process.on('SIGINT', () => {
+    console.log('Shutting down...')
+    process.exit(0)
+})
 ;(async () => {
     const db = drizzle(path.join(DATA_DIRECTORY, 'database.db'))
     migrate(db, { migrationsFolder: path.join(__dirname, '..', 'drizzle') })
