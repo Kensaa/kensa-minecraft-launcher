@@ -65,9 +65,11 @@ function LoginWall({
     redirect = '/login',
     admin_needed = false
 }: LoginWallProps) {
+    const isFetching = useAuth(state => state.fetching)
     let autorized = useAuth(state => state.connected)
     const userInfos = useAuth(state => state.userInfos)
-    console.log(admin_needed, userInfos)
+
+    if (isFetching) return <div>Loading</div>
     if (admin_needed && (userInfos === undefined || !userInfos.is_admin))
         return <Redirect to={redirect} />
     if (reversed) autorized = !autorized
