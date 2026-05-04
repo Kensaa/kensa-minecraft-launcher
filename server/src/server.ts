@@ -31,10 +31,13 @@ const serverVersion = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')
 ).version
 
+console.log('IS DEV : ', IS_DEV)
+
 if (!fs.existsSync(DATA_DIRECTORY)) {
     console.log(`data directory ${DATA_DIRECTORY} does not exist, creating it`)
     fs.mkdirSync(DATA_DIRECTORY)
 }
+console.log('data directory : ', DATA_DIRECTORY)
 
 if (process.env.SERVER_NAME === undefined) {
     console.log(
