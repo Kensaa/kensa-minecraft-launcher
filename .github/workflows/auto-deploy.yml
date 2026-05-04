@@ -93,7 +93,7 @@ jobs:
 
             - name: install dependencies
               working-directory: out
-              run: yarn
+              run: yarn install --immutable=false
 
             - name: build
               working-directory: out
