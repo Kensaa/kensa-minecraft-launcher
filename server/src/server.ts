@@ -18,7 +18,7 @@ import * as webApi from './web-api/web-api'
 import * as launcherApi from './launcher-api/launcher-api'
 
 const PORT = parseInt(process.env.PORT || '40069')
-const DATA_DIRECTORY = process.env.DATA_FOLDER || './data'
+const DATA_DIRECTORY = process.env.DATA_DIRECTORY || './data'
 const IS_DEV = process.env.NODE_ENV !== 'production'
 const SERVER_NAME =
     process.env.SERVER_NAME ||
