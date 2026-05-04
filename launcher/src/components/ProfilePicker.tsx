@@ -17,7 +17,6 @@ export default function ProfilePicker() {
     const fetching = useIsFetching()
     const { setSelectedProfile } = useSelectedProfile()
 
-    console.log(profiles)
     return (
         <div
             style={{ maxWidth: '400px' }}
@@ -37,7 +36,7 @@ export default function ProfilePicker() {
                                     />
                                     {profiles.map((profile, profileIndex) => (
                                         <Dropdown.Item
-                                            key={`${serverIndex},${profile.id ?? profileIndex}`}
+                                            key={`${serverIndex}-${profileIndex}`}
                                             onClick={() =>
                                                 setSelectedProfile([
                                                     server,

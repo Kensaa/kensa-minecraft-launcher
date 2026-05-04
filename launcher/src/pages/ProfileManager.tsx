@@ -11,7 +11,6 @@ import { Profile } from '../types'
 import {
     useIsFetching,
     useLocalProfiles,
-    useProfiles,
     useSelectedProfile
 } from '../stores/profiles'
 import LoadingSpinner from '../components/LoadingSpinner'

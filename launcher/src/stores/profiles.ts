@@ -165,6 +165,7 @@ export const useSelectedProfile = () => {
         if (!profile) return undefined
         return {
             serverName,
+            address: serverProfiles.address,
             profile
         }
     }, [profiles, selectedProfile])
