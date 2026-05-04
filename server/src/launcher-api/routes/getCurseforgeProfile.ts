@@ -127,6 +127,7 @@ async function createCurseforgeProfile(
             overrideDirectory,
             { recursive: true }
         )
+        // TODO: neoforge support
         const manifest = {
             minecraft: {
                 version: profile.mc_version,

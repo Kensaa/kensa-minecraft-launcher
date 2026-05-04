@@ -10,6 +10,7 @@ export const profilesTable = sqliteTable('profiles', {
     id: int().primaryKey({ autoIncrement: true }),
     name: text().notNull().unique(),
     mc_version: text().notNull(),
+    is_neoforge: int({ mode: 'boolean' }).notNull().default(false),
     forge_version: text(),
     game_directory: text().references(() => gameDirectoriesTable.name),
     last_modified: int({ mode: 'timestamp_ms' }).notNull().default(new Date(0)),

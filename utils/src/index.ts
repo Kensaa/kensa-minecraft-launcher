@@ -24,6 +24,9 @@ export interface LegacyProfile {
 export type Profile = LegacyProfile & {
     id: number
     gameDirectory: LegacyProfile['gameFolder']
+    version: LegacyProfile['version'] & {
+        isNeoforge: boolean
+    }
 }
 
 export type GameDirectory = {
