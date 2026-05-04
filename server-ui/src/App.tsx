@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SnackbarProvider } from 'notistack'
 import GameDirectoryPage from './pages/GameDirectoryPage'
+import AccountCreatePage from './pages/AccountCreatePage'
 
 const queryClient = new QueryClient()
 
@@ -35,6 +36,11 @@ function App() {
                                 <LoginPage />
                             </LoginWall>
                         </Route>
+                        <Route path='/admin/createAccount'>
+                            <LoginWall admin_needed redirect='/'>
+                                <AccountCreatePage />
+                            </LoginWall>
+                        </Route>
                         <Route>
                             <Redirect to='/' />
                         </Route>
@@ -51,13 +57,19 @@ interface LoginWallProps {
     children: React.ReactNode
     reversed?: boolean
     redirect?: string
+    admin_needed?: boolean
 }
 function LoginWall({
     children,
     reversed,
-    redirect = '/login'
+    redirect = '/login',
+    admin_needed = false
 }: LoginWallProps) {
     let autorized = useAuth(state => state.connected)
+    const userInfos = useAuth(state => state.userInfos)
+    console.log(admin_needed, userInfos)
+    if (admin_needed && (userInfos === undefined || !userInfos.is_admin))
+        return <Redirect to={redirect} />
     if (reversed) autorized = !autorized
     return autorized ? children : <Redirect to={redirect} />
 }

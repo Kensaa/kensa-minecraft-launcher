@@ -7,17 +7,11 @@ import {
     Menu,
     MenuItem,
     IconButton,
-    Box,
-    Drawer,
-    Divider,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemText
+    Box
 } from '@mui/material'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
-import { Link } from 'wouter'
+import { Link, useLocation } from 'wouter'
 import { useAuth } from '../stores/auth'
 
 type Page = {
@@ -28,8 +22,10 @@ type Page = {
 const pages: Page[] = []
 
 export default function Navbar() {
+    const [, setLocation] = useLocation()
     const [anchor, setAnchor] = useState<null | HTMLElement>(null)
     const connected = useAuth(state => state.connected)
+    const userInfos = useAuth(state => state.userInfos)
     const logout = useAuth(state => state.logout)
     const [drawerOpened, setDrawerOpened] = useState(false)
 
@@ -97,60 +93,17 @@ export default function Navbar() {
                         )}
                     </Box>
                 </Toolbar>
-                <nav>
-                    <Drawer
-                        variant='temporary'
-                        open={drawerOpened}
-                        onClose={() => setDrawerOpened(false)}
-                        ModalProps={{
-                            keepMounted: true
-                        }}
-                        sx={{
-                            display: { xs: 'block', sm: 'none' },
-                            '& .MuiDrawer-paper': {
-                                boxSizing: 'border-box',
-                                width: '240px'
-                            }
-                        }}
-                    >
-                        <Box
-                            onClick={toggleDrawer}
-                            sx={{ textAlign: 'center' }}
-                        >
-                            <Typography
-                                variant='h6'
-                                component={Link}
-                                to='/'
-                                sx={{
-                                    my: 2,
-                                    textDecoration: 'none',
-                                    color: 'inherit'
-                                }}
-                            >
-                                The Bulk Project
-                            </Typography>
-                            <Divider />
-                            <List>
-                                {pages.map(item => (
-                                    <ListItem key={item.name} disablePadding>
-                                        <ListItemButton
-                                            sx={{ textAlign: 'center' }}
-                                            LinkComponent={Link}
-                                            href={item.path}
-                                        >
-                                            <ListItemText primary={item.name} />
-                                        </ListItemButton>
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Box>
-                    </Drawer>
-                </nav>
-
                 <NavbarMenu anchor={anchor} hide={() => setAnchor(null)}>
                     <MenuItem component={Link} to='/account'>
                         My Account
                     </MenuItem>
+                    {userInfos && userInfos.is_admin ? (
+                        <MenuItem
+                            onClick={() => setLocation('/admin/createAccount')}
+                        >
+                            Create Account
+                        </MenuItem>
+                    ) : undefined}
                     <MenuItem onClick={logout}>Logout</MenuItem>
                 </NavbarMenu>
             </AppBar>
@@ -164,10 +117,14 @@ interface UserIconProps {
 
 function UserIcon({ onClick }: UserIconProps) {
     const connected = useAuth(state => state.connected)
-    if (!connected) return <div></div>
+    const userInfos = useAuth(state => state.userInfos)
+    if (!connected || !userInfos) return <div></div>
 
     return (
         <>
+            <Typography>
+                Logged in as <b>{userInfos.username}</b>
+            </Typography>
             <IconButton onClick={onClick}>
                 <AccountCircle />
             </IconButton>

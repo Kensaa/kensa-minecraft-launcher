@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, type JSX } from 'react'
 import { Box, Button, Typography } from '@mui/material'
 import { useAuth } from '../stores/auth'
 import { useLocation } from 'wouter'
@@ -7,6 +7,7 @@ import { ValidatedTextField } from '../components/ValidatedTextField'
 import { address } from '../config'
 import { useSnackbar } from 'notistack'
 import { jsonHeaders } from '../queries'
+import CreateAccountAskDialog from '../components/CreateAccountAskDialog'
 
 export default function LoginPage() {
     const { enqueueSnackbar } = useSnackbar()
@@ -16,6 +17,9 @@ export default function LoginPage() {
 
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+
+    // const [showAskDialog, setShowAskDialog] = useState(false)
+    const [dialog, setDialog] = useState<null | JSX.Element>(null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -34,8 +38,19 @@ export default function LoginPage() {
         }).then(res => {
             if (res.ok) {
                 res.json().then(data => {
-                    login(data)
-                    setLocation('/')
+                    console.log(data)
+                    if (data.is_admin && data.temp_account) {
+                        setDialog(
+                            <CreateAccountAskDialog
+                                open={true}
+                                close={() => login(data)}
+                            />
+                        )
+                        // temp admin account, ask if user want to create an account
+                    } else {
+                        login(data)
+                        setLocation('/')
+                    }
                 })
             } else {
                 res.text().then(text =>
@@ -46,51 +61,54 @@ export default function LoginPage() {
     }
 
     return (
-        <div>
-            <Navbar />
-            <Box className='f-col align-center' sx={{ m: 8 }}>
-                <Typography component='h1' variant='h5'>
-                    Login
-                </Typography>
-                <Box
-                    component='form'
-                    onSubmit={handleSubmit}
-                    noValidate
-                    sx={{ mt: 1, width: { xs: '100%', sm: '25%' } }}
-                >
-                    <ValidatedTextField
-                        margin='normal'
-                        required
-                        fullWidth
-                        label='Username'
-                        autoComplete='username'
-                        autoFocus
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        errorMessage='Username is required'
-                    />
-                    <ValidatedTextField
-                        margin='normal'
-                        required
-                        fullWidth
-                        label='Password'
-                        type='password'
-                        autoComplete='current-password'
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        errorMessage='Password is required'
-                    />
-                    <Button
-                        type='submit'
-                        fullWidth
-                        variant='contained'
-                        sx={{ mt: 3, mb: 2 }}
-                        disabled={!(username && password)}
-                    >
+        <>
+            <div>
+                <Navbar />
+                <Box className='f-col align-center' sx={{ m: 8 }}>
+                    <Typography component='h1' variant='h5'>
                         Login
-                    </Button>
+                    </Typography>
+                    <Box
+                        component='form'
+                        onSubmit={handleSubmit}
+                        noValidate
+                        sx={{ mt: 1, width: { xs: '100%', sm: '25%' } }}
+                    >
+                        <ValidatedTextField
+                            margin='normal'
+                            required
+                            fullWidth
+                            label='Username'
+                            autoComplete='username'
+                            autoFocus
+                            value={username}
+                            onChange={e => setUsername(e.target.value)}
+                            errorMessage='Username is required'
+                        />
+                        <ValidatedTextField
+                            margin='normal'
+                            required
+                            fullWidth
+                            label='Password'
+                            type='password'
+                            autoComplete='current-password'
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            errorMessage='Password is required'
+                        />
+                        <Button
+                            type='submit'
+                            fullWidth
+                            variant='contained'
+                            sx={{ mt: 3, mb: 2 }}
+                            disabled={!(username && password)}
+                        >
+                            Login
+                        </Button>
+                    </Box>
                 </Box>
-            </Box>
-        </div>
+            </div>
+            {dialog}
+        </>
     )
 }
