@@ -10,7 +10,6 @@ import { count, eq } from 'drizzle-orm'
 import {
     APIInstances,
     downloadJavaRuntime,
-    getGameDirectory,
     hashPassword,
     refreshGameDirectory
 } from './utils'
@@ -234,11 +233,7 @@ if (!fs.existsSync(STATIC_DIRECTORY)) {
         express.static(path.join(STATIC_DIRECTORY, 'gameDirectories'))
     )
 
-    const PUBLIC_PATH = path.resolve(
-        process.env.NODE_ENV === 'production'
-            ? './public/'
-            : path.join(__dirname, '..', 'public/')
-    )
+    const PUBLIC_PATH = path.resolve(__dirname, '..', 'public/')
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
     console.log('public folder :', PUBLIC_PATH)
