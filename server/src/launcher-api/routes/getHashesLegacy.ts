@@ -14,7 +14,7 @@ export function getHashesLegacy(router: APIRouter) {
         querySchema: z.object(),
         responseSchema: getTreeSchema(z.string()),
         async handler(req, res, instances) {
-            const tree: Tree<string> = {}
+            const tree: { gameFolders: Tree<string> } = { gameFolders: {} }
             const game_directories = await instances.database
                 .select()
                 .from(gameDirectoriesTable)
@@ -24,7 +24,7 @@ export function getHashesLegacy(router: APIRouter) {
                     .select()
                     .from(filesTable)
                     .where(eq(filesTable.game_directory, game_directory.name))
-                tree[game_directory.name] = buildFileTree(
+                tree.gameFolders[game_directory.name] = buildFileTree(
                     profileFiles,
                     file => file.hash
                 )
