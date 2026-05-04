@@ -54,6 +54,14 @@ export function getCurseforgeProfile(router: APIRouter) {
                   )
                 : undefined
 
+            // TODO: neoforge support
+            if (profile.is_neoforge) {
+                throw new HTTPError(
+                    500,
+                    'Curseforge profiles are not yet implemented for profiles using neoforge'
+                )
+            }
+
             if (profile.curseforge_profile_created_at) {
                 // There is a curseforge profile
                 if (
@@ -76,6 +84,7 @@ export function getCurseforgeProfile(router: APIRouter) {
                 }
             } else {
                 // The curseforge profile doesn't exist
+                console.log('does not exist')
                 await createCurseforgeProfile(instances, profile)
             }
 
@@ -127,38 +136,39 @@ async function createCurseforgeProfile(
             overrideDirectory,
             { recursive: true }
         )
-        // TODO: neoforge support
-        const manifest = {
-            minecraft: {
-                version: profile.mc_version,
-                modLoaders: profile.forge_version
-                    ? [
-                          {
-                              id: `forge-${profile.forge_version}`,
-                              primary: true
-                          }
-                      ]
-                    : undefined
-            },
-            manifestType: 'minecraftModpack',
-            manifestVersion: 1,
-            name: profile.name,
-            version: '',
-            author: '',
-            files: [],
-            overrides: 'overrides'
-        }
-        fs.writeFileSync(
-            path.join(tempDirectory, 'manifest.json'),
-            JSON.stringify(manifest, null, 2)
-        )
-        await createArchive('zip', tempDirectory, curseforgeProfilePath, true)
-        fs.rmSync(tempDirectory, { recursive: true })
-        await instances.database
-            .update(profilesTable)
-            .set({
-                curseforge_profile_created_at: new Date()
-            })
-            .where(eq(profilesTable.id, profile.id))
+    } else {
+        fs.mkdirSync(overrideDirectory)
     }
+    const manifest = {
+        minecraft: {
+            version: profile.mc_version,
+            modLoaders: profile.forge_version
+                ? [
+                      {
+                          id: `forge-${profile.forge_version}`,
+                          primary: true
+                      }
+                  ]
+                : undefined
+        },
+        manifestType: 'minecraftModpack',
+        manifestVersion: 1,
+        name: profile.name,
+        version: '',
+        author: '',
+        files: [],
+        overrides: 'overrides'
+    }
+    fs.writeFileSync(
+        path.join(tempDirectory, 'manifest.json'),
+        JSON.stringify(manifest, null, 2)
+    )
+    await createArchive('zip', tempDirectory, curseforgeProfilePath, true)
+    fs.rmSync(tempDirectory, { recursive: true })
+    await instances.database
+        .update(profilesTable)
+        .set({
+            curseforge_profile_created_at: new Date()
+        })
+        .where(eq(profilesTable.id, profile.id))
 }
