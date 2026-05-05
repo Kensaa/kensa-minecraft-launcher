@@ -13,7 +13,8 @@ export function createProfileHandler(router: APIRouter) {
             mcVersion: z.string(),
             isNeoforge: z.boolean(),
             forgeVersion: z.string().optional(),
-            gameDirectory: z.string().optional()
+            gameDirectory: z.string().optional(),
+            hidden: z.boolean()
         }),
         paramsSchema: z.object(),
         querySchema: z.object(),
@@ -46,7 +47,8 @@ export function createProfileHandler(router: APIRouter) {
                     mc_version: req.body.mcVersion,
                     is_neoforge: req.body.isNeoforge,
                     forge_version: req.body.forgeVersion,
-                    game_directory: req.body.gameDirectory
+                    game_directory: req.body.gameDirectory,
+                    hidden: req.body.hidden
                 })
                 .returning({ id: profilesTable.id })
 

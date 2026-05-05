@@ -17,7 +17,8 @@ export function getProfilesHandler(router: APIRouter) {
                     isNeoforge: z.boolean(),
                     forge: z.string().optional()
                 }),
-                gameDirectory: z.string().optional()
+                gameDirectory: z.string().optional(),
+                hidden: z.boolean()
             })
             .array(),
         async handler(req, res, instances, userTokenData) {
@@ -33,7 +34,8 @@ export function getProfilesHandler(router: APIRouter) {
                     isNeoforge: profile.is_neoforge,
                     forge: profile.forge_version ?? undefined
                 },
-                gameDirectory: profile.game_directory ?? undefined
+                gameDirectory: profile.game_directory ?? undefined,
+                hidden: profile.hidden
             }))
         }
     })

@@ -18,7 +18,8 @@ export function getProfilesHandler(router: APIRouter) {
                     isNeoforge: z.boolean()
                 }),
                 gameFolder: z.string().optional(),
-                gameDirectory: z.string().optional()
+                gameDirectory: z.string().optional(),
+                hidden: z.boolean()
             })
             .array(),
         async handler(req, res, instances) {
@@ -26,7 +27,7 @@ export function getProfilesHandler(router: APIRouter) {
                 .select()
                 .from(profilesTable)
 
-            const reformattedProfiles = profiles.map(profile => ({
+            return profiles.map(profile => ({
                 id: profile.id,
                 name: profile.name,
                 version: {
@@ -35,10 +36,9 @@ export function getProfilesHandler(router: APIRouter) {
                     isNeoforge: profile.is_neoforge
                 },
                 gameFolder: profile.game_directory ?? undefined, // for backward compat
-                gameDirectory: profile.game_directory ?? undefined
+                gameDirectory: profile.game_directory ?? undefined,
+                hidden: profile.hidden
             }))
-
-            return reformattedProfiles
         }
     })
 }

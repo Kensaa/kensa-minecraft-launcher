@@ -27,6 +27,7 @@ export type Profile = LegacyProfile & {
     version: LegacyProfile['version'] & {
         isNeoforge: boolean
     }
+    hidden: boolean
 }
 
 export type GameDirectory = {
