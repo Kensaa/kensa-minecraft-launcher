@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `is_neoforge` integer DEFAULT false NOT NULL;

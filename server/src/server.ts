@@ -200,19 +200,16 @@ process.on('SIGINT', () => {
 
     const app = express()
     app.use(express.json())
-    if (IS_DEV) {
-        app.use(
-            cors({
-                allowedHeaders: [
-                    'X-Server-Name',
-                    'Content-Type',
-                    'Authorization'
-                ],
-                credentials: true,
-                origin: ['http://localhost:5173', 'http://localhost:5174'] // server-ui and launcher vite dev servers
-            })
-        )
-    }
+    app.use(
+        cors({
+            // allowedHeaders: [ 'Content-Type', 'Authorization'],
+            exposedHeaders: ['X-Server-Name'],
+            credentials: true,
+            origin: IS_DEV
+                ? ['http://localhost:5173', 'http://localhost:5174']
+                : true // server-ui and launcher vite dev servers
+        })
+    )
     app.use((_, res, next) => {
         res.setHeader('X-Server-Name', SERVER_NAME)
         next()

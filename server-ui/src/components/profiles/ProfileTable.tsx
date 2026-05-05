@@ -112,6 +112,7 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
                 id,
                 name: '',
                 gameDirectory: '',
+                isNeoforge: false,
                 mcVersion: '',
                 forgeVersion: '',
                 isNew: true
@@ -249,6 +250,7 @@ export default function ProfileTable() {
             name: profile.name,
             gameDirectory: profile.gameDirectory ?? '',
             mcVersion: profile.version.mc ?? '',
+            isNeoforge: profile.version.isNeoforge,
             forgeVersion: profile.version.forge ?? ''
         }))
         setGridRows(rows)
@@ -326,8 +328,14 @@ export default function ProfileTable() {
                 flex: 1
             },
             {
+                field: 'isNeoforge',
+                headerName: 'Is Neoforge',
+                type: 'boolean',
+                editable: true
+            },
+            {
                 field: 'forgeVersion',
-                headerName: 'Forge Version',
+                headerName: 'Forge / Neoforge Version',
                 type: 'singleSelect',
                 valueOptions: param => {
                     const noneOptions = { value: '', label: 'None' }
@@ -336,14 +344,25 @@ export default function ProfileTable() {
                         v => v.version === param.row.mcVersion
                     )
                     if (!version) return [noneOptions]
+                    const isNeoforge = param.row.isNeoforge
 
-                    return [
-                        noneOptions,
-                        ...version.forgeVersions.map(v => ({
-                            value: v.version,
-                            label: forgeVersionToString(v)
-                        }))
-                    ]
+                    if (isNeoforge) {
+                        return [
+                            noneOptions,
+                            ...version.neoforgeVersions.map(v => ({
+                                value: v,
+                                label: v
+                            }))
+                        ]
+                    } else {
+                        return [
+                            noneOptions,
+                            ...version.forgeVersions.map(v => ({
+                                value: v.version,
+                                label: forgeVersionToString(v)
+                            }))
+                        ]
+                    }
                 },
                 editable: true,
                 flex: 1
@@ -476,7 +495,8 @@ export default function ProfileTable() {
     ])
 
     const processRowUpdate = async (newRow: GridRowModel) => {
-        const { name, mcVersion, forgeVersion, gameDirectory } = newRow
+        const { name, mcVersion, isNeoforge, forgeVersion, gameDirectory } =
+            newRow
         if (name === '') {
             // enqueueSnackbar('Invalid profile name', { variant: 'error' })
             throw 'Invalid profile name'
@@ -488,6 +508,7 @@ export default function ProfileTable() {
         const requestBody = {
             name: name,
             mcVersion: mcVersion,
+            isNeoforge: isNeoforge,
             forgeVersion: forgeVersion !== '' ? forgeVersion : undefined,
             gameDirectory: gameDirectory !== '' ? gameDirectory : undefined
         }

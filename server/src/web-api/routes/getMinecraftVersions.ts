@@ -17,7 +17,8 @@ export function getMinecraftVersionHandler(router: APIRouter) {
                         latest: z.boolean(),
                         recommended: z.boolean()
                     })
-                    .array()
+                    .array(),
+                neoforgeVersions: z.string().array()
             })
             .array(),
         async handler(req, res, instances) {

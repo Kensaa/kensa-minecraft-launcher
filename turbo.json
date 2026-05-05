@@ -9,7 +9,8 @@
         "XDG_SESSION_TYPE",
         "XDG_CURRENT_DESKTOP",
         "ORIGINAL_XDG_CURRENT_DESKTOP",
-        "GH_TOKEN"
+        "GH_TOKEN",
+        "LOCALAPPDATA"
     ],
     "tasks": {
         "release": {

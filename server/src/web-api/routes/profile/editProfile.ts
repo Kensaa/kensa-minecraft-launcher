@@ -11,6 +11,7 @@ export function updateProfileHandler(router: APIRouter) {
         bodySchema: z.object({
             name: z.string(),
             mcVersion: z.string(),
+            isNeoforge: z.boolean(),
             forgeVersion: z.string().optional(),
             gameDirectory: z.string().optional()
         }),
@@ -44,6 +45,7 @@ export function updateProfileHandler(router: APIRouter) {
                 .set({
                     name: req.body.name,
                     mc_version: req.body.mcVersion,
+                    is_neoforge: req.body.isNeoforge,
                     forge_version: req.body.forgeVersion ?? null,
                     game_directory: req.body.gameDirectory ?? null,
                     last_modified: new Date()

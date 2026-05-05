@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Task } from './types'
+import type { Profile, Task } from './types'
 import { ipcRenderer } from 'electron'
 
 export function useFetch(address: string, options: RequestInit) {
@@ -55,4 +55,22 @@ export function formatTime(time: number | Date) {
     const second = date.getSeconds().toString().padStart(2, '0')
 
     return `${day}/${month}/${year} ${hour}:${minute}:${second}`
+}
+
+export function getVersionString(version: Profile['version']): string {
+    const { forge, mc, isNeoforge } = version
+    if (forge !== undefined) {
+        if (isNeoforge) {
+            return `neoforge-${mc}-${forge}`
+        } else {
+            // compat with both forge version format
+            if (forge.endsWith('.jar')) {
+                return forge.substring(0, forge.lastIndexOf('-'))
+            } else {
+                return `forge-${mc}-${forge}`
+            }
+        }
+    } else {
+        return version.mc
+    }
 }

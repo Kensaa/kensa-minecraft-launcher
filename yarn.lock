@@ -6662,7 +6662,7 @@ __metadata:
     electron-builder: "npm:^23.6.0"
     electron-fetch: "npm:^1.9.1"
     lucide-react: "npm:^0.104.1"
-    minecraft-launcher-core: "npm:^3.18.1"
+    minecraft-launcher-core: "npm:^3.18.2"
     msmc: "patch:msmc@npm%3A5.0.5#~/.yarn/patches/msmc-npm-5.0.5-d83892c101.patch"
     pino: "npm:^9.7.0"
     pino-pretty: "npm:^13.0.0"
@@ -7010,15 +7010,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minecraft-launcher-core@npm:^3.18.1":
-  version: 3.18.1
-  resolution: "minecraft-launcher-core@npm:3.18.1"
+"minecraft-launcher-core@npm:^3.18.2":
+  version: 3.18.2
+  resolution: "minecraft-launcher-core@npm:3.18.2"
   dependencies:
     adm-zip: "npm:^0.4.13"
     checksum: "npm:^0.1.1"
     request: "npm:^2.88.2"
     uuid: "npm:^8.3.2"
-  checksum: 10c0/890a933640d90aaa91e94408749f58ba673453348efc2f19aa15a1c4f735b3a3b0cd5a9f1dbeb5b875aacc7ce0c5e68e21497afb887c4d5e5416675650b1024f
+  checksum: 10c0/b18bbe2609996401b60a0a6efdb3ba89799d949dba7d73dad269f07b3715cb147d9338ac41ae566c5d498657192ec2ab3557593bcb7fe100ffe91db9e0244d8f
   languageName: node
   linkType: hard
 

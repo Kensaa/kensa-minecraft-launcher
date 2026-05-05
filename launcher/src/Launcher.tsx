@@ -48,13 +48,14 @@ export default function Launcher() {
             <Modal
                 show={profileManagerShown}
                 onHide={() => setProfileManagerShown(false)}
+                dialogClassName='large-modal'
             >
                 <Modal.Header closeButton>
                     <Modal.Title style={{ color: 'black' }}>
                         Local Profile Manager
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body style={{}}>
                     <ProfileManager />
                 </Modal.Body>
             </Modal>

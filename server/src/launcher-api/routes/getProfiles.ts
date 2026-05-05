@@ -14,7 +14,8 @@ export function getProfilesHandler(router: APIRouter) {
                 name: z.string(),
                 version: z.object({
                     mc: z.string(),
-                    forge: z.string().optional()
+                    forge: z.string().optional(),
+                    isNeoforge: z.boolean()
                 }),
                 gameFolder: z.string().optional(),
                 gameDirectory: z.string().optional()
@@ -30,7 +31,8 @@ export function getProfilesHandler(router: APIRouter) {
                 name: profile.name,
                 version: {
                     mc: profile.mc_version,
-                    forge: profile.forge_version ?? undefined
+                    forge: profile.forge_version ?? undefined,
+                    isNeoforge: profile.is_neoforge
                 },
                 gameFolder: profile.game_directory ?? undefined, // for backward compat
                 gameDirectory: profile.game_directory ?? undefined
