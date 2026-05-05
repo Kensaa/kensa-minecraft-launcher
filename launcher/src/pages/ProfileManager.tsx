@@ -202,7 +202,8 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
                 forge: forge && forge !== '' ? forge : undefined
             },
             gameFolder: effectiveGameDirectory,
-            gameDirectory: effectiveGameDirectory
+            gameDirectory: effectiveGameDirectory,
+            hidden: false
         }
 
         const newProfiles = localProfiles.filter(p => p !== profile)
