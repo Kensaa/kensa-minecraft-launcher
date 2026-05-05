@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as fs from 'fs'
 import { Auth, Xbox } from 'msmc'
 import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
-import type { Config, Profile, StartArgs } from '../src/types'
+import type { Config, Profile, StartArgs, IPCHandlerResult } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
 
 import decompress from 'decompress'
@@ -45,8 +45,6 @@ const platform = os.platform()
 const supportedPlatforms = ['win32', 'linux']
 
 const DIRECTORY_HASH_UPDATE_SKIP = ['config']
-
-let gameStarting = false
 
 if (!supportedPlatforms.includes(platform)) {
     dialog.showErrorBox(
@@ -415,92 +413,93 @@ ipcMain.handle('fetch-mcversions', async (event, args) => {
     return fetchMcVersions(fetch)
 })
 
-ipcMain.handle('start-game', async (_, args: StartArgs) => {
-    logger.debug('start-game (async)')
-    logger.info('Starting Game ...')
-    if (gameStarting) {
-        throw new Error('game already starting')
-    }
-    gameStarting = true
-    if (!config) throw new Error('no config loaded')
-    if (!authInfo) throw new Error('not logged in')
-    checkExist(path.join(config.rootDir, 'profiles'))
-    checkExist(path.join(config.rootDir, 'addedMods'))
-    checkExist(path.join(config.rootDir, 'java'))
+let gameStarting = false
 
-    updateTask({
-        title: 'Starting Game',
-        progress: 0
-    })
+ipcMain.handle(
+    'start-game',
+    async (_, args: StartArgs): Promise<IPCHandlerResult> => {
+        logger.debug('start-game (async)')
+        logger.info('Starting Game ...')
+        if (gameStarting) {
+            return { success: false, error: 'Game already starting' }
+        }
+        gameStarting = true
+        if (!authInfo) return { success: false, error: 'Not logged in' }
+        checkExist(path.join(config.rootDir, 'profiles'))
+        checkExist(path.join(config.rootDir, 'addedMods'))
+        checkExist(path.join(config.rootDir, 'java'))
 
-    let gameStarted = false
+        updateTask({
+            title: 'Starting Game',
+            progress: 0
+        })
 
-    const launcher = new Client()
-    const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
-    launcher.on('data', (e: string) => {
-        if (!gameStarted) {
-            gameStarted = true
-            updateTask(undefined)
-            if (config.closeLauncher) {
-                setTimeout(app.quit, 5000)
-            } else if (config.openLogs) {
-                openLogs()
+        const launcher = new Client()
+        const timeExp = /(\[\d\d:\d\d:\d\d\])?(.*)/
+        launcher.on('data', (e: string) => {
+            // sometimes multiple lines arrive at once
+            for (const line of e.trim().split('\n')) {
+                // remove the time in front of the game logs
+                const matches = line.match(timeExp)
+                if (!matches) {
+                    continue
+                }
+                const data = matches[matches.length - 1]
+                logger.game(data.trim())
             }
-            gameStarting = false
-            return
-        }
-        // sometimes multiple lines arrive at once
-        for (const line of e.trim().split('\n')) {
-            // remove the time in front of the game logs
-            const matches = line.match(timeExp)
-            if (!matches) {
-                continue
+        })
+
+        launcher.on('progress', progress => {
+            const {
+                type,
+                task: current,
+                total
+            } = progress as { type: string; task: number; total: number }
+
+            if (['assets', 'natives'].includes(type)) {
+                updateTask({
+                    title: `Downloading ${type}`,
+                    progress: (current / total) * 100
+                })
+            } else {
+                updateTask({
+                    title: 'Starting Game',
+                    progress: (current / total) * 100
+                })
             }
-            const data = matches[matches.length - 1]
-            logger.game(data.trim())
+        })
+
+        launcher.on('debug', data => {
+            logger.debug(data)
+        })
+
+        try {
+            const launchOptions = await launchGame(args)
+            logger.info('Launching Game')
+            const game = await launcher.launch(launchOptions)
+            if (game) {
+                logger.info('Game Launched')
+                gameStarting = false
+                updateTask(undefined)
+                if (config.closeLauncher) {
+                    app.quit()
+                } else if (config.openLogs) {
+                    openLogs()
+                }
+            } else {
+                logger.warning('Failed to launch game')
+                return { success: false, error: 'Failed to start game' }
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                logger.warning(err)
+                gameStarting = false
+                return { success: false, error: err.message }
+            }
         }
-    })
-
-    launcher.on('progress', progress => {
-        const {
-            type,
-            task: current,
-            total
-        } = progress as { type: string; task: number; total: number }
-
-        if (['assets', 'natives'].includes(type)) {
-            updateTask({
-                title: `Downloading ${type}`,
-                progress: (current / total) * 100
-            })
-        } else {
-            updateTask({
-                title: 'Starting Game',
-                progress: (current / total) * 100
-            })
-        }
-    })
-
-    launcher.on('debug', data => {
-        logger.debug(data)
-    })
-
-    try {
-        const launchOptions = await launchGame(args)
-        logger.info('Launching Game')
-        const game = await launcher.launch(launchOptions)
-        if (game) {
-            logger.info('Game Launched')
-            game.on('close', () => logger.info('Game Closed'))
-        } else {
-            logger.warning('Failed to launch game')
-        }
-    } catch (err) {
-        logger.warning(err)
-        gameStarting = false
-        throw err
+        return { success: true }
     }
-})
+)
 
 async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
     const profile = args.profile

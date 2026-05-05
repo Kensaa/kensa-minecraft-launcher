@@ -18,3 +18,12 @@ export interface Config {
     closeLauncher: boolean
     openLogs: boolean
 }
+
+export type IPCHandlerResult =
+    | {
+          success: false
+          error: string
+      }
+    | {
+          success: true
+      }

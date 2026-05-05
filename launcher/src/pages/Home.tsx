@@ -4,7 +4,7 @@ import { Alert, Button, ProgressBar } from 'react-bootstrap'
 import HomeHeader from '../components/HomeHeader'
 
 import { useIsConnected } from '../stores/auth'
-import type { StartArgs } from '../types'
+import type { IPCHandlerResult, StartArgs } from '../types'
 
 import minecraft from '../img/minecraft.png'
 import AlertStack from '../components/AlertStack'
@@ -81,9 +81,13 @@ export default function Home({
             server: selectedProfile.address
         }
 
-        ipcRenderer.invoke('start-game', args).catch(error => {
-            setError(error.message)
-        })
+        ipcRenderer
+            .invoke('start-game', args)
+            .then((result: IPCHandlerResult) => {
+                if (!result.success) {
+                    setError(result.error)
+                }
+            })
     }
 
     return (
