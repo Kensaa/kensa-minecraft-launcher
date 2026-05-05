@@ -3,6 +3,7 @@ import { Profile } from '../types'
 
 import craftingtable from '../img/craftingtable.png'
 import furnace from '../img/furnace.png'
+import neoforge from '../img/neoforge.png'
 import { getVersionString } from '../utils'
 
 interface ProfileElementProps {
@@ -15,7 +16,13 @@ export default function ProfileElement({ profile }: ProfileElementProps) {
             <img
                 width={48}
                 height={48}
-                src={profile.version.forge ? furnace : craftingtable}
+                src={
+                    profile.version.forge
+                        ? profile.version.isNeoforge
+                            ? neoforge
+                            : furnace
+                        : craftingtable
+                }
             />
             <div className='d-flex flex-column justify-content-center align-items-start mx-1'>
                 <h6 style={{ marginBottom: '0px', color: 'white' }}>
