@@ -57,13 +57,20 @@ export function uncompressGameDirectoryFileHandler(router: APIRouter) {
                 gameDirectoryPath
             )
             const splitedFilePath = file.filepath.split(path.sep)
-            const containingDirectory = splitedFilePath
-                .slice(0, splitedFilePath.length - 1)
-                .join(path.sep)
-            const containingDirectoryPath = sanitizeFilePath(
-                containingDirectory,
-                gameDirectoryPath
-            )
+            let containingDirectoryPath: string
+            if (splitedFilePath.length === 1) {
+                // Archive is at the root of the game directory, so the containing directory is the game directory itself
+                containingDirectoryPath = gameDirectoryPath
+            } else {
+                const containingDirectory = splitedFilePath
+                    .slice(0, splitedFilePath.length - 1)
+                    .join(path.sep)
+
+                containingDirectoryPath = sanitizeFilePath(
+                    containingDirectory,
+                    gameDirectoryPath
+                )
+            }
 
             await decompress(diskFilePath, containingDirectoryPath)
             await refreshGameDirectory(
