@@ -254,7 +254,8 @@ ipcMain.handle('start-update', async (event, arg) => {
         const filepath = path.join(os.tmpdir(), installer.name)
         const url = installer.url
         await download(url, filepath, {
-            Accept: 'application/octet-stream'
+            Accept: 'application/octet-stream',
+            'User-Agent': `kensa-minecraft-launcher`
         })
 
         shell.openPath(filepath)

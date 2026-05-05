@@ -27,7 +27,19 @@ export function download(
         const client = address.startsWith('https') ? https : http
 
         const req = client.get(address, { headers }, res => {
-            if (res.statusCode !== 200) {
+            if (res.statusCode === 302) {
+                // FOLLOW (returned by github when downloading releases)
+                const location = res.headers.location
+                if (location) {
+                    return download(location, filepath, headers)
+                        .then(resolve)
+                        .catch(reject)
+                } else {
+                    return reject(
+                        new Error('Status was 302 but no Location header found')
+                    )
+                }
+            } else if (res.statusCode !== 200) {
                 file.close()
                 fs.unlinkSync(filepath)
                 return reject(
