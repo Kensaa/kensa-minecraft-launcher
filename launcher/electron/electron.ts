@@ -723,7 +723,14 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
                 const forgeCache = JSON.parse(
                     fs.readFileSync(forgeCacheFile, 'utf-8')
                 )
-                if (forgeCache.id !== `${modloader}-${profile.version.forge}`) {
+                const expectedID =
+                    modloader === 'neoforge'
+                        ? `neoforge-${profile.version.forge}`
+                        : `${profile.version.mc}-forge-${profile.version.forge}`
+                logger.debug(`current forgeCache id : ${forgeCache.id}`)
+                logger.debug(`expected forgeCache id : ${expectedID}`)
+
+                if (forgeCache.id !== expectedID) {
                     logger.info(
                         'The existing forge cache was made under another version of forge/neoforge, deleting it'
                     )
