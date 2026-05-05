@@ -3,6 +3,7 @@ import { Profile } from '../types'
 
 import craftingtable from '../img/craftingtable.png'
 import furnace from '../img/furnace.png'
+import { getVersionString } from '../utils'
 
 interface ProfileElementProps {
     profile: Profile
@@ -26,18 +27,4 @@ export default function ProfileElement({ profile }: ProfileElementProps) {
             </div>
         </div>
     )
-}
-
-function getVersionString(version: Profile['version']) {
-    const { mc, forge } = version
-    let versionString = mc
-    if (forge) {
-        // compat with both forge version format
-        if (forge.endsWith('.jar')) {
-            versionString = forge.substring(0, forge.lastIndexOf('-'))
-        } else {
-            versionString = `forge-${mc}-${forge}`
-        }
-    }
-    return versionString
 }

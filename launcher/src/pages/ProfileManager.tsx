@@ -15,6 +15,7 @@ import {
 } from '../stores/profiles'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { mcversions } from '../mcversions'
+import { getVersionString } from '../utils'
 
 export default function ProfileManager() {
     const [editProfile, setEditProfile] = useState<Profile | undefined>()
@@ -129,9 +130,10 @@ function ProfileComponent({
     deleteProfile,
     edit
 }: ProfileComponentProps) {
-    const versionString = profile.version.forge
-        ? `forge-${profile.version.mc}`
-        : `${profile.version.mc}`
+    const versionString = useMemo(
+        () => getVersionString(profile.version),
+        [profile]
+    )
 
     return (
         <tr>
@@ -163,18 +165,21 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
 
     const [name, setName] = useState<string>(profile?.name ?? '')
     const [version, setVersion] = useState<string>(profile?.version.mc ?? '')
+    const [isNeoforge, setIsNeoforge] = useState<boolean>(
+        profile?.version.isNeoforge ?? false
+    )
     const [forge, setForge] = useState<string>(profile?.version.forge ?? '')
     const [gameDirectory, setGameDirectory] = useState<string>(
         profile?.gameDirectory ?? profile?.gameFolder ?? ''
     )
 
-    const forgeVersions = useMemo(() => {
+    const [forgeVersions, neoforgeVersions] = useMemo(() => {
         const v = mcversions.find(v => v.version === version)
         if (!v) {
-            return []
+            return [[], []]
         }
-        return v.forgeVersions
-    }, [version])
+        return [v.forgeVersions, v.neoforgeVersions]
+    }, [version, isNeoforge])
 
     const save = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -193,6 +198,7 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
             name,
             version: {
                 mc: version,
+                isNeoforge,
                 forge: forge && forge !== '' ? forge : undefined
             },
             gameFolder: effectiveGameDirectory,
@@ -230,28 +236,59 @@ function ProfileEdit({ profile, hide }: ProfileEditProps) {
                 </Form.Select>
             </Form.Group>
             <Form.Group>
-                <Form.Label>Forge Version</Form.Label>
-                <Form.Select
-                    value={forge}
-                    onChange={({ target }) => setForge(target.value)}
-                    disabled={forgeVersions.length === 0}
-                >
-                    <option value=''>Select a forge version (optional)</option>
-                    {forgeVersions.map((forgeVersion, i) => (
-                        <option key={i} value={forgeVersion.version}>
-                            {forgeVersion.version}{' '}
-                            {forgeVersion.latest ? '(latest)' : ''}{' '}
-                            {forgeVersion.recommended ? '(recommended)' : ''}
-                        </option>
-                    ))}
-                </Form.Select>
+                <Form.Label>Is Neoforge ?</Form.Label>
+                <Form.Switch
+                    checked={isNeoforge}
+                    onChange={e => setIsNeoforge(e.target.checked)}
+                />
             </Form.Group>
+            {isNeoforge ? (
+                <Form.Group>
+                    <Form.Label>Neoforge Version</Form.Label>
+                    <Form.Select
+                        value={forge}
+                        onChange={({ target }) => setForge(target.value)}
+                        disabled={neoforgeVersions.length === 0}
+                    >
+                        <option value=''>
+                            Select a neoforge version (optional)
+                        </option>
+                        {neoforgeVersions.map((neoforgeVersion, i) => (
+                            <option key={i} value={neoforgeVersion}>
+                                {neoforgeVersion}
+                            </option>
+                        ))}
+                    </Form.Select>
+                </Form.Group>
+            ) : (
+                <Form.Group>
+                    <Form.Label>Forge Version</Form.Label>
+                    <Form.Select
+                        value={forge}
+                        onChange={({ target }) => setForge(target.value)}
+                        disabled={forgeVersions.length === 0}
+                    >
+                        <option value=''>
+                            Select a forge version (optional)
+                        </option>
+                        {forgeVersions.map((forgeVersion, i) => (
+                            <option key={i} value={forgeVersion.version}>
+                                {forgeVersion.version}{' '}
+                                {forgeVersion.latest ? '(latest)' : ''}{' '}
+                                {forgeVersion.recommended
+                                    ? '(recommended)'
+                                    : ''}
+                            </option>
+                        ))}
+                    </Form.Select>
+                </Form.Group>
+            )}
             <Form.Group>
                 <Form.Label>Game Directory</Form.Label>
                 <Form.Control
                     value={gameDirectory}
                     onChange={({ target }) => setGameDirectory(target.value)}
-                    placeholder='game diectory of the profile (optional)'
+                    placeholder='game directory of the profile (optional)'
                 />
             </Form.Group>
             <Form.Group className='d-flex justify-content-center mt-2'>
