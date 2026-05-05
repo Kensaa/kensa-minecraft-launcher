@@ -386,6 +386,14 @@ ipcMain.on('get-local-profiles', (event, args) => {
             }
             return profile
         })
+
+        // Migration for hidden profiles
+        localProfiles = localProfiles.map(profile => {
+            if (profile.hidden === undefined) {
+                profile.hidden = false
+            }
+            return profile
+        })
         event.returnValue = localProfiles
     }
 })
