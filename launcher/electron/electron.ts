@@ -369,6 +369,13 @@ ipcMain.on('get-local-profiles', (event, args) => {
             return profile
         })
 
+        // Migration to neoforge
+        localProfiles = localProfiles.map(profile => {
+            if (profile.version.isNeoforge === undefined) {
+                profile.version.isNeoforge = false
+            }
+            return profile
+        })
         event.returnValue = localProfiles
     }
 })
@@ -405,7 +412,6 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
     gameStarting = true
     if (!config) throw new Error('no config loaded')
     if (!authInfo) throw new Error('not logged in')
-    checkExist(path.join(config.rootDir, 'forgeInstallers'))
     checkExist(path.join(config.rootDir, 'profiles'))
     checkExist(path.join(config.rootDir, 'addedMods'))
     checkExist(path.join(config.rootDir, 'java'))
@@ -463,9 +469,20 @@ ipcMain.handle('start-game', async (_, args: StartArgs) => {
         }
     })
 
+    launcher.on('debug', data => {
+        logger.debug(data)
+    })
+
     try {
         const launchOptions = await launchGame(args)
-        launcher.launch(launchOptions)
+        logger.info('Launching Game')
+        const game = await launcher.launch(launchOptions)
+        if (game) {
+            logger.info('Game Launched')
+            game.on('close', () => logger.info('Game Closed'))
+        } else {
+            logger.warning('Failed to launch game')
+        }
     } catch (err) {
         logger.warning(err)
         gameStarting = false
@@ -513,36 +530,6 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         }
         if (!installed) {
             throw new Error('Failed to install java from any server')
-        }
-    }
-
-    let forgePath: string | undefined
-    if (profile.version.forge) {
-        // if forge is specified
-        // two cases (as before) (even if the server will only be used in case of a legacy forge download)
-        if (server) {
-            forgePath = await downloadForge(
-                profile.version.mc,
-                profile.version.forge,
-                server
-            )
-        } else {
-            let installed = false
-            for (const server of config.servers) {
-                try {
-                    forgePath = await downloadForge(
-                        profile.version.mc,
-                        profile.version.forge,
-                        server
-                    )
-                    installed = true
-                    break
-                } catch {}
-            }
-
-            if (!installed) {
-                throw new Error('Failed to download forge from any server')
-            }
         }
     }
 
@@ -684,6 +671,28 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         })
     }
 
+    // handle modloaders
+    const isModded = profile.version.forge !== undefined
+    const modloader = profile.version.isNeoforge ? 'neoforge' : 'forge'
+    const modloaderFullVersion = `${modloader}-${profile.version.mc}-${profile.version.forge}`
+    const forgePath = path.join(
+        gameDirectoryPath,
+        'versions',
+        modloaderFullVersion,
+        `${modloader}.jar`
+    )
+    if (isModded) {
+        if (modloader === 'forge') {
+            await downloadForge(
+                profile.version.mc,
+                profile.version.forge!,
+                forgePath
+            )
+        } else {
+            await downloadNeoforge(profile.version.forge!, forgePath)
+        }
+    }
+
     await refreshAuth()
     const auth = await authInfo?.getMinecraft()
     if (!auth) throw new Error('failed to get Minecraft auth info')
@@ -693,9 +702,10 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         root: gameDirectoryPath,
         version: {
             number: profile.version.mc,
-            type: 'release'
+            type: 'release',
+            custom: isModded ? modloaderFullVersion : undefined
         },
-        forge: forgePath,
+        forge: isModded ? forgePath : undefined,
         memory: {
             max: config.ram + 'M',
             min: config.ram + 'M'
@@ -791,40 +801,17 @@ async function openLogs() {
 
 /**
  * Downloads forge for a given version
- * If the forge version given as argument is a file (ex: forge-1.20.1-47.3.0-installer.jar), it will use the legacy way of downloading (downloading for the server given as 3rd param), else it will download the version from forge's servers
  * @param mcVersion the version of Minecraft
  * @param forgeVersion the version of Forge
- * @param server the server to download from if using legacy way of downloading
- * @returns the path to the downloaded file
  */
 async function downloadForge(
     mcVersion: string,
     forgeVersion: string,
-    server?: string
-): Promise<string> {
+    downloadPath: string
+) {
     // Check for old forge format (directly the forge installer)
     if (forgeVersion.endsWith('.jar')) {
-        // LEGACY WAY OF DOWNLOADING FORGE (FROM THE SERVER)
-        logger.info('Forge legacy mode (downloading from launcher server)')
-        const forgePath = path.join(
-            config.rootDir,
-            'forgeInstallers',
-            forgeVersion
-        )
-        if (!fs.existsSync(forgePath)) {
-            if (!server) {
-                throw new Error(
-                    'Not able to download this version of forge: ' +
-                        forgeVersion +
-                        'please change the profile to the new forge version format'
-                )
-            }
-            const forgeURL = urlJoin(server, '/static/forges/', forgeVersion)
-            logger.info(`downloading ${forgeURL} to ${forgePath}`)
-            await download(forgeURL, forgePath)
-            logger.info(`${forgeVersion} downloaded`)
-        }
-        return forgePath
+        throw new Error('old forge format no longer supported')
     } else {
         // NEW WAY : DOWNLOAD THE INSTALLER DIRECTLY
         logger.info(
@@ -839,15 +826,31 @@ async function downloadForge(
             ? 'universal'
             : 'installer'
         const filename = `forge-${mcVersion}-${forgeVersion}-${fileType}.jar`
-        const filepath = path.join(config.rootDir, 'forgeInstallers', filename)
 
-        if (!fs.existsSync(filepath)) {
+        if (!fs.existsSync(downloadPath)) {
             const downloadURL = `https://maven.minecraftforge.net/net/minecraftforge/forge/${mcVersion}-${forgeVersion}/${filename}`
-            logger.info(`downloading ${downloadURL} to ${filepath}`)
-            await download(downloadURL, filepath)
+            logger.info(`Downloading ${downloadURL} to ${downloadPath}`)
+            await download(downloadURL, downloadPath)
             logger.info(`${forgeVersion} downloaded`)
         }
-        return filepath
+    }
+}
+
+/**
+ * Downloads a given version of neoforge
+ * @param neoforgeVersion The version of Neoforge to download (ex:21.5.86)
+ * @param downloadPath The path where neoforge will be downloaded
+ */
+async function downloadNeoforge(neoforgeVersion: string, downloadPath: string) {
+    logger.info(`Downloading Neoforge version ${neoforgeVersion}`)
+    const filename = `neoforge-${encodeURIComponent(neoforgeVersion)}-installer.jar`
+    // const filepath = path.join(config.rootDir, 'neoforgeInstallers', filename)
+    const downloadURL = `https://maven.neoforged.net/releases/net/neoforged/neoforge/${encodeURIComponent(neoforgeVersion)}/${filename}`
+
+    if (!fs.existsSync(downloadPath)) {
+        logger.info(`downloading ${downloadURL} to ${downloadPath}`)
+        await download(downloadURL, downloadPath)
+        logger.info(`Neoforge version ${neoforgeVersion} downloaded`)
     }
 }
 
