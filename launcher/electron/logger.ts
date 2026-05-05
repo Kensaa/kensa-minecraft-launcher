@@ -1,6 +1,6 @@
 import { ipcMain, type BrowserWindow } from 'electron'
 import * as fs from 'fs'
-import { pino, multistream } from 'pino'
+import { pino, multistream, destination } from 'pino'
 import type { LogDescriptor } from 'pino'
 import pretty from 'pino-pretty'
 import { Writable } from 'stream'
@@ -71,7 +71,7 @@ export function createLogger(LOG_FILE: string) {
             customLevels
         },
         multistream([
-            { level: 'trace', stream: pino.destination(LOG_FILE) },
+            { level: 'trace', stream: destination(LOG_FILE) },
             {
                 level: 'trace',
                 stream: pretty({

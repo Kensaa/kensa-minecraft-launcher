@@ -694,6 +694,11 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         `${modloader}.jar`
     )
     if (isModded) {
+        logger.info('profile is modded')
+        logger.info(
+            `modloader is ${modloader} version ${profile.version.forge}`
+        )
+        logger.info(`modloader full version ${modloaderFullVersion}`)
         if (modloader === 'forge') {
             await downloadForge(
                 profile.version.mc,
@@ -704,6 +709,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
             await downloadNeoforge(profile.version.forge!, forgePath)
         }
     }
+    logger.debug(`modloader path : ${forgePath}`)
 
     await refreshAuth()
     const auth = await authInfo?.getMinecraft()
@@ -715,7 +721,10 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         version: {
             number: profile.version.mc,
             type: 'release',
-            custom: isModded ? modloaderFullVersion : undefined
+            custom:
+                isModded && modloader === 'neoforge'
+                    ? modloaderFullVersion
+                    : undefined
         },
         forge: isModded ? forgePath : undefined,
         memory: {
