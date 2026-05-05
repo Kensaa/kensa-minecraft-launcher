@@ -72,7 +72,8 @@ const defaultConfig: Config = {
         'http://localhost:40069'
     ],
     closeLauncher: true,
-    openLogs: false
+    openLogs: false,
+    showHiddenProfiles: false
 }
 
 const authInstance = new Auth('select_account')

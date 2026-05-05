@@ -1,5 +1,5 @@
 import { ipcRenderer } from 'electron'
-import { Dropdown, Spinner } from 'react-bootstrap'
+import { Dropdown, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap'
 
 import { Profile } from '../types'
 import ProfileElement from './ProfileElement'
@@ -11,11 +11,27 @@ import {
 import LoadingSpinner from './LoadingSpinner'
 import { useEffect, useMemo, useState } from 'react'
 import { ServerCrash } from 'lucide-react'
+import { useConfig } from '../stores/config'
 
 export default function ProfilePicker() {
     const profiles = useProfiles()
     const fetching = useIsFetching()
     const { setSelectedProfile } = useSelectedProfile()
+    const showHiddenProfiles = useConfig(config => config.showHiddenProfiles)
+
+    const filteredProfiles = useMemo(() => {
+        if (showHiddenProfiles) return profiles
+        const out: typeof profiles = {}
+        for (const [server, serverProfiles] of Object.entries(profiles)) {
+            const filtered = serverProfiles.profiles.filter(p => !p.hidden)
+            if (filtered.length === 0) continue
+            out[server] = {
+                address: serverProfiles.address,
+                profiles: filtered
+            }
+        }
+        return out
+    }, [profiles, showHiddenProfiles])
 
     return (
         <div
@@ -23,9 +39,12 @@ export default function ProfilePicker() {
             className='d-flex flex-column align-items-center'
         >
             <Dropdown className='w-100 h-100'>
-                <DropdownToggle />
+                <DropdownToggle
+                    profiles={filteredProfiles}
+                    fetching={fetching}
+                />
                 <Dropdown.Menu className='w-100'>
-                    {Object.entries(profiles).map(
+                    {Object.entries(filteredProfiles).map(
                         ([server, { profiles, address }], serverIndex) => {
                             if (!profiles.length) return null
                             return (
@@ -56,10 +75,11 @@ export default function ProfilePicker() {
         </div>
     )
 }
-
-function DropdownToggle() {
-    const profiles = useProfiles()
-    const fetching = useIsFetching()
+interface DropdownToggleProps {
+    profiles: ReturnType<typeof useProfiles>
+    fetching: boolean
+}
+function DropdownToggle({ profiles, fetching }: DropdownToggleProps) {
     const { selectedProfile } = useSelectedProfile()
 
     // There is at least one profile
@@ -81,7 +101,13 @@ function DropdownToggle() {
             {fetching ? (
                 <LoadingSpinner />
             ) : !someProfilesExist ? (
-                <h2 className='mb-0'>No profile</h2>
+                <>
+                    <h2 className='mb-0'>No profile</h2>
+                    <h6>
+                        create local profiles or <br></br>
+                        add a server in the Settings
+                    </h6>
+                </>
             ) : !selectedProfile ? (
                 <h2>Select a profile</h2>
             ) : (
