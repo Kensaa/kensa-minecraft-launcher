@@ -115,6 +115,7 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
                 isNeoforge: false,
                 mcVersion: '',
                 forgeVersion: '',
+                hidden: false,
                 isNew: true
             }
         ])
@@ -251,7 +252,8 @@ export default function ProfileTable() {
             gameDirectory: profile.gameDirectory ?? '',
             mcVersion: profile.version.mc ?? '',
             isNeoforge: profile.version.isNeoforge,
-            forgeVersion: profile.version.forge ?? ''
+            forgeVersion: profile.version.forge ?? '',
+            hidden: profile.hidden
         }))
         setGridRows(rows)
     }, [profiles])
@@ -316,6 +318,12 @@ export default function ProfileTable() {
                 type: 'string',
                 editable: true,
                 flex: 1
+            },
+            {
+                field: 'hidden',
+                headerName: 'Hidden',
+                type: 'boolean',
+                editable: true
             },
             {
                 field: 'mcVersion',
@@ -495,8 +503,14 @@ export default function ProfileTable() {
     ])
 
     const processRowUpdate = async (newRow: GridRowModel) => {
-        const { name, mcVersion, isNeoforge, forgeVersion, gameDirectory } =
-            newRow
+        const {
+            name,
+            mcVersion,
+            isNeoforge,
+            forgeVersion,
+            gameDirectory,
+            hidden
+        } = newRow
         if (name === '') {
             // enqueueSnackbar('Invalid profile name', { variant: 'error' })
             throw 'Invalid profile name'
@@ -510,7 +524,8 @@ export default function ProfileTable() {
             mcVersion: mcVersion,
             isNeoforge: isNeoforge,
             forgeVersion: forgeVersion !== '' ? forgeVersion : undefined,
-            gameDirectory: gameDirectory !== '' ? gameDirectory : undefined
+            gameDirectory: gameDirectory !== '' ? gameDirectory : undefined,
+            hidden
         }
         if (newRow.isNew) {
             // create new profile

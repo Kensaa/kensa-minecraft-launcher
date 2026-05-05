@@ -13,7 +13,8 @@ export function updateProfileHandler(router: APIRouter) {
             mcVersion: z.string(),
             isNeoforge: z.boolean(),
             forgeVersion: z.string().optional(),
-            gameDirectory: z.string().optional()
+            gameDirectory: z.string().optional(),
+            hidden: z.boolean()
         }),
         paramsSchema: z.object({
             profile_id: z.string()
@@ -48,6 +49,7 @@ export function updateProfileHandler(router: APIRouter) {
                     is_neoforge: req.body.isNeoforge,
                     forge_version: req.body.forgeVersion ?? null,
                     game_directory: req.body.gameDirectory ?? null,
+                    hidden: req.body.hidden,
                     last_modified: new Date()
                 })
                 .where(eq(profilesTable.id, profile.id))

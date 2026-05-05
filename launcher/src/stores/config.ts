@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { ipcRenderer } from 'electron'
+import { Config } from '../types'
 
 interface configStore {
     rootDir: string
@@ -7,16 +8,18 @@ interface configStore {
     servers: string[]
     closeLauncher: boolean
     openLogs: boolean
+    showHiddenProfiles: boolean
     setRootDir: (dir: string) => void
     setRam: (ram: number) => void
     setServers: (servers: string[]) => void
     setCloseLauncher: (closeLauncher: boolean) => void
     setOpenLogs: (openLogs: boolean) => void
+    setShowHiddenProfiles: (showHiddenProfiles: boolean) => void
     resetConfig: () => void
 }
 
 const store = create<configStore>(set => {
-    const config = ipcRenderer.sendSync('get-config')
+    const config = ipcRenderer.sendSync('get-config') as Config
 
     return {
         rootDir: config.rootDir,
@@ -24,6 +27,7 @@ const store = create<configStore>(set => {
         servers: config.servers,
         closeLauncher: config.closeLauncher,
         openLogs: config.openLogs,
+        showHiddenProfiles: config.showHiddenProfiles,
         setRootDir: (rootDir: string) => {
             set({ rootDir })
             ipcRenderer.send('set-config', JSON.stringify({ rootDir }))
@@ -43,6 +47,13 @@ const store = create<configStore>(set => {
         setOpenLogs: (openLogs: boolean) => {
             set({ openLogs })
             ipcRenderer.send('set-config', JSON.stringify({ openLogs }))
+        },
+        setShowHiddenProfiles: (showHiddenProfiles: boolean) => {
+            set({ showHiddenProfiles })
+            ipcRenderer.send(
+                'set-config',
+                JSON.stringify({ showHiddenProfiles })
+            )
         },
         resetConfig: () => {
             ipcRenderer.sendSync('reset-config')

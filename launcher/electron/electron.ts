@@ -72,7 +72,8 @@ const defaultConfig: Config = {
         'http://localhost:40069'
     ],
     closeLauncher: true,
-    openLogs: false
+    openLogs: false,
+    showHiddenProfiles: false
 }
 
 const authInstance = new Auth('select_account')
@@ -383,6 +384,14 @@ ipcMain.on('get-local-profiles', (event, args) => {
         localProfiles = localProfiles.map(profile => {
             if (profile.version.isNeoforge === undefined) {
                 profile.version.isNeoforge = false
+            }
+            return profile
+        })
+
+        // Migration for hidden profiles
+        localProfiles = localProfiles.map(profile => {
+            if (profile.hidden === undefined) {
+                profile.hidden = false
             }
             return profile
         })

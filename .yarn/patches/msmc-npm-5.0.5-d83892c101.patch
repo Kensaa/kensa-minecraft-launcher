@@ -1,64 +1,51 @@
+diff --git a/dist/cjs/auth/auth.js b/dist/cjs/auth/auth.js
+index 651ac93291a2aa4f60ed95f9ee4255c03cb73e22..7fdde0221892a5aafd752c621e09821ae02b601e 100644
+--- a/dist/cjs/auth/auth.js
++++ b/dist/cjs/auth/auth.js
+@@ -118,7 +118,6 @@ class Auth extends events_1.default {
+                 }
+                 if (req.url.includes("?")) {
+                     const code = new URLSearchParams(req.url.substr(req.url.indexOf("?") + 1)).get("code");
+-                    console.log(code);
+                     try {
+                         callback(await this.login(code, lnk));
+                     }
+diff --git a/dist/cjs/auth/xbox.js b/dist/cjs/auth/xbox.js
+index 6adbb2132254dc999b07263447ba77197c4009e4..b528d6415ac0c5a6be7e7cfd10818004d6062ad6 100644
+--- a/dist/cjs/auth/xbox.js
++++ b/dist/cjs/auth/xbox.js
+@@ -54,7 +54,6 @@ class Xbox {
+             }
+             (0, lexicon_js_1.error)(ts);
+         }
+-        console.log(XSTS.DisplayClaims);
+         return `XBL3.0 x=${XSTS.DisplayClaims.xui[0].uhs};${XSTS.Token}`;
+     }
+     async refresh(force) {
 diff --git a/dist/cjs/gui/common.js b/dist/cjs/gui/common.js
-index 0456743490a3c0e5845dbe72550c88ea7d1c16b6..bcd80b7a26f650dacbb8142c467a10ded88ba9c1 100644
+index 0456743490a3c0e5845dbe72550c88ea7d1c16b6..37e2231285cbd8c55c31bf6a3b4eb65f5578025b 100644
 --- a/dist/cjs/gui/common.js
 +++ b/dist/cjs/gui/common.js
-@@ -4,31 +4,36 @@ exports.launch = exports.getDefaultWinProperties = void 0;
- const lexicon_js_1 = require("../util/lexicon.js");
- const lexicon_js_2 = require("../util/lexicon.js");
- function getDefaultWinProperties() {
--    return {
--        width: 500,
--        height: 650,
--        resizable: false,
--        title: (0, lexicon_js_1.getCode)("gui.title"),
--    };
-+  return {
-+    width: 500,
-+    height: 650,
-+    resizable: false,
-+    title: (0, lexicon_js_1.getCode)("gui.title"),
-+  };
- }
- exports.getDefaultWinProperties = getDefaultWinProperties;
- async function launch(auth, framework, windowProperties) {
--    let func = null;
--    switch (framework) {
--        case "raw":
+@@ -16,19 +16,18 @@ async function launch(auth, framework, windowProperties) {
+     let func = null;
+     switch (framework) {
+         case "raw":
 -            func = await import("./raw.js");
--            break;
--        case "nwjs":
++            func = require("./raw.js");
+             break;
+         case "nwjs":
 -            func = await import("./nwjs.js");
--            break;
--        case "electron":
++            func = require("./nwjs.js");
+             break;
+         case "electron":
 -            func = await import("./electron.js");
--            break;
--        default:
--            (0, lexicon_js_2.error)("error.state.invalid.gui");
--            return;
--    }
++            func = require("./electron.js");
+             break;
+         default:
+             (0, lexicon_js_2.error)("error.state.invalid.gui");
+             return;
+     }
 -    console.log(func);
--    return await auth.login(await (func?.default?.default || func?.default || func)(auth, windowProperties));
-+  let func = null;
-+  switch (framework) {
-+    case "raw":
-+      func = require("./raw.js");
-+      break;
-+    case "nwjs":
-+      func = require("./nwjs.js");
-+      break;
-+    case "electron":
-+      func = require("./electron.js");
-+      break;
-+    default:
-+      (0, lexicon_js_2.error)("error.state.invalid.gui");
-+      return;
-+  }
-+  console.log(func);
-+  return await auth.login(
-+    await (func?.default?.default || func?.default || func)(
-+      auth,
-+      windowProperties
-+    )
-+  );
+     return await auth.login(await (func?.default?.default || func?.default || func)(auth, windowProperties));
  }
  exports.launch = launch;

@@ -24,6 +24,9 @@ export default function Settings({
     const [ram, setRam] = useState(config.ram)
     const [closeLauncher, setCloseLauncher] = useState(config.closeLauncher)
     const [openLogs, setOpenLogs] = useState(config.openLogs)
+    const [showHiddenProfiles, setShowHiddenProfiles] = useState(
+        config.showHiddenProfiles
+    )
 
     const [validated, setValidated] = useState(false)
 
@@ -33,6 +36,7 @@ export default function Settings({
         config.setRam(ram)
         config.setCloseLauncher(closeLauncher)
         config.setOpenLogs(openLogs)
+        config.setShowHiddenProfiles(showHiddenProfiles)
 
         setValidated(true)
         hide()
@@ -76,6 +80,11 @@ export default function Settings({
                     label='Open logs when game starts'
                     value={openLogs}
                     setter={setOpenLogs as Setter}
+                />
+                <BooleanInput
+                    label='Show hidden profiles'
+                    value={showHiddenProfiles}
+                    setter={setShowHiddenProfiles as Setter}
                 />
                 <div className='d-flex justify-content-center my-1'>
                     <Button className='mx-1 flex-grow' onClick={resetConfig}>

@@ -17,6 +17,7 @@ export interface Config {
     servers: string[]
     closeLauncher: boolean
     openLogs: boolean
+    showHiddenProfiles: boolean
 }
 
 export type IPCHandlerResult =

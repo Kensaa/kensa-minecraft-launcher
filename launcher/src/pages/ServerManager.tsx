@@ -8,8 +8,10 @@ export default function ServerManager() {
     return (
         <Table>
             <thead>
-                <th>Address</th>
-                <th>Action</th>
+                <tr>
+                    <th>Address</th>
+                    <th>Action</th>
+                </tr>
             </thead>
             <tbody>
                 <tr>
@@ -41,6 +43,7 @@ export default function ServerManager() {
 
                 {servers.map(server => (
                     <ServerComponent
+                        key={server}
                         server={server}
                         deleteServer={() => {
                             setServers(servers.filter(s => s !== server))
