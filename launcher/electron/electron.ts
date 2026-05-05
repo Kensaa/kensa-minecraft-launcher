@@ -721,10 +721,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         version: {
             number: profile.version.mc,
             type: 'release',
-            custom:
-                isModded && modloader === 'neoforge'
-                    ? modloaderFullVersion
-                    : undefined
+            custom: isModded ? modloaderFullVersion : undefined
         },
         forge: isModded ? forgePath : undefined,
         memory: {
