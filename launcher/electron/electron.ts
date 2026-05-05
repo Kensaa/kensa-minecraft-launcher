@@ -369,6 +369,18 @@ ipcMain.on('get-local-profiles', (event, args) => {
             return profile
         })
 
+        // Enforce unique ids
+        const seenIds = new Set<number>()
+        localProfiles = localProfiles.map(profile => {
+            if (!seenIds.has(profile.id)) {
+                seenIds.add(profile.id)
+            } else {
+                profile.id = Math.max(...seenIds.values()) + 1
+                seenIds.add(profile.id)
+            }
+            return profile
+        })
+
         // Migration to neoforge
         localProfiles = localProfiles.map(profile => {
             if (profile.version.isNeoforge === undefined) {
