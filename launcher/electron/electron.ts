@@ -708,6 +708,34 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         } else {
             await downloadNeoforge(profile.version.forge!, forgePath)
         }
+
+        // Check if the forge / neoforge version has changed since last launch
+        // If yes, delete the mclc forge cache directory
+        // This is here so that if the profile's forge version changes, the game should not start on the old version
+        const forgeCacheFile = path.join(
+            gameDirectoryPath,
+            'forge',
+            profile.version.mc,
+            'version.json'
+        )
+        if (fs.existsSync(forgeCacheFile)) {
+            try {
+                const forgeCache = JSON.parse(
+                    fs.readFileSync(forgeCacheFile, 'utf-8')
+                )
+                if (forgeCache.id !== `${modloader}-${profile.version.forge}`) {
+                    logger.info(
+                        'The existing forge cache was made under another version of forge/neoforge, deleting it'
+                    )
+                    fs.rmSync(forgeCacheFile)
+                }
+            } catch {
+                logger.warning(
+                    'Failed to parse the forge cache file, deleting it'
+                )
+                fs.rmSync(forgeCacheFile)
+            }
+        }
     }
     logger.debug(`modloader path : ${forgePath}`)
 
