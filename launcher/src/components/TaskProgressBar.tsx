@@ -8,7 +8,6 @@ export default function TaskProgressBar() {
 
     useEffect(() => {
         ipcRenderer.on('task-update', (_, task) => {
-            console.log(task)
             setTask(task)
         })
     }, [])

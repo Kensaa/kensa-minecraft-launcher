@@ -110,7 +110,6 @@ const useStore = create<ProfileStore>(set => {
 
         selectedProfile: ipcRenderer.sendSync('get-selected-profile'),
         setSelectedProfile(profile: ProfileStore['selectedProfile']) {
-            console.log(profile)
             set({ selectedProfile: profile })
             ipcRenderer.send('set-selected-profile', profile)
         }
