@@ -1,8 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import fetch from 'electron-fetch'
-import type { Readable } from 'stream'
 import { StartArgs } from '../src/types'
+import https from 'https'
+import http from 'http'
 
 export function checkExist(path: string) {
     if (!fs.existsSync(path)) {
@@ -23,24 +24,30 @@ export function download(
             fs.writeFileSync(filepath, '')
         }
         const file = fs.createWriteStream(filepath)
-        fetch(address, { headers })
-            .then(res => {
-                if (res.ok) {
-                    return res.body as Readable
-                } else {
-                    throw new Error(
-                        `failed to download "${address}" (${res.status})`
+        const client = address.startsWith('https') ? https : http
+
+        const req = client.get(address, { headers }, res => {
+            if (res.statusCode !== 200) {
+                file.close()
+                fs.unlinkSync(filepath)
+                return reject(
+                    new Error(
+                        `Failed to download "${address}" (${res.statusCode})`
                     )
-                }
+                )
+            }
+            res.pipe(file)
+            file.on('finish', () => file.close(() => resolve()))
+            file.on('error', err => {
+                fs.unlinkSync(filepath)
+                reject(err)
             })
-            .then(data => {
-                data.pipe(file)
-                file.on('finish', () => {
-                    file.close()
-                    resolve()
-                })
-            })
-            .catch(reject)
+        })
+
+        req.on('error', err => {
+            fs.unlinkSync(filepath)
+            reject(err)
+        })
     })
 }
 
