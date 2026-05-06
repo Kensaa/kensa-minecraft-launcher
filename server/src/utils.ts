@@ -248,6 +248,9 @@ export async function createArchive(
         strip ? false : path.basename(directoryPath)
     )
     await archive.finalize()
+    await new Promise<void>(res => {
+        writeStream.on('finish', () => res())
+    })
 }
 
 /**
