@@ -56,7 +56,7 @@ export default function Settings({
         <Form
             onSubmit={handleSubmit}
             validated={validated}
-            className='w-100 h-100 d-flex flex-column p-2'
+            className='w-100 h-100 d-flex flex-column px-2'
         >
             <div style={{ flexGrow: 1 }} className='w-100'>
                 <DirInput
@@ -65,7 +65,7 @@ export default function Settings({
                     setter={setRootDir as Setter}
                 />
                 <NumberInput
-                    label='RAM'
+                    label='RAM (MiB)'
                     value={ram}
                     setter={setRam as Setter}
                     min={500}
@@ -86,7 +86,7 @@ export default function Settings({
                     value={showHiddenProfiles}
                     setter={setShowHiddenProfiles as Setter}
                 />
-                <div className='d-flex justify-content-center my-1'>
+                <div className='d-flex justify-content-center mb-1 mt-2'>
                     <Button className='mx-1 flex-grow' onClick={resetConfig}>
                         Reset Config
                     </Button>
@@ -146,7 +146,7 @@ interface GenericInputProps extends InputProps {
 function GenericInput({ children, ...props }: GenericInputProps) {
     return (
         <Form.Group className='d-flex flex-row my-2 align-items-center justify-content-start'>
-            <Form.Label className='text-nowrap me-2'>
+            <Form.Label className='text-nowrap me-2' style={{}}>
                 {props.label} :
             </Form.Label>
             {children}
@@ -202,18 +202,29 @@ function FileInput(props: InputProps) {
 }
 
 function NumberInput(props: InputProps & { min: number; max: number }) {
+    const { value, setter, min, max } = props
     return (
         <GenericInput {...props}>
-            <label className='me-2 mb-2'>{props.value}M</label>
+            <Form.Control
+                type='number'
+                value={value as number}
+                onChange={({ target }) =>
+                    setter(
+                        Math.max(
+                            min,
+                            Math.min(max, target.value as unknown as number)
+                        )
+                    )
+                }
+                min={min}
+                max={max}
+                style={{ maxWidth: '100px', marginRight: '0.5rem' }}
+            />
             <Form.Range
-                className='mb-2'
-                value={props.value as number}
-                onChange={({ target }) => {
-                    console.log(target.value)
-                    props.setter(target.value)
-                }}
-                max={props.max}
-                min={props.min}
+                value={value as number}
+                onChange={({ target }) => setter(target.value)}
+                max={max}
+                min={min}
             />
         </GenericInput>
     )
@@ -236,7 +247,7 @@ function BooleanInput(props: InputProps) {
     return (
         <GenericInput {...props}>
             <Form.Check
-                className='mx-2 mb-2 d-flex align-items-center'
+                className='mx-2 d-flex align-items-center'
                 type='switch'
                 checked={props.value as boolean}
                 onChange={({ target }) => props.setter(target.checked)}
