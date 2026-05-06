@@ -20,7 +20,7 @@
 }
 
 .large-modal {
-    max-width: 100%;
+    --bs-modal-width: 95% !important;
 }
 .progress {
     width: 100%;

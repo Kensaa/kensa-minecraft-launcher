@@ -3,7 +3,7 @@
     "description": "A Minecraft launcher with auto-update feature to facilitate playing modded minecraft",
     "author": "Kensa",
     "private": true,
-    "version": "4.2.3",
+    "version": "4.2.4",
     "license": "MIT",
     "main": "dist-electron/electron.js",
     "repository": {
@@ -12,8 +12,8 @@
     },
     "scripts": {
         "dev": "vite --clearScreen false",
-        "build": "rm -r -f release && yarn && tsc && vite build && electron-builder --x64 -wl && rm -r dist-electron && rm -r dist",
-        "release": "tsc && vite build && electron-builder --x64 -wl --publish always"
+        "build": "tsc && vite build",
+        "release": "yarn build && electron-builder --x64 -wl --publish always"
     },
     "dependencies": {
         "bootstrap": "^5.3.0",
