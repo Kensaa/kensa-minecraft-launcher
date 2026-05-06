@@ -770,7 +770,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
         forge: isModded ? forgePath : undefined,
         memory: {
             max: config.ram + 'M',
-            min: config.ram + 'M'
+            min: '512M'
         },
         javaPath: javaPath,
         customArgs: ['-Djava.net.preferIPv6Stack=true'],
