@@ -603,7 +603,9 @@ export default function ProfileTable() {
         const gameDirectory = row.gameDirectory
         if (!gameDirectory) return
         navigator.clipboard
-            .writeText(`${address}/tarball/${gameDirectory}`)
+            .writeText(
+                `${import.meta.env.MODE === 'production' ? address : window.location.origin}/tarball/${gameDirectory}`
+            )
             .then(() =>
                 enqueueSnackbar(
                     'Successfully copied tarball link to clipboard',
@@ -614,7 +616,9 @@ export default function ProfileTable() {
     const copyCurseProfile = (id: GridRowId) => {
         const row = gridRows.find(grid => grid.id === id)!
         navigator.clipboard
-            .writeText(`${address}/curseforge/${row.name}`)
+            .writeText(
+                `${import.meta.env.MODE === 'production' ? address : window.location.origin}/curseforge/${row.name}`
+            )
             .then(() =>
                 enqueueSnackbar(
                     'Successfully copied curseforge profile link to clipboard',
