@@ -11,54 +11,44 @@ export function checkExist(path: string) {
     }
 }
 
-export function download(
+export async function download(
     address: string,
     filepath: string,
     headers?: Record<string, string>
-) {
-    return new Promise<void>(async (resolve, reject) => {
-        if (!fs.existsSync(path.dirname(filepath))) {
-            fs.mkdirSync(path.dirname(filepath), { recursive: true })
-        }
-        if (fs.existsSync(filepath)) {
-            fs.writeFileSync(filepath, '')
-        }
-        const file = fs.createWriteStream(filepath)
-        const client = address.startsWith('https') ? https : http
-
-        const req = client.get(address, { headers }, res => {
+): Promise<void> {
+    if (!fs.existsSync(path.dirname(filepath))) {
+        fs.mkdirSync(path.dirname(filepath), { recursive: true })
+    }
+    if (fs.existsSync(filepath)) {
+        fs.writeFileSync(filepath, '')
+    }
+    const client = address.startsWith('https') ? https : http
+    await new Promise<void>((resolve, reject) => {
+        client.get(address, { headers }, res => {
             if (res.statusCode === 302) {
                 // FOLLOW (returned by github when downloading releases)
                 const location = res.headers.location
-                if (location) {
-                    return download(location, filepath, headers)
-                        .then(resolve)
-                        .catch(reject)
-                } else {
+                if (!location) {
                     return reject(
                         new Error('Status was 302 but no Location header found')
                     )
                 }
-            } else if (res.statusCode !== 200) {
-                file.close()
-                fs.unlinkSync(filepath)
-                return reject(
-                    new Error(
-                        `Failed to download "${address}" (${res.statusCode})`
-                    )
+                download(location, filepath, headers)
+                    .then(resolve)
+                    .catch(reject)
+            } else if (res.statusCode === 200) {
+                const file = fs.createWriteStream(filepath)
+                res.pipe(file)
+                file.on('finish', () => file.close(() => resolve()))
+                file.on('error', err => {
+                    fs.unlinkSync(filepath)
+                    reject(err)
+                })
+            } else {
+                throw new Error(
+                    `Failed to download "${address}" (${res.statusCode})`
                 )
             }
-            res.pipe(file)
-            file.on('finish', () => file.close(() => resolve()))
-            file.on('error', err => {
-                fs.unlinkSync(filepath)
-                reject(err)
-            })
-        })
-
-        req.on('error', err => {
-            fs.unlinkSync(filepath)
-            reject(err)
         })
     })
 }
