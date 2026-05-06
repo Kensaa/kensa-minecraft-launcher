@@ -21,7 +21,7 @@ jobs:
             changes: ${{ steps.changes.outputs.changes }}
         steps:
             - name: checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Mark repo as safe
               run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -74,7 +74,7 @@ jobs:
             DISPLAY: ''
         steps:
             - name: checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Clear Previous wine setup
               run: |
