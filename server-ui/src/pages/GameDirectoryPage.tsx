@@ -1,4 +1,4 @@
-import { Box, Button, Tooltip } from '@mui/material'
+import { Box, Button, Divider, Tooltip } from '@mui/material'
 import { Redirect, useParams } from 'wouter'
 import GameDirectoryViewer from '../components/gameDirectories/GameDirectoryViewer'
 import Navbar from '../components/Navbar'
@@ -49,8 +49,9 @@ export default function GameDirectoryPage() {
                     arrow
                     title='rescans every file present on the server, this should only be used if modification were made directly on the server and not through this page'
                 >
-                    <Button onClick={handleRefresh}>Refresh</Button>
+                    <Button onClick={handleRefresh}>Rescan</Button>
                 </Tooltip>
+                <Divider flexItem />
                 <GameDirectoryViewer gameDirectoryName={gameDirectoryName} />
             </Box>
         </Box>

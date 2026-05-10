@@ -1,8 +1,15 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, {
+    createContext,
+    useContext,
+    useMemo,
+    useRef,
+    useState
+} from 'react'
 import {
     Box,
     CircularProgress,
     IconButton,
+    LinearProgress,
     Menu,
     MenuItem
 } from '@mui/material'
@@ -46,6 +53,16 @@ interface ExtendedFileExplorerItemProps {
 export interface GameDirectoryViewerProps {
     gameDirectoryName: GameDirectory['name']
 }
+
+interface UploadContextType {
+    uploadProgress: number | null
+    setUploadProgress: (p: number | null) => void
+}
+const UploadContext = createContext<UploadContextType>({
+    uploadProgress: null,
+    setUploadProgress: () => {}
+})
+
 export default function GameDirectoryViewer({
     gameDirectoryName
 }: GameDirectoryViewerProps) {
@@ -53,6 +70,7 @@ export default function GameDirectoryViewer({
     const queryClient = useQueryClient()
 
     const apiRef = useTreeViewApiRef()
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null)
 
     const {
         isPending: filesPending,
@@ -172,16 +190,25 @@ export default function GameDirectoryViewer({
     }
 
     return (
-        <Box sx={{ mt: 1, width: { xs: '100%', sm: '25%' } }}>
-            <RichTreeView
-                items={rearrangedFiles}
-                slots={{ item: FileExplorerItem }}
-                apiRef={apiRef}
-                isItemEditable={item => item.id !== ''}
-                onItemLabelChange={handleRename}
-                defaultExpandedItems={['']}
-            />
-        </Box>
+        <UploadContext value={{ uploadProgress, setUploadProgress }}>
+            {uploadProgress ? (
+                <LinearProgress
+                    variant='determinate'
+                    style={{ width: '100%' }}
+                    value={uploadProgress}
+                />
+            ) : undefined}
+            <Box sx={{ mt: 1, width: { xs: '100%', sm: '25%' } }}>
+                <RichTreeView
+                    items={rearrangedFiles}
+                    slots={{ item: FileExplorerItem }}
+                    apiRef={apiRef}
+                    isItemEditable={item => item.id !== ''}
+                    onItemLabelChange={handleRename}
+                    defaultExpandedItems={['']}
+                />
+            </Box>
+        </UploadContext>
     )
 }
 
@@ -257,6 +284,7 @@ const FileExplorerItem = React.forwardRef(function (
     props: FileExplorerItemProps,
     ref: React.Ref<HTMLLIElement>
 ) {
+    const { setUploadProgress } = useContext(UploadContext)
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     const queryClient = useQueryClient()
     const { itemId } = props
@@ -369,34 +397,118 @@ const FileExplorerItem = React.forwardRef(function (
             // dragged file is an external file => upload
             const uploadPormises: Promise<void>[] = []
             for (const file of files) {
-                const notifKey = enqueueSnackbar(
-                    `Uploading file "${file.name}"`,
-                    {
-                        variant: 'info'
+                const uploadPromise = new Promise<void>((resolve, reject) => {
+                    const notifKey = enqueueSnackbar(
+                        `Uploading file "${file.name}"`,
+                        {
+                            variant: 'info'
+                        }
+                    )
+                    const formData = new FormData()
+                    const filepath = [...item.path]
+                    filepath.push(file.name)
+                    formData.append('filepath', filepath.join('/'))
+                    formData.append('file', file)
+                    const httpRequest = new XMLHttpRequest()
+
+                    httpRequest.withCredentials = true
+
+                    httpRequest.upload.onprogress = event => {
+                        if (event.lengthComputable) {
+                            const percentComplete = Math.round(
+                                (event.loaded / event.total) * 100
+                            )
+                            console.log(percentComplete)
+                            setUploadProgress(percentComplete)
+                        }
                     }
-                )
-                const formData = new FormData()
-                const filepath = [...item.path]
-                filepath.push(file.name)
-                formData.append('filepath', filepath.join('/'))
-                formData.append('file', file)
-                const uploadPromise = fetch(
-                    `${address}/web-api/gameDirectory/${item.gameDirectoryName}/file`,
-                    { method: 'POST', credentials: 'include', body: formData }
-                ).then(res => {
-                    closeSnackbar(notifKey)
-                    if (res.ok) {
-                        enqueueSnackbar(`"${file.name}" uploaded`, {
-                            variant: 'success'
-                        })
-                    } else {
-                        res.text().then(err => {
+
+                    httpRequest.onload = () => {
+                        setUploadProgress(null)
+                        closeSnackbar(notifKey)
+
+                        if (
+                            httpRequest.status >= 200 &&
+                            httpRequest.status < 300
+                        ) {
+                            enqueueSnackbar(`"${file.name}" uploaded`, {
+                                variant: 'success'
+                            })
+                            resolve()
+                        } else {
                             enqueueSnackbar(
-                                `Failed to upload "${file.name}" : ${err} (${res.status})`,
+                                `Failed to upload "${file.name}" : ${httpRequest.responseText} (${httpRequest.status})`,
                                 { variant: 'error' }
                             )
-                        })
+                            reject(new Error(httpRequest.responseText))
+                        }
                     }
+
+                    httpRequest.onerror = () => {
+                        setUploadProgress(null)
+
+                        enqueueSnackbar(
+                            `Network error uploading "${file.name}"`,
+                            {
+                                variant: 'error'
+                            }
+                        )
+
+                        reject(new Error('Network error'))
+                    }
+
+                    httpRequest.open(
+                        'POST',
+                        `${address}/web-api/gameDirectory/${item.gameDirectoryName}/file`,
+                        true
+                    )
+
+                    httpRequest.send(formData)
+                    // const httpRequest = new XMLHttpRequest()
+                    // httpRequest.upload.onprogress = event => {
+                    //     if (event.lengthComputable) {
+                    //         const percentComplete = Math.round(
+                    //             (event.loaded / event.total) * 100
+                    //         )
+                    //         setUploadProgress(percentComplete)
+                    //     }
+                    // }
+                    // // const uploadPromise = fetch(
+                    // //     `${address}/web-api/gameDirectory/${item.gameDirectoryName}/file`,
+                    // //     { method: 'POST', credentials: 'include', body: formData })
+
+                    // httpRequest.onload = () => {
+                    //     if (httpRequest.status === 200) {
+                    //         setUploadProgress(null)
+                    //         closeSnackbar(notifKey)
+                    //         resolve()
+                    //     } else {
+                    //         enqueueSnackbar(
+                    //             `Failed to upload "${file.name}" : (${httpRequest.status})`,
+                    //             { variant: 'error' }
+                    //         )
+                    //         reject()
+                    //     }
+                    // }
+                    // //     ,
+                    // httpRequest.open(
+                    //     'POST',
+                    //     `${address}/web-api/gameDirectory/${item.gameDirectoryName}/file`,
+                    //     true
+                    // )
+                    // httpRequest.send(formData)
+                    // if (res.ok) {
+                    //     enqueueSnackbar(`"${file.name}" uploaded`, {
+                    //         variant: 'success'
+                    //     })
+                    // } else {
+                    //     res.text().then(err => {
+                    //         enqueueSnackbar(
+                    //             `Failed to upload "${file.name}" : ${err} (${res.status})`,
+                    //             { variant: 'error' }
+                    //         )
+                    //     })
+                    // })
                 })
                 uploadPormises.push(uploadPromise)
             }
