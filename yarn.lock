@@ -2148,6 +2148,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/express@npm:*":
+  version: 5.0.6
+  resolution: "@types/express@npm:5.0.6"
+  dependencies:
+    "@types/body-parser": "npm:*"
+    "@types/express-serve-static-core": "npm:^5.0.0"
+    "@types/serve-static": "npm:^2"
+  checksum: 10c0/f1071e3389a955d4f9a38aae38634121c7cd9b3171ba4201ec9b56bd534aba07866839d278adc0dda05b942b05a901a02fd174201c3b1f70ce22b10b6c68f24b
+  languageName: node
+  linkType: hard
+
 "@types/express@npm:^5.0.3":
   version: 5.0.4
   resolution: "@types/express@npm:5.0.4"
@@ -2229,6 +2240,15 @@ __metadata:
   version: 0.7.31
   resolution: "@types/ms@npm:0.7.31"
   checksum: 10c0/19fae4f587651e8761c76a0c72ba8af1700d37054476878d164b758edcc926f4420ed06037a1a7fdddc1dbea25265895d743c8b2ea44f3f3f7ac06c449b9221e
+  languageName: node
+  linkType: hard
+
+"@types/multer@npm:^2":
+  version: 2.1.0
+  resolution: "@types/multer@npm:2.1.0"
+  dependencies:
+    "@types/express": "npm:*"
+  checksum: 10c0/f1f512918f79c5dac007d8d30de74372ad24932b34b43d09f250178dcce6da426297e0ea9c939322545519f133cd525dca0552781967d05f43d782ff0b169333
   languageName: node
   linkType: hard
 
@@ -2435,6 +2455,16 @@ __metadata:
     "@types/node": "npm:*"
     "@types/send": "npm:<1"
   checksum: 10c0/842fca14c9e80468f89b6cea361773f2dcd685d4616a9f59013b55e1e83f536e4c93d6d8e3ba5072d40c4e7e64085210edd6646b15d538ded94512940a23021f
+  languageName: node
+  linkType: hard
+
+"@types/serve-static@npm:^2":
+  version: 2.2.0
+  resolution: "@types/serve-static@npm:2.2.0"
+  dependencies:
+    "@types/http-errors": "npm:*"
+    "@types/node": "npm:*"
+  checksum: 10c0/a3c6126bdbf9685e6c7dc03ad34639666eff32754e912adeed9643bf3dd3aa0ff043002a7f69039306e310d233eb8e160c59308f95b0a619f32366bbc48ee094
   languageName: node
   linkType: hard
 
@@ -5161,14 +5191,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-api-router@https://github.com/Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca":
-  version: 1.0.12
-  resolution: "express-api-router@https://github.com/Kensaa/express-api-router.git#commit=eecf2bd40c7dde360aeb7391cee23e692eb571ca"
+"express-api-router@https://github.com/Kensaa/express-api-router.git#0852c50c8fc33d18eb3082140537dcff6e34d4c1":
+  version: 1.1.0
+  resolution: "express-api-router@https://github.com/Kensaa/express-api-router.git#commit=0852c50c8fc33d18eb3082140537dcff6e34d4c1"
   dependencies:
     cookie-parser: "npm:^1.4.7"
     express: "npm:^5.1.0"
     jsonwebtoken: "npm:^9.0.2"
-    multer: "npm:^2.0.2"
+    multer: "npm:^2.1.1"
     zod: "npm:^4.1.12"
   dependenciesMeta:
     cookie-parser:
@@ -5177,7 +5207,7 @@ __metadata:
       optional: true
     multer:
       optional: true
-  checksum: 10c0/fcdeb1fafab0a3a1971b44a3374dde7de31f55a80fa12d266b30db462120f87bf59126084f6f9e9ec53878084f33927449a1c544bc1e71638cc856f0d5186515
+  checksum: 10c0/2e58a7f7fb5a1ee3f12eee14dfd390a2f8aaf5b60371bffc18a6b37c11ce4473da16baa8621322a8e9622425886cb07be4481222a97d80251168ea9bf61737f0
   languageName: node
   linkType: hard
 
@@ -7179,17 +7209,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mkdirp@npm:^0.5.6":
-  version: 0.5.6
-  resolution: "mkdirp@npm:0.5.6"
-  dependencies:
-    minimist: "npm:^1.2.6"
-  bin:
-    mkdirp: bin/cmd.js
-  checksum: 10c0/e2e2be789218807b58abced04e7b49851d9e46e88a2f9539242cc8a92c9b5c3a0b9bab360bd3014e02a140fc4fbc58e31176c408b493f8a2a6f4986bd7527b01
-  languageName: node
-  linkType: hard
-
 "mkdirp@npm:^1.0.3":
   version: 1.0.4
   resolution: "mkdirp@npm:1.0.4"
@@ -7240,18 +7259,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"multer@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "multer@npm:2.0.2"
+"multer@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "multer@npm:2.1.1"
   dependencies:
     append-field: "npm:^1.0.0"
     busboy: "npm:^1.6.0"
     concat-stream: "npm:^2.0.0"
-    mkdirp: "npm:^0.5.6"
-    object-assign: "npm:^4.1.1"
     type-is: "npm:^1.6.18"
-    xtend: "npm:^4.0.2"
-  checksum: 10c0/d3b99dd0512169bbabf15440e1bbb3ecdc000b761e5a3e4aaca40b5e5e213c6cdcc9b7dffebaa601b7691a84f6876aa87e0173ffcc47139253793cf5657819eb
+  checksum: 10c0/2ec4e02833b20f403cfb879d4b64d2a9070d902b9deae7aef18a6faadb707d7665385456cf540aa8a6dadfe3d4c5fc8e0e7b0675b94e1077048b1125426deee6
   languageName: node
   linkType: hard
 
@@ -8733,6 +8749,7 @@ __metadata:
     "@types/decompress": "npm:^4.2.7"
     "@types/express": "npm:^5.0.3"
     "@types/jsonwebtoken": "npm:^9"
+    "@types/multer": "npm:^2"
     "@types/node": "npm:^22.15.21"
     archiver: "npm:^7.0.1"
     better-sqlite3: "npm:^12.4.1"
@@ -8743,8 +8760,9 @@ __metadata:
     drizzle-kit: "npm:^0.31.5"
     drizzle-orm: "npm:^0.44.6"
     express: "npm:^5.1.0"
-    express-api-router: "https://github.com/Kensaa/express-api-router.git#eecf2bd40c7dde360aeb7391cee23e692eb571ca"
+    express-api-router: "https://github.com/Kensaa/express-api-router.git#0852c50c8fc33d18eb3082140537dcff6e34d4c1"
     jsonwebtoken: "npm:^9.0.2"
+    multer: "npm:^2.1.1"
     utils: "workspace:*"
     zod: "npm:^4.1.12"
   languageName: unknown
@@ -10026,7 +10044,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xtend@npm:^4.0.0, xtend@npm:^4.0.2":
+"xtend@npm:^4.0.0":
   version: 4.0.2
   resolution: "xtend@npm:4.0.2"
   checksum: 10c0/366ae4783eec6100f8a02dff02ac907bf29f9a00b82ac0264b4d8b832ead18306797e283cf19de776538babfdcb2101375ec5646b59f08c52128ac4ab812ed0e

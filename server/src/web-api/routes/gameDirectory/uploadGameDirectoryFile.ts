@@ -13,6 +13,7 @@ import {
     sanitizeFilePath
 } from '../../../utils'
 import { hashFile } from 'utils'
+import { diskStorage } from 'multer'
 
 export function uploadGameDirectoryFileHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -21,6 +22,7 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
             type: 'single',
             fieldName: 'file'
         },
+        storage: diskStorage({}),
         bodySchema: z.object({
             filepath: z.string()
         }),
@@ -59,7 +61,8 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
 
             const fileDirectory = path.parse(diskFilepath)
             fs.mkdirSync(fileDirectory.dir, { recursive: true })
-            fs.writeFileSync(diskFilepath, req.file.buffer)
+            // fs.writeFileSync(diskFilepath, req.file.buffer)
+            fs.renameSync(req.file.path, diskFilepath)
             const stat = fs.statSync(diskFilepath)
 
             const insertedFile = await instances.database
