@@ -1,4 +1,4 @@
-name: auto-deploy
+name: launcher-auto-deploy
 on:
     push:
         branches:

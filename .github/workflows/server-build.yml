@@ -1,0 +1,60 @@
+name: launcher-auto-deploy
+on:
+    push:
+        branches:
+            - main
+            - master
+    workflow_dispatch:
+
+env:
+    REGISTRY: docker.kensa.fr
+    IMAGE: kensa-minecraft-launcher-server
+
+jobs:
+    version-check:
+        name: Version Checking
+        runs-on: [self-hosted]
+        container:
+            image: docker.kensa.fr/electron-build-image
+            credentials:
+                username: ${{ secrets.REGISTRY_USERNAME }}
+                password: ${{ secrets.REGISTRY_PASSWORD }}
+        outputs:
+            needs_update: ${{ steps.needs-update.outputs.needs_update }}
+            version: ${{ steps.get-project-version.outputs.version }}
+        steps:
+            - name: checkout
+              uses: actions/checkout@v6
+
+            - name: get-pkgversion
+              id: get-project-version
+              working-directory: server
+              run: |
+                  version=v$(cat package.json | jq -r ".version")
+                  echo $version
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+            - name: needs-update
+              id: needs-update
+              run: |
+                  needs_update = $(curl -fsSL -u "$REGISTRY_USER:$REGISTRY_PASSWORD" "https://$REGISTRY/v2/$IMAGE/tags/list" `| jq --arg tag ${{ steps.get-project-version.outputs.version }} '.tags | index($tag) == null')
+                  echo $needs_update
+                  echo "needs_update=$needs_update" >> "$GITHUB_OUTPUT"
+    build:
+        name: Build
+        runs-on: [self-hosted]
+        permissions: write-all
+        needs: version-check
+        if: ${{ needs.version-check.outputs.needs_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        container:
+            credentials:
+                username: ${{ secrets.REGISTRY_USERNAME }}
+                password: ${{ secrets.REGISTRY_PASSWORD }}
+        steps:
+            - name: checkout
+              uses: actions/checkout@v6
+
+            - name: build
+              run: \
+                  docker buildx build -t $REGISTRY/$IMAGE:${{ needs.version-check.outputs.version }} -t $REGISTRY/$IMAGE:latest .
+                  doccker push $REGISTRY/$IMAGE:${{ needs.version-check.outputs.version }}
+                  doccker push $REGISTRY/$IMAGE:latest
