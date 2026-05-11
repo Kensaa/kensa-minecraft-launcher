@@ -9,3 +9,4 @@ server(old)
 .act-secrets
 .turbo
 out
+.env

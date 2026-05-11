@@ -10,8 +10,10 @@
         "XDG_CURRENT_DESKTOP",
         "ORIGINAL_XDG_CURRENT_DESKTOP",
         "GH_TOKEN",
-        "LOCALAPPDATA"
+        "LOCALAPPDATA",
+        "CURSEFORGE_API_KEY"
     ],
+    "envMode": "loose",
     "tasks": {
         "release": {
             "dependsOn": ["^build", "^build"],

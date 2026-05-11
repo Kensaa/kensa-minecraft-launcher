@@ -396,3 +396,51 @@ export function localizePath(s: string): string {
 export function normalizePath(s: string): string {
     return s.split(path.sep).join('/').trim()
 }
+
+/**
+ * Computes the fingerprint of a file using the murmur2 hash algorithm for curseforge fingerprint search
+ * @param file the filepath of the file to fingerprint
+ * @returns the fingerprint of file
+ */
+export function getCurseforgeFileFingerprint(file: string): number {
+    const rawData = fs.readFileSync(file)
+    // Curseforge filter out whitespaces
+    const data = rawData.filter(
+        b => b !== 9 && b !== 10 && b !== 13 && b !== 32
+    )
+
+    const seed = 1
+    const m = 0x5bd1e995
+    const r = 24
+    let h = (seed ^ data.length) >>> 0
+
+    let i = 0
+    while (i + 4 <= data.length) {
+        let k =
+            (data[i] |
+                (data[i + 1] << 8) |
+                (data[i + 2] << 16) |
+                (data[i + 3] << 24)) >>>
+            0
+        k = Math.imul(k, m) >>> 0
+        k ^= k >>> r
+        k = Math.imul(k, m) >>> 0
+        h = Math.imul(h, m) >>> 0
+        h ^= k
+        i += 4
+    }
+
+    // Handle remaining bytes
+    const remaining = data.length - i
+    if (remaining >= 3) h ^= data[i + 2] << 16
+    if (remaining >= 2) h ^= data[i + 1] << 8
+    if (remaining >= 1) {
+        h ^= data[i]
+        h = Math.imul(h, m) >>> 0
+    }
+
+    h ^= h >>> 13
+    h = Math.imul(h, m) >>> 0
+    h ^= h >>> 15
+    return h >>> 0
+}

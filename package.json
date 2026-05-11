@@ -8,12 +8,13 @@
         "utils"
     ],
     "scripts": {
-        "dev": "turbo dev",
-        "build": "turbo build",
-        "release": "turbo release"
+        "dev": "dotenv -- turbo dev",
+        "build": "dotenv -- turbo build",
+        "release": "dotenv -- turbo release"
     },
     "packageManager": "yarn@4.12.0",
     "devDependencies": {
+        "dotenv-cli": "^11.0.0",
         "turbo": "^2.5.8",
         "typescript": "^5.9.3"
     }

@@ -22,6 +22,7 @@ const IS_DEV = process.env.NODE_ENV !== 'production'
 const SERVER_NAME =
     process.env.SERVER_NAME ||
     (IS_DEV ? 'dev' : crypto.randomBytes(4).toString('hex'))
+const CURSEFORGE_API_KEY_BASE64 = process.env.CURSEFORGE_API_KEY_BASE64
 
 const expectedJavaRuntimesVersion = [8, 17, 22]
 const expectedJavaRuntimesPlatform = ['linux', 'win32']
@@ -42,6 +43,12 @@ if (process.env.SERVER_NAME === undefined) {
     console.log(
         `SERVER_NAME environement variables is not defined, using a random name : ${SERVER_NAME}`
     )
+}
+if (CURSEFORGE_API_KEY_BASE64 === undefined) {
+    console.error(
+        'Please specify the CURSEFORGE_API_KEY env variable (see: https://console.curseforge.com/)'
+    )
+    process.exit(1)
 }
 
 const STATIC_DIRECTORY = path.join(DATA_DIRECTORY, 'static')

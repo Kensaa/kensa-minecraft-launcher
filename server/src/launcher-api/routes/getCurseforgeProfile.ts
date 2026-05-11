@@ -3,8 +3,8 @@ import { APIRouter } from '../launcher-api'
 import {
     APIInstances,
     createArchive,
-    DatabaseGameDirectory,
     DatabaseProfile,
+    getCurseforgeFileFingerprint,
     getGameDirectory,
     getGameDirectoryPath,
     getProfile,
@@ -12,7 +12,7 @@ import {
     sanitizeFilePath,
     sendFile
 } from '../../utils'
-import { profilesTable } from '../../db/schema'
+import { curseforgeFingerprintsTable, profilesTable } from '../../db/schema'
 import { eq } from 'drizzle-orm'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
@@ -54,14 +54,6 @@ export function getCurseforgeProfile(router: APIRouter) {
                   )
                 : undefined
 
-            // TODO: neoforge support
-            if (profile.is_neoforge) {
-                throw new HTTPError(
-                    500,
-                    'Curseforge profiles are not yet implemented for profiles using neoforge'
-                )
-            }
-
             if (profile.curseforge_profile_created_at) {
                 // There is a curseforge profile
                 if (
@@ -102,6 +94,12 @@ export function getCurseforgeProfile(router: APIRouter) {
     })
 }
 
+interface CurseforgeFile {
+    projectID: number
+    fileID: number
+    required: boolean
+}
+
 async function createCurseforgeProfile(
     instances: APIInstances,
     profile: DatabaseProfile
@@ -121,6 +119,7 @@ async function createCurseforgeProfile(
         path.join(tmpdir(), `curseforgeProfile-${profile.id}-`)
     )
     const overrideDirectory = path.join(tempDirectory, 'overrides')
+    const filesArray: CurseforgeFile[] = []
     if (profile.game_directory) {
         const gameDirectory = await getGameDirectory(
             instances.database,
@@ -136,16 +135,133 @@ async function createCurseforgeProfile(
             overrideDirectory,
             { recursive: true }
         )
+
+        const modDirectory = path.join(overrideDirectory, 'mods')
+        if (fs.existsSync(modDirectory)) {
+            // There is a directory called "mods", scan the file inside it to find if they are on curseforge
+
+            const toFetchFingerprints: Record<number, string> = {}
+            for (const file of fs.readdirSync(modDirectory)) {
+                const modFile = path.join(modDirectory, file)
+                const stat = fs.statSync(modFile)
+                if (!stat.isFile()) continue
+
+                const fingerprint = getCurseforgeFileFingerprint(modFile)
+                // check if the fingerprint is cached in the server database
+                const cachedFiles = await instances.database
+                    .select()
+                    .from(curseforgeFingerprintsTable)
+                    .where(
+                        eq(curseforgeFingerprintsTable.fingerprint, fingerprint)
+                    )
+                if (cachedFiles.length > 0) {
+                    // if there is a match, check if the file was a match on fingerprint search
+                    if (cachedFiles[0].match) {
+                        // we found a curseforge file matching this one, delete it from the overrides directory and add it to the files array
+                        filesArray.push({
+                            required: true,
+                            fileID: cachedFiles[0].fileID!,
+                            projectID: cachedFiles[0].projectID!
+                        })
+                        fs.rmSync(modFile)
+                    }
+                } else {
+                    // we never seen this file, add it to the list of file to send to the api
+                    toFetchFingerprints[fingerprint] = modFile
+                }
+            }
+
+            // if there is fingerprint to send to the curseforge API, send it
+            if (Object.keys(toFetchFingerprints).length > 0) {
+                const apiKey = Buffer.from(
+                    process.env.CURSEFORGE_API_KEY_BASE64!,
+                    'base64'
+                ).toString()
+                try {
+                    const res = await fetch(
+                        `https://api.curseforge.com/v1/fingerprints/432`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'User-Agent': 'kensa-minecraft-launcher',
+                                'x-api-key': apiKey
+                            },
+                            body: JSON.stringify({
+                                fingerprints: Object.keys(toFetchFingerprints)
+                            })
+                        }
+                    )
+                    if (!res.ok) {
+                        throw new HTTPError(
+                            500,
+                            'failed to access curseforge api'
+                        )
+                    }
+                    const data = await res.json()
+                    const matches = data.data.exactMatches
+                    for (const match of matches) {
+                        await instances.database
+                            .insert(curseforgeFingerprintsTable)
+                            .values({
+                                match: true,
+                                projectID: match.id,
+                                fileID: match.file.id,
+                                fingerprint: match.file.fileFingerprint
+                            })
+
+                        filesArray.push({
+                            required: true,
+                            projectID: match.id,
+                            fileID: match.file.id
+                        })
+                        fs.rmSync(
+                            toFetchFingerprints[match.file.fileFingerprint]
+                        )
+                    }
+                    const nonMatches = [
+                        ...data.data.partialMatches.map(
+                            (e: any) => e.file.fileFingerprint
+                        ),
+                        ...(data.data.unmatchedFingerprints ?? [])
+                    ]
+                    for (const nonMatch of nonMatches) {
+                        await instances.database
+                            .insert(curseforgeFingerprintsTable)
+                            .values({
+                                match: false,
+                                fingerprint: nonMatch
+                            })
+                    }
+                } catch (err) {
+                    if (Error.isError(err)) {
+                        throw new HTTPError(
+                            500,
+                            'Failed to access the curseforge api : ' +
+                                err.message
+                        )
+                    } else {
+                        throw new HTTPError(
+                            500,
+                            'Failed to access the curseforge api'
+                        )
+                    }
+                }
+            }
+        }
     } else {
         fs.mkdirSync(overrideDirectory)
     }
+
+    const isModded = profile.forge_version !== undefined
+    const modloader = profile.is_neoforge ? 'neoforge' : 'forge'
     const manifest = {
         minecraft: {
             version: profile.mc_version,
-            modLoaders: profile.forge_version
+            modLoaders: isModded
                 ? [
                       {
-                          id: `forge-${profile.forge_version}`,
+                          id: `${modloader}-${profile.forge_version}`,
                           primary: true
                       }
                   ]
@@ -154,9 +270,9 @@ async function createCurseforgeProfile(
         manifestType: 'minecraftModpack',
         manifestVersion: 1,
         name: profile.name,
-        version: '',
-        author: '',
-        files: [],
+        version: '1.0.0',
+        author: 'Kensa',
+        files: filesArray,
         overrides: 'overrides'
     }
     fs.writeFileSync(
