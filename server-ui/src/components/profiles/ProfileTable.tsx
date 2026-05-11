@@ -604,7 +604,7 @@ export default function ProfileTable() {
         if (!gameDirectory) return
         navigator.clipboard
             .writeText(
-                `${import.meta.env.MODE === 'production' ? address : window.location.origin}/tarball/${gameDirectory}`
+                `${import.meta.env.MODE === 'production' ? window.location.origin : address}/tarball/${gameDirectory}`
             )
             .then(() =>
                 enqueueSnackbar(
@@ -617,7 +617,7 @@ export default function ProfileTable() {
         const row = gridRows.find(grid => grid.id === id)!
         navigator.clipboard
             .writeText(
-                `${import.meta.env.MODE === 'production' ? address : window.location.origin}/curseforge/${row.name}`
+                `${import.meta.env.MODE === 'production' ? window.location.origin : address}/curseforge/${row.name}`
             )
             .then(() =>
                 enqueueSnackbar(
