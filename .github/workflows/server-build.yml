@@ -1,4 +1,4 @@
-name: launcher-auto-deploy
+name: server-build
 on:
     push:
         branches:
@@ -9,6 +9,8 @@ on:
 env:
     REGISTRY: docker.kensa.fr
     IMAGE: kensa-minecraft-launcher-server
+    REGISTRY_USER: ${{ secrets.REGISTRY_USERNAME }}
+    REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
 
 jobs:
     version-check:
@@ -19,6 +21,7 @@ jobs:
             credentials:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
+            options: --user 1000:1000
         outputs:
             needs_update: ${{ steps.needs-update.outputs.needs_update }}
             version: ${{ steps.get-project-version.outputs.version }}
@@ -30,13 +33,13 @@ jobs:
               id: get-project-version
               working-directory: server
               run: |
-                  version=v$(cat package.json | jq -r ".version")
+                  version=$(cat package.json | jq -r ".version")
                   echo $version
                   echo "version=$version" >> "$GITHUB_OUTPUT"
             - name: needs-update
               id: needs-update
               run: |
-                  needs_update = $(curl -fsSL -u "$REGISTRY_USER:$REGISTRY_PASSWORD" "https://$REGISTRY/v2/$IMAGE/tags/list" `| jq --arg tag ${{ steps.get-project-version.outputs.version }} '.tags | index($tag) == null')
+                  needs_update=$(curl -fsSL -u "$REGISTRY_USER:$REGISTRY_PASSWORD" "https://$REGISTRY/v2/$IMAGE/tags/list" | jq --arg tag "${{ steps.get-project-version.outputs.version }}" '.tags | index($tag) == null')
                   echo $needs_update
                   echo "needs_update=$needs_update" >> "$GITHUB_OUTPUT"
     build:
@@ -45,16 +48,19 @@ jobs:
         permissions: write-all
         needs: version-check
         if: ${{ needs.version-check.outputs.needs_update == 'true' || github.event_name == 'workflow_dispatch' }}
-        container:
-            credentials:
-                username: ${{ secrets.REGISTRY_USERNAME }}
-                password: ${{ secrets.REGISTRY_PASSWORD }}
         steps:
             - name: checkout
               uses: actions/checkout@v6
 
+            - name: Login to registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ env.REGISTRY_USER }}
+                  password: ${{ env.REGISTRY_PASSWORD }}
+
             - name: build
-              run: \
+              run: |
                   docker buildx build -t $REGISTRY/$IMAGE:${{ needs.version-check.outputs.version }} -t $REGISTRY/$IMAGE:latest .
-                  doccker push $REGISTRY/$IMAGE:${{ needs.version-check.outputs.version }}
-                  doccker push $REGISTRY/$IMAGE:latest
+                  docker push $REGISTRY/$IMAGE:${{ needs.version-check.outputs.version }}
+                  docker push $REGISTRY/$IMAGE:latest
