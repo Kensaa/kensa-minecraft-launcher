@@ -51,3 +51,13 @@ export const accountsTable = sqliteTable('accounts', {
     temp_account: int({ mode: 'boolean' }).notNull(),
     is_admin: int({ mode: 'boolean' }).notNull().default(false)
 })
+
+export const curseforgeFingerprintsTable = sqliteTable(
+    'curseforgeFingerprints',
+    {
+        fingerprint: int().primaryKey(),
+        match: int({ mode: 'boolean' }).notNull(),
+        projectID: int(),
+        fileID: int()
+    }
+)
