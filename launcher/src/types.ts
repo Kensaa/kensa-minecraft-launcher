@@ -18,6 +18,7 @@ export interface Config {
     closeLauncher: boolean
     openLogs: boolean
     showHiddenProfiles: boolean
+    enableExperimentalJVMArgs: boolean
 }
 
 export type IPCHandlerResult =

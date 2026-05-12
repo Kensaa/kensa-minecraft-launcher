@@ -27,6 +27,9 @@ export default function Settings({
     const [showHiddenProfiles, setShowHiddenProfiles] = useState(
         config.showHiddenProfiles
     )
+    const [enableExperimentalJVMArgs, setEnableExperimentalJVMArgs] = useState(
+        config.enableExperimentalJVMArgs
+    )
 
     const [validated, setValidated] = useState(false)
 
@@ -37,6 +40,7 @@ export default function Settings({
         config.setCloseLauncher(closeLauncher)
         config.setOpenLogs(openLogs)
         config.setShowHiddenProfiles(showHiddenProfiles)
+        config.setEnableExperimentalJVMArgs(enableExperimentalJVMArgs)
 
         setValidated(true)
         hide()
@@ -85,6 +89,11 @@ export default function Settings({
                     label='Show hidden profiles'
                     value={showHiddenProfiles}
                     setter={setShowHiddenProfiles as Setter}
+                />
+                <BooleanInput
+                    label='Enable Experimental JVM args'
+                    value={enableExperimentalJVMArgs}
+                    setter={setEnableExperimentalJVMArgs as Setter}
                 />
                 <div className='d-flex justify-content-center mb-1 mt-2'>
                     <Button className='mx-1 flex-grow' onClick={resetConfig}>
