@@ -73,7 +73,8 @@ const defaultConfig: Config = {
     ],
     closeLauncher: true,
     openLogs: false,
-    showHiddenProfiles: false
+    showHiddenProfiles: false,
+    enableExperimentalJVMArgs: false
 }
 
 const authInstance = new Auth('select_account')
@@ -530,7 +531,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
     const javaPath = path.join(
         config.rootDir,
         'java',
-        javaVersion,
+        javaVersion + '',
         'bin',
         platform === 'win32' ? 'java.exe' : 'java'
     )
@@ -753,8 +754,18 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
             }
         }
     }
-    logger.debug(`modloader path : ${forgePath}`)
 
+    const JVMArgs = ['-Djava.net.preferIPv6Stack=true']
+    if (config.enableExperimentalJVMArgs) {
+        JVMArgs.push('-XX:+UseLargePages')
+        if (javaVersion >= 17) {
+            JVMArgs.push('-XX:+UseZGC')
+            if (javaVersion >= 21) {
+                JVMArgs.push('-XX:+ZGenerational')
+            }
+        }
+    }
+    logger.child(JVMArgs).info('Starting game with JVM arguments : ')
     await refreshAuth()
     const auth = await authInfo?.getMinecraft()
     if (!auth) throw new Error('failed to get Minecraft auth info')
@@ -773,7 +784,7 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
             min: '512M'
         },
         javaPath: javaPath,
-        customArgs: ['-Djava.net.preferIPv6Stack=true'],
+        customArgs: JVMArgs,
         overrides: {
             detached: true,
             assetRoot: path.join(config.rootDir, 'assets'),
@@ -782,11 +793,11 @@ async function launchGame(args: StartArgs): Promise<ILauncherOptions> {
     }
 }
 
-async function installJava(server: string, version: string) {
+async function installJava(server: string, version: number) {
     const javaFolder = path.join(config.rootDir, 'java')
     const javaExecutable = path.join(
         javaFolder,
-        version,
+        version + '',
         'bin',
         platform === 'win32' ? 'java.exe' : 'java'
     )
@@ -812,7 +823,7 @@ async function installJava(server: string, version: string) {
             title: 'Installing Java',
             progress: 50
         })
-        await decompress(zipPath, path.join(javaFolder, version), {
+        await decompress(zipPath, path.join(javaFolder, version + ''), {
             strip: 1
         })
         fs.rmSync(zipPath)
@@ -824,15 +835,15 @@ async function installJava(server: string, version: string) {
     }
 }
 
-function getJavaVersion(mcversion: string): string {
+function getJavaVersion(mcversion: string): number {
     const MCVersionNumber = parseInt(mcversion.split('.')[1])
 
     if (MCVersionNumber < 17) {
-        return '8'
+        return 8
     } else if (MCVersionNumber < 21) {
-        return '17'
+        return 17
     } else {
-        return '22'
+        return 22
     }
 }
 
