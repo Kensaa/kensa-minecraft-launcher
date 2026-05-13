@@ -4,7 +4,6 @@
     overflow-y: scroll;
     max-height: 100%;
     display: flex;
-    flex-direction: column-reverse;
     padding: 4px;
 }
 
@@ -14,4 +13,16 @@
     flex-direction: column;
     font-family: monospace;
     white-space: pre-wrap;
+}
+
+.logs-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; // keeps the header fixed, scroll stays in log-container
+}
+
+.logs-header {
+    display: flex;
+    justify-content: center;
 }

@@ -6,7 +6,6 @@ import { Auth, Xbox } from 'msmc'
 import { Client, ILauncherOptions, IUser } from 'minecraft-launcher-core'
 import type { Config, Profile, StartArgs, IPCHandlerResult } from '../src/types'
 import { createLogger, setLogWindow } from './logger'
-
 import decompress from 'decompress'
 import { urlJoin } from './url-join'
 import 'source-map-support/register'
