@@ -1,7 +1,7 @@
 {
     "name": "server",
     "private": true,
-    "version": "5.2.1",
+    "version": "5.2.2",
     "main": "dist/server.js",
     "author": "Kensa",
     "license": "MIT",

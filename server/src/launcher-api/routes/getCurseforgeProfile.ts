@@ -89,7 +89,7 @@ export function getCurseforgeProfile(router: APIRouter) {
                 curseforgeProfileDirectory
             )
 
-            await sendFile(res, curseforgeProfilePath)
+            await sendFile(res, curseforgeProfilePath, `${profile.name}.zip`)
         }
     })
 }

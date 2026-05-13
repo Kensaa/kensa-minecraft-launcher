@@ -257,13 +257,18 @@ export async function createArchive(
  * Sends a file as a response to a request
  * @param res the response object
  * @param filepath the file to send
+ * @param filename the optional name of the file as it should be downloaded
  * @returns a promise that resolve when the file is sent
  */
-export async function sendFile(res: Response, filepath: string) {
+export async function sendFile(
+    res: Response,
+    filepath: string,
+    filename?: string
+) {
     return new Promise<void>((resolve, reject) => {
         res.setHeader(
             'Content-Disposition',
-            `attachment; filename="${path.basename(filepath)}"`
+            `attachment; filename="${filename ?? path.basename(filepath)}"`
         )
         res.status(200).sendFile(filepath, err => {
             if (err) {
