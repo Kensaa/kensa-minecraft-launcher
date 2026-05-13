@@ -62,7 +62,8 @@ export function uploadGameDirectoryFileHandler(router: APIRouter) {
             const fileDirectory = path.parse(diskFilepath)
             fs.mkdirSync(fileDirectory.dir, { recursive: true })
             // fs.writeFileSync(diskFilepath, req.file.buffer)
-            fs.renameSync(req.file.path, diskFilepath)
+            fs.cpSync(req.file.path, diskFilepath)
+            fs.rmSync(req.file.path)
             const stat = fs.statSync(diskFilepath)
 
             const insertedFile = await instances.database
