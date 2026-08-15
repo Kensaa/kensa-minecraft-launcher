@@ -835,14 +835,22 @@ async function installJava(server: string, version: number) {
 }
 
 function getJavaVersion(mcversion: string): number {
-    const MCVersionNumber = parseInt(mcversion.split('.')[1])
+    const splitVersion = mcversion.split('.').map(parseInt)
+    if (splitVersion.length < 2) {
+        throw `Could not determine a Java version for version "${mcversion}"`
+    }
+    const [major, minor] = splitVersion
 
-    if (MCVersionNumber < 17) {
-        return 8
-    } else if (MCVersionNumber < 21) {
-        return 17
+    if (major == 1) {
+        if (minor < 17) {
+            return 8
+        } else if (minor < 21) {
+            return 17
+        } else {
+            return 22
+        }
     } else {
-        return 22
+        return 25
     }
 }
 

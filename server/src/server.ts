@@ -24,7 +24,7 @@ const SERVER_NAME =
     (IS_DEV ? 'dev' : crypto.randomBytes(4).toString('hex'))
 const CURSEFORGE_API_KEY_BASE64 = process.env.CURSEFORGE_API_KEY_BASE64
 
-const expectedJavaRuntimesVersion = [8, 17, 22]
+const expectedJavaRuntimesVersion = [8, 17, 22, 25]
 const expectedJavaRuntimesPlatform = ['linux', 'win32']
 
 const serverVersion = JSON.parse(
