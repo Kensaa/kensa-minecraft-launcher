@@ -228,7 +228,10 @@ ipcMain.handle('get-update-status', (event, arg) => {
         logger.info('Latest version of Launcher: %s', latestVersion)
 
         const needsUpdate = currentVersion != latestVersion
-        if (platform === 'win32') {
+        if (
+            platform === 'win32' &&
+            process.env.PORTABLE_EXECUTABLE_DIR === undefined
+        ) {
             res({ autoUpdate: needsUpdate, manualUpdate: false })
         } else {
             res({ autoUpdate: false, manualUpdate: needsUpdate })
