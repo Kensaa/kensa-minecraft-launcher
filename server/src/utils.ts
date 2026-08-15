@@ -375,7 +375,8 @@ export async function downloadJavaRuntime(
                 Accept: 'application/octet-stream',
                 ...headers
             })
-        } catch {
+        } catch (err) {
+            console.error('failed to download : ', err)
             continue
         }
         return
